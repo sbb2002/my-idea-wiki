@@ -152,15 +152,16 @@ def read_notes_from_folder(
     return notes
 
 
-def upload_json(folder_id: str, filename: str, content: str, existing_file_id: Optional[str] = None) -> str:
+def upload_json(folder_id: str, filename: str, content: str, existing_file_id: Optional[str] = None, mime_type: str = "application/json") -> str:
     """
-    Upload or update a JSON file in the specified Drive folder.
+    Upload or update a file in the specified Drive folder.
 
     Args:
         folder_id: Google Drive folder ID.
         filename: Name of the file to create/update.
-        content: JSON string content.
+        content: File content as string.
         existing_file_id: If provided, update this file instead of creating a new one.
+        mime_type: MIME type of the file (default: application/json).
 
     Returns:
         File ID of the created/updated file.
@@ -168,7 +169,7 @@ def upload_json(folder_id: str, filename: str, content: str, existing_file_id: O
     service = get_drive_service()
     media = MediaIoBaseUpload(
         io.BytesIO(content.encode("utf-8")),
-        mimetype="application/json",
+        mimetype=mime_type,
         resumable=False,
     )
 

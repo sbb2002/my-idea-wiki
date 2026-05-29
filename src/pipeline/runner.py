@@ -6,7 +6,8 @@
   2. Claude API로 위키화 시도
   3. 실패 시 Gemini API 폴백
   4. wiki.json 업데이트 후 Drive에 저장
-  5. 처리 결과 집계 반환
+  5. HTML 뷰어 생성 후 Drive에 저장
+  6. 처리 결과 집계 반환
 """
 import os
 import traceback
@@ -20,6 +21,7 @@ from src.pipeline.claude_processor import wikify_with_claude
 from src.pipeline.gemini_processor import wikify_with_gemini
 
 WIKI_FILENAME = "wiki.json"
+VIEWER_FILENAME = "index.html"
 
 
 def run_pipeline() -> dict:
@@ -148,7 +150,24 @@ def run_pipeline() -> dict:
         result["errors"].append(f"wiki.json 저장 실패: {e}")
         return result
 
-    # ── 6. 최종 상태 결정 ──────────────────────────────────────
+    # ── 6. HTML 뷰어 생성 후 Drive 저장 ────────────────────────
+    try:
+        from src.viewer.builder import build_viewer_html
+        viewer_html = build_viewer_html(dump_wiki(wiki))
+        viewer_file_id = find_file_in_folder(wiki_folder_id, VIEWER_FILENAME)
+        upload_json(
+            folder_id=wiki_folder_id,
+            filename=VIEWER_FILENAME,
+            content=viewer_html,
+            existing_file_id=viewer_file_id,
+            mime_type="text/html",
+        )
+    except Exception as e:
+        # 뷰어 생성 실패는 경고로만 처리 — 위키화 결과에는 영향 없음
+        print(f"[WARN] HTML 뷰어 생성 실패 (무시): {e}")
+        result["errors"].append(f"뷰어 생성 실패 (무시됨): {e}")
+
+    # ── 7. 최종 상태 결정 ──────────────────────────────────────
     if skipped > 0 and (result["new_items"] + result["updated_items"]) > 0:
         result["status"] = "partial"
     elif skipped == result["processed"]:
