@@ -20,96 +20,98 @@ GitHub: https://github.com/sbb2002/my-idea-wiki
 | #1 | 프로젝트 스캐폴딩 + Google Drive 노트 읽기 | ✅ closed |
 | #2 | Claude/Gemini API 위키화 + JSON → Drive 저장 | ✅ closed |
 | #3 | Render Cron Job 배포 + 텔레그램 알람 | ✅ closed |
-| #4 | Render Web Service + Telegram Webhook + 봇 명령어 5개 | ✅ 구현 완료 (브랜치: `issue-4-telegram-webhook`) |
+| #4 | Render Web Service + Telegram Webhook + 봇 명령어 5개 | ✅ closed |
+| #5 | 로컬 HTML 뷰어 — 위키 문서 렌더링 | ✅ PR #8 오픈 (머지 대기) |
 
 ### 미완료 이슈
 
 | 이슈 | 내용 | Blocked by |
 |------|------|------------|
-| #5 | 로컬 HTML 뷰어 — 위키 문서 렌더링 | #2 (완료됨 → 바로 시작 가능) |
-| #6 | 그래프 뷰 (D3/Vis.js 인라인) | #5 |
+| #6 | 그래프 뷰 (D3/Vis.js 인라인) | #5 (머지 후 시작 가능) |
 
 ### 현재 프로젝트 구조
 
 ```
 my-idea-wiki/
-├── render.yaml                  # Cron Job + Web Service 설정
+├── render.yaml
 ├── requirements.txt
-├── .env.example                 # TELEGRAM_WEBHOOK_SECRET 추가됨
+├── .env.example
 ├── scripts/
-│   └── register_webhook.py     # Webhook URL 등록 유틸리티 (배포 후 1회 실행)
+│   └── register_webhook.py
+├── viewer/
+│   └── index.html               # ✨ NEW: 단일 파일 HTML 뷰어
 ├── src/
-│   ├── main.py                  # FastAPI: GET /health, POST /webhook
-│   ├── cron_job.py              # Render Cron Job 진입점
+│   ├── main.py
+│   ├── cron_job.py
 │   ├── drive/
-│   │   └── client.py
+│   │   └── client.py            # upload_json에 mime_type 파라미터 추가됨
 │   ├── pipeline/
-│   │   ├── runner.py
+│   │   ├── runner.py            # step 6: HTML 뷰어 자동 생성 추가됨
 │   │   ├── wiki_store.py
 │   │   ├── claude_processor.py
 │   │   └── gemini_processor.py
+│   ├── viewer/
+│   │   ├── __init__.py
+│   │   └── builder.py           # ✨ NEW: wiki.json 인라인 embed 유틸
 │   └── telegram/
-│       ├── notifier.py          # 텔레그램 알람 (3종)
-│       └── bot.py               # ✨ NEW: Webhook 핸들러 + 5개 명령어
-└── tests/
+│       ├── notifier.py
+│       └── bot.py
+└── tests/                       # 53개 단위 테스트 (전부 통과)
     ├── test_drive_client.py
     ├── test_notifier.py
     ├── test_pipeline.py
-    └── test_bot.py              # ✨ NEW: 19개 단위 테스트
+    ├── test_bot.py
+    └── test_viewer.py           # ✨ NEW: 8개 테스트
 ```
 
 ---
 
 ## What Worked
 
-- **google-genai 최신 SDK** 사용 (`google.generativeai` deprecated → `google.genai`로 교체)
-- **mock 기반 단위 테스트**: Drive API / AI API 호출 없이 파이프라인 로직 검증
-- **incremental 처리**: `last_processed_at` 필드로 신규/변경 노트만 처리
-- **수동 태그 우선**: `#태그` 파싱 후 업데이트 시에도 기존 태그 보존
-- **백그라운드 스레드**: /run 수신 시 파이프라인을 threading.Thread로 실행해 응답 블로킹 없음
-- **콜드 스타트 감지**: `_cold_start_warned` 플래그로 프로세스 첫 /run 시에만 안내 메시지 발송
+- **google-genai 최신 SDK** 사용
+- **mock 기반 단위 테스트**
+- **incremental 처리**: `last_processed_at` 필드
+- **수동 태그 우선**
+- **백그라운드 스레드**: /run 파이프라인 비블로킹 실행
+- **인라인 embed 방식**: file:// 프로토콜 fetch 차단 우회 — builder.py로 WIKI_DATA 변수 주입
+- **단계적 폴백**: fetch → 인라인 WIKI_DATA → 샘플 데이터
 
 ---
 
 ## What Didn't Work
 
-- `google-generativeai==0.8.1` — deprecated, FutureWarning 발생. `google-genai`로 교체함
-- GitHub fine-grained PAT는 PR 생성 API 권한 없음 (`Resource not accessible by personal access token`). 브랜치 push만 가능.
+- `google-generativeai==0.8.1` → `google-genai`로 교체
+- GitHub fine-grained PAT는 PR 생성 권한 별도 설정 필요 (현재 해결됨)
 
 ---
 
 ## Next Steps
 
-### 다음 세션에서 바로 시작할 것: #5
+### 다음 세션에서 바로 시작할 것: #6
 
-**#5 — 로컬 HTML 뷰어 (위키 문서 렌더링)**
+**#6 — 그래프 뷰 (D3/Vis.js 인라인)**
 
-구현할 파일:
-- `viewer/index.html` — 단일 파일(모든 JS/CSS 인라인), wiki.json 읽어 렌더링
-- `src/pipeline/runner.py` 수정 — 위키화 후 HTML 뷰어도 Drive에 업로드
+#5가 머지되면 `viewer/index.html`에 그래프 뷰 탭을 추가한다.
 
-기능:
-- 아이템 목록 사이드바 + 상세 뷰
-- 위키 문서 구조: 개요 → AI 작성 내용 → 버전 히스토리 (타임라인)
-- 로컬 파일에서 JSON fetch (`fetch()` API, `file://` 프로토콜 주의)
-  - `file://` 프로토콜에서는 fetch()가 차단될 수 있음 → JSON을 JS 변수로 인라인하거나 별도 로컬 서버 필요
+구현 방향:
+- `viewer/index.html`에 "그래프" 탭 추가 (위키 문서 뷰와 토글)
+- D3.js CDN 사용 불가 (오프라인) → D3 force simulation 코드를 인라인으로 포함
+  - 또는 순수 JS로 간단한 force-directed graph 직접 구현 (의존성 없음)
+- 노드: 각 아이템 (제목 표시)
+- 엣지: `related` 배열 기반 자동 연결
+- 인터랙션: 노드 클릭 → 해당 아이템 위키 문서로 이동
+- 태그 기반 노드 색상 구분
+- 줌/패닝 지원
 
-그 다음: **#6 — 그래프 뷰** (#5 완료 후)
-
----
-
-### #4 배포 절차 (참고용)
-
-1. Render 대시보드에서 `idea-wiki-web` Web Service 생성 및 배포
-2. 배포 완료 후 URL 확인 (예: `https://idea-wiki-web.onrender.com`)
-3. `.env`에 `TELEGRAM_WEBHOOK_URL=https://idea-wiki-web.onrender.com/webhook` 설정
-4. `python -m scripts.register_webhook` 실행 (1회)
+주의사항:
+- D3를 인라인으로 넣으면 HTML 파일이 매우 커짐 → 경량 force simulation 직접 구현 검토
+- PRD: "AI 의미 유사도 + 태그 공유로 자동 연결"은 #6 범위, 명시적 `related` 필드 연결이 핵심
 
 ---
 
-## Environment Variables (필요한 것들)
+## Environment Variables
 
-`.env.example` 참고. 실제 값은 Render 대시보드 환경변수에 등록.
+`.env.example` 참고.
 
 | 변수 | 비고 |
 |------|------|
