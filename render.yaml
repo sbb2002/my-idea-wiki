@@ -1,0 +1,29 @@
+services:
+  # ── Cron Job: 주기적 위키화 ────────────────────────────────
+  # 실행 시에만 켜지므로 750시간 무료 할당량에 영향 없음
+  - type: cron
+    name: idea-wiki-cron
+    runtime: python
+    schedule: "0 9 * * 1"   # 매주 월요일 오전 9시 (UTC) — .env의 SCHEDULE_CRON으로 재정의 가능
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m src.cron_job
+    envVars:
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: DRIVE_NOTES_FOLDER_ID
+        sync: false
+      - key: DRIVE_WIKI_FOLDER_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+
+  # ── Web Service: 텔레그램 Webhook 수신 (#4에서 추가) ───────
+  # - type: web
+  #   name: idea-wiki-web
+  #   ...
