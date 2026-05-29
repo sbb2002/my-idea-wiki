@@ -4,7 +4,7 @@ services:
   - type: cron
     name: idea-wiki-cron
     runtime: python
-    schedule: "0 9 * * 1"   # 매주 월요일 오전 9시 (UTC) — .env의 SCHEDULE_CRON으로 재정의 가능
+    schedule: "0 9 * * 1"   # 매주 월요일 오전 9시 (UTC)
     buildCommand: pip install -r requirements.txt
     startCommand: python -m src.cron_job
     envVars:
@@ -23,7 +23,31 @@ services:
       - key: TELEGRAM_CHAT_ID
         sync: false
 
-  # ── Web Service: 텔레그램 Webhook 수신 (#4에서 추가) ───────
-  # - type: web
-  #   name: idea-wiki-web
-  #   ...
+  # ── Web Service: 텔레그램 Webhook 수신 ─────────────────────
+  # 15분 비활성 시 슬립, 콜드 스타트(30초~1분) 허용
+  - type: web
+    name: idea-wiki-web
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: DRIVE_NOTES_FOLDER_ID
+        sync: false
+      - key: DRIVE_WIKI_FOLDER_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_WEBHOOK_URL
+        sync: false
+      - key: SCHEDULE_CRON
+        sync: false
