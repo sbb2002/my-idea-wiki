@@ -71,9 +71,30 @@ class TestBuildViewerHtml:
         assert "id=\"wiki-doc\"" in html
         assert "id=\"item-list\"" in html
 
+    def test_graph_view_elements_present(self):
+        """그래프 뷰 DOM 요소들이 포함되어 있어야 함."""
+        html = build_viewer_html(_sample_wiki_json())
+        assert "id=\"graph-view\"" in html
+        assert "id=\"graph-canvas\"" in html
+        assert "id=\"graph-legend\"" in html
+        assert "id=\"graph-tooltip\"" in html
+
+    def test_graph_js_functions_present(self):
+        """그래프 핵심 함수들이 포함되어 있어야 함."""
+        html = build_viewer_html(_sample_wiki_json())
+        assert "function renderGraph" in html
+        assert "function switchView" in html
+
+    def test_view_toggle_buttons_present(self):
+        """뷰 전환 버튼이 헤더에 포함되어 있어야 함."""
+        html = build_viewer_html(_sample_wiki_json())
+        assert "btn-wiki" in html
+        assert "btn-graph" in html
+
     def test_build_from_file(self, tmp_path):
         wiki_json = _sample_wiki_json()
         wiki_file = tmp_path / "wiki.json"
         wiki_file.write_text(wiki_json, encoding="utf-8")
         html = build_viewer_html_from_file(str(wiki_file))
         assert "const WIKI_DATA =" in html
+
