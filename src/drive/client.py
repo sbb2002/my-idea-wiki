@@ -36,10 +36,16 @@ COMMENT_PATTERN = re.compile(r"^comment_(.+)_(\d{4}-\d{2}-\d{2})\.txt$")
 
 def get_drive_service():
     """Build and return an authenticated Drive API service."""
-    creds_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "./credentials/service_account.json")
-    credentials = service_account.Credentials.from_service_account_file(
-        creds_path, scopes=SCOPES
-    )
+    creds_value = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "./credentials/service_account.json")
+
+    # 환경 변수 값이 JSON 문자열이면 직접 파싱, 아니면 파일 경로로 처리
+    if creds_value.strip().startswith("{"):
+        import json as _json
+        info = _json.loads(creds_value)
+        credentials = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+    else:
+        credentials = service_account.Credentials.from_service_account_file(creds_value, scopes=SCOPES)
+
     return build("drive", "v3", credentials=credentials)
 
 
