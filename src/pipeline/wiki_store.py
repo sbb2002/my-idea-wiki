@@ -100,6 +100,61 @@ def upsert_item(wiki: dict, title: str, tags: list[str], summary: str, version: 
 
 # ── 유틸 ───────────────────────────────────────────────────────
 
+def make_attachment(drive_id: str, filename: str, ocr_text: str, summary: str, tags: list[str]) -> dict:
+    """이미지 첨부 파일 dict를 생성한다."""
+    return {
+        "type": "image",
+        "drive_id": drive_id,
+        "filename": filename,
+        "ocr_text": ocr_text,
+        "summary": summary,
+        "tags": tags,
+    }
+
+
+def add_attachment_to_item(wiki: dict, item_id: str, attachment: dict) -> bool:
+    """
+    아이템에 첨부 파일을 추가한다. drive_id가 이미 존재하면 업데이트(중복 방지).
+
+    Returns:
+        True if added, False if updated existing.
+    """
+    item = find_item_by_id(wiki, item_id)
+    if item is None:
+        return False
+    if "attachments" not in item:
+        item["attachments"] = []
+    for att in item["attachments"]:
+        if att.get("drive_id") == attachment["drive_id"]:
+            att.update(attachment)
+            return False
+    item["attachments"].append(attachment)
+    return True
+
+
+def add_comment_to_item(wiki: dict, item_id: str, date: str, text: str, attachments: Optional[list] = None) -> bool:
+    """
+    아이템에 코멘트를 추가한다. 같은 날짜 코멘트는 중복 방지.
+
+    Returns:
+        True if added, False if already exists.
+    """
+    item = find_item_by_id(wiki, item_id)
+    if item is None:
+        return False
+    for c in item.get("comments", []):
+        if c.get("date") == date:
+            c["text"] = text  # 재업로드 시 덮어씀
+            return False
+    item["comments"].append({
+        "date": date,
+        "text": text,
+        "attachments": attachments or [],
+    })
+    return True
+
+
+
 def current_week_str() -> str:
     """이번 주 월요일 날짜를 'YYYY-MM-DD' 형식으로 반환."""
     today = datetime.now(timezone.utc).date()

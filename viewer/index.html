@@ -361,6 +361,21 @@
 
   /* 연관 아이템 */
   .related-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ── 첨부 이미지 ── */
+  .attachment-card { display: flex; gap: 16px; padding: 14px; background: var(--bg-secondary); border-radius: 10px; margin-bottom: 12px; }
+  .attachment-img { width: 160px; min-width: 160px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
+  .attachment-img-placeholder { width: 160px; min-width: 160px; height: 120px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--bg); color: var(--text-dim); }
+  .attachment-body { flex: 1; }
+  .attachment-filename { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-family: monospace; }
+  .attachment-summary { font-size: 14px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+  .attachment-ocr { font-size: 13px; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6; max-height: 120px; overflow-y: auto; }
+  .attachment-ocr-empty { font-size: 13px; color: var(--text-dim); font-style: italic; }
+
+  /* ── 코멘트 ── */
+  .comment-card { padding: 14px 16px; background: var(--bg-secondary); border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--accent); }
+  .comment-date { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .comment-text { font-size: 14px; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
   .related-chip {
     font-size: 13px;
     background: var(--surface2);
@@ -638,6 +653,28 @@
         </div>
       </div>
 
+      <!-- 이미지 첨부 섹션 -->
+      <div class="section" id="attachments-section" style="display:none">
+        <div class="section-header">
+          <span class="s-icon">🖼️</span>
+          <span class="s-title">이미지 첨부</span>
+        </div>
+        <div class="section-body">
+          <div id="doc-attachments" class="attachments-list"></div>
+        </div>
+      </div>
+
+      <!-- 코멘트 섹션 -->
+      <div class="section" id="comments-section" style="display:none">
+        <div class="section-header">
+          <span class="s-icon">💬</span>
+          <span class="s-title">코멘트</span>
+        </div>
+        <div class="section-body">
+          <div id="doc-comments" class="comments-list"></div>
+        </div>
+      </div>
+
       <!-- 연관 아이템 섹션 -->
       <div class="section" id="related-section">
         <div class="section-header">
@@ -702,7 +739,22 @@ const SAMPLE_WIKI = {
       ],
       "related": ["item_demo02", "item_demo03"],
       "explicit_related": ["item_demo03"],
-      "comments": []
+      "attachments": [
+        {
+          "type": "image",
+          "drive_id": "sample_img_001",
+          "filename": "루틴앱_스케치.jpg",
+          "ocr_text": "- 아침 루틴 체크인\n- 수면 시간 자동 기록\n- AI 피드백 카드\n- 주간 리포트",
+          "summary": "앱 UI 초기 스케치. 체크인 화면과 AI 피드백 카드 레이아웃 구상."
+        }
+      ],
+      "comments": [
+        {
+          "date": "2026-05-27",
+          "text": "수면 트래킹은 워치 연동으로 자동화하는 게 더 좋을 것 같다. 삼성 헬스 API 확인 필요.",
+          "attachments": []
+        }
+      ]
     },
     {
       "id": "item_demo02",
@@ -895,6 +947,42 @@ function selectItem(id) {
         entry?.scrollIntoView({ block: 'nearest' });
       });
     });
+  }
+
+  // 이미지 첨부
+  const attachmentsSection = document.getElementById('attachments-section');
+  const attachmentsEl = document.getElementById('doc-attachments');
+  const attachments = item.attachments || [];
+  if (attachments.length === 0) {
+    attachmentsSection.style.display = 'none';
+  } else {
+    attachmentsSection.style.display = '';
+    attachmentsEl.innerHTML = attachments.map(att => `
+      <div class="attachment-card">
+        <div class="attachment-img-placeholder">🖼️</div>
+        <div class="attachment-body">
+          <div class="attachment-filename">${esc(att.filename || att.drive_id || '')}</div>
+          <div class="attachment-summary">${esc(att.summary || '')}</div>
+          ${att.ocr_text
+            ? `<div class="attachment-ocr">${esc(att.ocr_text)}</div>`
+            : `<div class="attachment-ocr-empty">텍스트 없음</div>`}
+        </div>
+      </div>`).join('');
+  }
+
+  // 코멘트
+  const commentsSection = document.getElementById('comments-section');
+  const commentsEl = document.getElementById('doc-comments');
+  const comments = (item.comments || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+  if (comments.length === 0) {
+    commentsSection.style.display = 'none';
+  } else {
+    commentsSection.style.display = '';
+    commentsEl.innerHTML = comments.map(c => `
+      <div class="comment-card">
+        <div class="comment-date">${esc(c.date)}</div>
+        <div class="comment-text">${esc(c.text || '')}</div>
+      </div>`).join('');
   }
 
   // 스크롤 맨 위로
