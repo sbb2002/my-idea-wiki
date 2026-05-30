@@ -4,6 +4,7 @@ services:
   - type: cron
     name: idea-wiki-cron
     runtime: python
+    plan: starter
     schedule: "0 9 * * 1"   # 매주 월요일 오전 9시 (UTC)
     buildCommand: pip install -r requirements.txt
     startCommand: python -m src.cron_job
@@ -28,6 +29,7 @@ services:
   - type: web
     name: idea-wiki-web
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
     envVars:
