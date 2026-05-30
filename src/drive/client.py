@@ -19,6 +19,20 @@ SUPPORTED_MIME_TYPES = [
 
 TAG_PATTERN = re.compile(r"#(\w+)")
 
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}
+IMAGE_MIME_TYPES = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".heic": "image/heic",
+    ".heif": "image/heif",
+}
+
+# 코멘트 파일명 패턴: comment_<item_id>_<날짜>.txt
+COMMENT_PATTERN = re.compile(r"^comment_(.+)_(\d{4}-\d{2}-\d{2})\.txt$")
+
 
 def get_drive_service():
     """Build and return an authenticated Drive API service."""
@@ -188,6 +202,95 @@ def upload_json(folder_id: str, filename: str, content: str, existing_file_id: O
         )
 
     return file["id"]
+
+
+def download_file_bytes(file_id: str) -> bytes:
+    """
+    Drive 파일의 raw bytes를 다운로드해 반환한다.
+
+    Args:
+        file_id: Google Drive file ID.
+
+    Returns:
+        File content as bytes.
+    """
+    service = get_drive_service()
+    request = service.files().get_media(fileId=file_id)
+    buffer = io.BytesIO()
+    downloader = MediaIoBaseDownload(buffer, request)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+    return buffer.getvalue()
+
+
+def list_images(folder_id: str, modified_after: Optional[str] = None) -> list[dict]:
+    """
+    Drive 폴더에서 이미지 파일 목록을 반환한다.
+
+    Args:
+        folder_id: Google Drive folder ID.
+        modified_after: ISO 8601 datetime. 이후 수정된 파일만 반환.
+
+    Returns:
+        List of dicts: id, name, mimeType, modifiedTime, extension
+    """
+    service = get_drive_service()
+
+    # 이미지 MIME type 조건 (OR)
+    mime_conditions = " or ".join(
+        f"mimeType = '{m}'" for m in set(IMAGE_MIME_TYPES.values())
+    )
+    query_parts = [
+        f"'{folder_id}' in parents",
+        "trashed = false",
+        f"({mime_conditions})",
+    ]
+    if modified_after:
+        query_parts.append(f"modifiedTime > '{modified_after}'")
+
+    query = " and ".join(query_parts)
+    results = []
+    page_token = None
+
+    while True:
+        response = (
+            service.files()
+            .list(
+                q=query,
+                fields="nextPageToken, files(id, name, mimeType, modifiedTime)",
+                pageToken=page_token,
+            )
+            .execute()
+        )
+        for f in response.get("files", []):
+            ext = os.path.splitext(f["name"])[1].lower()
+            if ext in IMAGE_EXTENSIONS:
+                f["extension"] = ext
+                results.append(f)
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
+
+    return results
+
+
+def list_comment_files(folder_id: str, modified_after: Optional[str] = None) -> list[dict]:
+    """
+    Drive 폴더에서 코멘트 파일(comment_<item_id>_<날짜>.txt) 목록을 반환한다.
+
+    Returns:
+        List of dicts: id, name, item_id, date, modifiedTime
+    """
+    files = list_notes(folder_id, modified_after=modified_after)
+    comment_files = []
+    for f in files:
+        match = COMMENT_PATTERN.match(f["name"])
+        if match:
+            f["item_id"] = match.group(1)
+            f["date"] = match.group(2)
+            comment_files.append(f)
+    return comment_files
 
 
 def find_file_in_folder(folder_id: str, filename: str) -> Optional[str]:

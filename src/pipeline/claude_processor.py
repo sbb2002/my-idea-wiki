@@ -3,10 +3,27 @@ Claude API를 사용해 노트를 위키 아이템으로 변환한다.
 """
 import os
 import json
+import base64
 import anthropic
 
 # 한 번에 처리할 최대 노트 수 (토큰 절약)
 BATCH_SIZE = 10
+
+OCR_SYSTEM_PROMPT = """당신은 손글씨 메모나 사진 속 텍스트를 정확하게 추출하는 OCR 어시스턴트입니다.
+
+이미지에서 텍스트를 추출하고 다음 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+{
+  "ocr_text": "추출한 텍스트 전문",
+  "summary": "이미지 내용 요약 (2-3문장)",
+  "tags": ["관련 태그1", "태그2"]
+}
+
+텍스트가 없는 이미지(사진, 도표 등)의 경우:
+{
+  "ocr_text": "",
+  "summary": "이미지 내용 설명",
+  "tags": []
+}"""
 
 SYSTEM_PROMPT = """당신은 아이디어 노트를 위키 아이템으로 정리하는 어시스턴트입니다.
 
@@ -83,3 +100,70 @@ def wikify_with_claude(notes: list[dict]) -> list[dict]:
         all_items.extend(parsed.get("items", []))
 
     return all_items
+
+
+def ocr_image_with_claude(image_bytes: bytes, mime_type: str, filename: str) -> dict:
+    """
+    Claude Vision API로 이미지에서 텍스트를 추출하고 요약한다.
+
+    Args:
+        image_bytes: 이미지 raw bytes
+        mime_type: 이미지 MIME type (예: "image/jpeg")
+        filename: 파일명 (로그용)
+
+    Returns:
+        {
+            "ocr_text": "추출 텍스트",
+            "summary": "요약",
+            "tags": ["태그1", ...],
+        }
+
+    Raises:
+        Exception: API 호출 실패 시
+    """
+    # HEIC/HEIF는 JPEG로 변환 (Claude Vision 미지원)
+    if mime_type in ("image/heic", "image/heif"):
+        try:
+            from PIL import Image
+            import io as _io
+            img = Image.open(_io.BytesIO(image_bytes))
+            buf = _io.BytesIO()
+            img.convert("RGB").save(buf, format="JPEG")
+            image_bytes = buf.getvalue()
+            mime_type = "image/jpeg"
+        except Exception as e:
+            raise RuntimeError(f"HEIC 변환 실패 ({filename}): {e}") from e
+
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    b64_data = base64.standard_b64encode(image_bytes).decode("utf-8")
+
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        system=OCR_SYSTEM_PROMPT,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": mime_type,
+                            "data": b64_data,
+                        },
+                    },
+                    {"type": "text", "text": f"파일명: {filename}\n위 이미지에서 텍스트를 추출하고 요약해주세요."},
+                ],
+            }
+        ],
+    )
+
+    raw = message.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    return json.loads(raw)
