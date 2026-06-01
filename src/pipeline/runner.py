@@ -233,7 +233,15 @@ def run_pipeline() -> dict:
         )
     except Exception as e:
         result["status"] = "failure"
-        result["errors"].append(f"wiki.json 저장 실패: {e}")
+        err_str = str(e)
+        if "storageQuotaExceeded" in err_str or "storage quota" in err_str.lower():
+            result["errors"].append(
+                "wiki.json 저장 실패: 서비스 계정은 빈 파일이 미리 존재해야 업데이트할 수 있습니다. "
+                "구글 드라이브 wikis 폴더에 빈 wiki.json 파일을 직접 업로드한 뒤 다시 실행하세요. "
+                f"(원본 에러: {e})"
+            )
+        else:
+            result["errors"].append(f"wiki.json 저장 실패: {e}")
         return result
 
     # ── 6. HTML 뷰어 생성 후 Drive 저장 ────────────────────────
@@ -249,9 +257,16 @@ def run_pipeline() -> dict:
             mime_type="text/html",
         )
     except Exception as e:
-        # 뷰어 생성 실패는 경고로만 처리 — 위키화 결과에는 영향 없음
+        err_str = str(e)
+        if "storageQuotaExceeded" in err_str or "storage quota" in err_str.lower():
+            msg = (
+                "뷰어 생성 실패: 구글 드라이브 wikis 폴더에 빈 index.html 파일을 직접 업로드한 뒤 다시 실행하세요. "
+                "업로드 시 드라이브 설정에서 Google 문서 자동변환 옵션을 해제해야 합니다."
+            )
+        else:
+            msg = f"뷰어 생성 실패 (무시됨): {e}"
         print(f"[WARN] HTML 뷰어 생성 실패 (무시): {e}")
-        result["errors"].append(f"뷰어 생성 실패 (무시됨): {e}")
+        result["errors"].append(msg)
 
     # ── 7. 최종 상태 결정 ──────────────────────────────────────
     if skipped > 0 and (result["new_items"] + result["updated_items"]) > 0:
