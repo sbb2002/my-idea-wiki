@@ -33,4 +33,7 @@ if result.get('comments_processed'):
 if result['errors']:
     print("에러:")
     for e in result['errors']:
-        print(f"  - {e}")
+        lines = str(e).split('\n')
+        print(f"  - {lines[0]}")
+        for line in lines[1:]:
+            print(f"  {line}")

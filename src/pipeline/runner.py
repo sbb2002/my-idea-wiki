@@ -236,9 +236,7 @@ def run_pipeline() -> dict:
         err_str = str(e)
         if "storageQuotaExceeded" in err_str or "storage quota" in err_str.lower():
             result["errors"].append(
-                "wiki.json 저장 실패: 서비스 계정은 빈 파일이 미리 존재해야 업데이트할 수 있습니다. "
-                "구글 드라이브 wikis 폴더에 빈 wiki.json 파일을 직접 업로드한 뒤 다시 실행하세요. "
-                f"(원본 에러: {e})"
+                f"wiki.json 저장 실패: {e}\n도움말: 지정한 공유 wiki 폴더에 비어있는 index.html과 wiki.json을 업로드하십시오. 업로드 시 구글독스로 변환되지 않도록 설정하여 주십시오."
             )
         else:
             result["errors"].append(f"wiki.json 저장 실패: {e}")
@@ -259,10 +257,7 @@ def run_pipeline() -> dict:
     except Exception as e:
         err_str = str(e)
         if "storageQuotaExceeded" in err_str or "storage quota" in err_str.lower():
-            msg = (
-                "뷰어 생성 실패: 구글 드라이브 wikis 폴더에 빈 index.html 파일을 직접 업로드한 뒤 다시 실행하세요. "
-                "업로드 시 드라이브 설정에서 Google 문서 자동변환 옵션을 해제해야 합니다."
-            )
+            msg = f"index.html 저장 실패: {e}\n도움말: 지정한 공유 wiki 폴더에 비어있는 index.html과 wiki.json을 업로드하십시오. 업로드 시 구글독스로 변환되지 않도록 설정하여 주십시오."
         else:
             msg = f"뷰어 생성 실패 (무시됨): {e}"
         print(f"[WARN] HTML 뷰어 생성 실패 (무시): {e}")
