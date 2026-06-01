@@ -7,23 +7,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Linux+Libertine:ital,wght@0,400;0,600;1,400&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* ── 공통 레이아웃 변수 ── */
   :root {
-    --bg: #f8f9fa;
-    --surface: #ffffff;
-    --border: #a2a9b1;
-    --border-light: #e0e3e7;
-    --accent: #3366cc;
-    --accent-visited: #6b4ba1;
-    --text: #202122;
-    --text-muted: #54595d;
-    --text-dim: #72777d;
     --sidebar-w: 260px;
     --toc-w: 200px;
     --header-h: 48px;
     --font-serif: 'Linux Libertine', 'Georgia', serif;
     --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     --font-mono: 'Courier New', monospace;
-    --infobox-bg: #eaf3fb;
+  }
+
+  /* ── 테마: 위키피디아 라이트 (기본) ── */
+  :root, [data-theme="wiki"] {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #a2a9b1;
+    --border-light: #e0e3e7;
+    --accent: #3366cc;
+    --text: #202122;
+    --text-muted: #54595d;
+    --text-dim: #72777d;
     --infobox-header: #cee0f2;
     --infobox-border: #a2a9b1;
     --tag-bg: #eaf3fb;
@@ -31,6 +34,39 @@
     --tl-line: #a2a9b1;
     --tl-dot: #3366cc;
     --tl-dot-old: #a2a9b1;
+    --comment-bg: #fafafa;
+    --comment-border: #e0e3e7;
+    --error-bg: #fef6e4;
+    --error-border: #fc3;
+    --graph-bg: #f8f9fa;
+    --graph-node-label: #54595d;
+    --graph-node-label-hover: #202122;
+  }
+
+  /* ── 테마: 다크 모던 ── */
+  [data-theme="dark"] {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --border: #2a2d35;
+    --border-light: #2a2d35;
+    --accent: #5b8dee;
+    --text: #e8eaf0;
+    --text-muted: #7a8099;
+    --text-dim: #4a5068;
+    --infobox-header: #1a2540;
+    --infobox-border: #2a2d35;
+    --tag-bg: #1a2540;
+    --tag-fg: #5b8dee;
+    --tl-line: #2a2d35;
+    --tl-dot: #5b8dee;
+    --tl-dot-old: #2a2d35;
+    --comment-bg: #1e2026;
+    --comment-border: #2a2d35;
+    --error-bg: #2a1a1a;
+    --error-border: #5a2a2a;
+    --graph-bg: #0e0f11;
+    --graph-node-label: #7a8099;
+    --graph-node-label-hover: #e8eaf0;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -506,7 +542,7 @@
     border-left: 3px solid var(--border-light);
     padding: 6px 12px;
     margin-bottom: 10px;
-    background: #fafafa;
+    background: var(--comment-bg);
   }
 
   .comment-date {
@@ -579,9 +615,9 @@
 
   /* 에러 */
   #error-banner {
-    background: #fef6e4;
-    border: 1px solid #fc3;
-    border-left: 4px solid #fc3;
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-left: 4px solid var(--error-border);
     padding: 10px 14px;
     font-size: 13px;
     color: var(--text);
@@ -718,6 +754,18 @@
     <button class="toggle-btn active" id="btn-wiki" onclick="switchView('wiki')">위키</button>
     <button class="toggle-btn" id="btn-graph" onclick="switchView('graph')">그래프</button>
   </div>
+  <button id="theme-toggle" onclick="toggleTheme()" title="테마 변경" style="
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: background .1s, color .1s;
+  ">🌙 다크</button>
   <div id="meta-info">—</div>
 </div>
 
@@ -1113,7 +1161,7 @@ function renderGraph(items) {
       ctx.stroke();
 
       ctx.font = `${isHov?12:11}px "Noto Sans KR", sans-serif`;
-      ctx.fillStyle = isHov ? '#202122' : '#54595d';
+      ctx.fillStyle = isHov ? getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label-hover').trim() : getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label').trim();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       let label = n.title;
@@ -1195,7 +1243,33 @@ function renderGraph(items) {
   graphState.animFrame=animFrame;
 }
 
+// ── 테마 전환 ─────────────────────────────────────────────────
+const THEMES = [
+  { key: 'wiki', label: '🌙 다크', next: 'dark' },
+  { key: 'dark', label: '☀️ 라이트', next: 'wiki' },
+];
+
+function applyTheme(key) {
+  document.documentElement.setAttribute('data-theme', key);
+  const t = THEMES.find(t => t.key === key) || THEMES[0];
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = t.label;
+  try { localStorage.setItem('wiki-theme', key); } catch(e) {}
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'wiki';
+  const t = THEMES.find(t => t.key === current) || THEMES[0];
+  applyTheme(t.next);
+}
+
 async function init() {
+  // 저장된 테마 복원
+  try {
+    const saved = localStorage.getItem('wiki-theme');
+    if (saved) applyTheme(saved);
+  } catch(e) {}
+
   const overlay = document.getElementById('load-overlay');
   let data = await loadWiki();
   let usingSample = false;
