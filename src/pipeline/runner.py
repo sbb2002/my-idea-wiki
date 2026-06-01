@@ -90,8 +90,10 @@ def run_pipeline() -> dict:
         claude_error = None
         gemini_error = None
 
+        existing_items = wiki.get("items", [])
+
         try:
-            ai_items = wikify_with_claude(notes)
+            ai_items = wikify_with_claude(notes, existing_items=existing_items)
             result["api_used"] = "claude"
         except Exception as e:
             claude_error = str(e)
@@ -99,7 +101,7 @@ def run_pipeline() -> dict:
 
         if ai_items is None:
             try:
-                ai_items = wikify_with_gemini(notes)
+                ai_items = wikify_with_gemini(notes, existing_items=existing_items)
                 result["api_used"] = "gemini"
             except Exception as e:
                 gemini_error = str(e)
