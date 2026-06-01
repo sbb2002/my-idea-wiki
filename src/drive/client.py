@@ -71,7 +71,7 @@ def list_notes(folder_id: str, modified_after: Optional[str] = None) -> list[dic
     query_parts = [
         f"'{folder_id}' in parents",
         "trashed = false",
-        "mimeType = 'text/plain'",
+        "(mimeType = 'text/plain' or mimeType = 'application/vnd.google-apps.document')",
     ]
     if modified_after:
         query_parts.append(f"modifiedTime > '{modified_after}'")
