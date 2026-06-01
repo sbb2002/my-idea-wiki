@@ -33,12 +33,17 @@ IMAGE_MIME_TYPES = {
 # 코멘트 파일명 패턴: comment_<item_id>_<날짜>.txt
 COMMENT_PATTERN = re.compile(r"^comment_(.+)_(\d{4}-\d{2}-\d{2})\.txt$")
 
+# 내 드라이브 공유 폴더 접근에 필요한 공통 파라미터
+_ALL_DRIVES_PARAMS = {
+    "supportsAllDrives": True,
+    "includeItemsFromAllDrives": True,
+}
+
 
 def get_drive_service():
     """Build and return an authenticated Drive API service."""
     creds_value = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "./credentials/service_account.json")
 
-    # 환경 변수 값이 JSON 문자열이면 직접 파싱, 아니면 파일 경로로 처리
     if creds_value.strip().startswith("{"):
         import json as _json
         info = _json.loads(creds_value)
@@ -66,7 +71,7 @@ def list_notes(folder_id: str, modified_after: Optional[str] = None) -> list[dic
     query_parts = [
         f"'{folder_id}' in parents",
         "trashed = false",
-        f"mimeType = 'text/plain'",
+        "mimeType = 'text/plain'",
     ]
     if modified_after:
         query_parts.append(f"modifiedTime > '{modified_after}'")
@@ -83,6 +88,7 @@ def list_notes(folder_id: str, modified_after: Optional[str] = None) -> list[dic
                 q=query,
                 fields="nextPageToken, files(id, name, mimeType, modifiedTime)",
                 pageToken=page_token,
+                **_ALL_DRIVES_PARAMS,
             )
             .execute()
         )
@@ -108,11 +114,14 @@ def read_note(file_id: str, mime_type: str = "text/plain") -> str:
     service = get_drive_service()
 
     if mime_type == "application/vnd.google-apps.document":
-        # Export Google Docs as plain text
-        response = service.files().export(fileId=file_id, mimeType="text/plain").execute()
+        response = (
+            service.files()
+            .export(fileId=file_id, mimeType="text/plain")
+            .execute()
+        )
         return response.decode("utf-8")
     else:
-        request = service.files().get_media(fileId=file_id)
+        request = service.files().get_media(fileId=file_id, **{"supportsAllDrives": True})
         buffer = io.BytesIO()
         downloader = MediaIoBaseDownload(buffer, request)
         done = False
@@ -125,7 +134,6 @@ def extract_tags(content: str) -> list[str]:
     """
     Extract manual tags from note content.
     Tags are in the format #tagname (alphanumeric + underscore).
-    These take priority over AI auto-classification.
 
     Args:
         content: Raw text content of the note.
@@ -166,13 +174,18 @@ def read_notes_from_folder(
                 }
             )
         except Exception as e:
-            # Log and skip files that fail to read; don't abort entire batch
             print(f"[WARN] Failed to read file {f['name']} ({f['id']}): {e}")
 
     return notes
 
 
-def upload_json(folder_id: str, filename: str, content: str, existing_file_id: Optional[str] = None, mime_type: str = "application/json") -> str:
+def upload_json(
+    folder_id: str,
+    filename: str,
+    content: str,
+    existing_file_id: Optional[str] = None,
+    mime_type: str = "application/json",
+) -> str:
     """
     Upload or update a file in the specified Drive folder.
 
@@ -196,14 +209,23 @@ def upload_json(folder_id: str, filename: str, content: str, existing_file_id: O
     if existing_file_id:
         file = (
             service.files()
-            .update(fileId=existing_file_id, media_body=media)
+            .update(
+                fileId=existing_file_id,
+                media_body=media,
+                supportsAllDrives=True,
+            )
             .execute()
         )
     else:
         metadata = {"name": filename, "parents": [folder_id]}
         file = (
             service.files()
-            .create(body=metadata, media_body=media, fields="id")
+            .create(
+                body=metadata,
+                media_body=media,
+                fields="id",
+                supportsAllDrives=True,
+            )
             .execute()
         )
 
@@ -221,7 +243,7 @@ def download_file_bytes(file_id: str) -> bytes:
         File content as bytes.
     """
     service = get_drive_service()
-    request = service.files().get_media(fileId=file_id)
+    request = service.files().get_media(fileId=file_id, **{"supportsAllDrives": True})
     buffer = io.BytesIO()
     downloader = MediaIoBaseDownload(buffer, request)
     done = False
@@ -243,7 +265,6 @@ def list_images(folder_id: str, modified_after: Optional[str] = None) -> list[di
     """
     service = get_drive_service()
 
-    # 이미지 MIME type 조건 (OR)
     mime_conditions = " or ".join(
         f"mimeType = '{m}'" for m in set(IMAGE_MIME_TYPES.values())
     )
@@ -266,6 +287,7 @@ def list_images(folder_id: str, modified_after: Optional[str] = None) -> list[di
                 q=query,
                 fields="nextPageToken, files(id, name, mimeType, modifiedTime)",
                 pageToken=page_token,
+                **_ALL_DRIVES_PARAMS,
             )
             .execute()
         )
@@ -308,6 +330,10 @@ def find_file_in_folder(folder_id: str, filename: str) -> Optional[str]:
     """
     service = get_drive_service()
     query = f"'{folder_id}' in parents and name = '{filename}' and trashed = false"
-    response = service.files().list(q=query, fields="files(id)").execute()
+    response = (
+        service.files()
+        .list(q=query, fields="files(id)", **_ALL_DRIVES_PARAMS)
+        .execute()
+    )
     files = response.get("files", [])
     return files[0]["id"] if files else None
