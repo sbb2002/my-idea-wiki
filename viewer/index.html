@@ -4,26 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>아이디어 위키</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Linux+Libertine:ital,wght@0,400;0,600;1,400&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  /* ── 변수 ─────────────────────────────────────────────────── */
   :root {
-    --bg:        #0e0f11;
-    --surface:   #16181c;
-    --surface2:  #1e2026;
-    --border:    #2a2d35;
-    --accent:    #5b8dee;
-    --accent2:   #3ecf8e;
-    --text:      #e8eaf0;
-    --text-muted:#7a8099;
-    --text-dim:  #4a5068;
-    --tag-bg:    #1a2540;
-    --tag-fg:    #5b8dee;
-    --sidebar-w: 280px;
-    --header-h:  52px;
-    --font-sans: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    --radius:    8px;
-    --shadow:    0 4px 24px rgba(0,0,0,.45);
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #a2a9b1;
+    --border-light: #e0e3e7;
+    --accent: #3366cc;
+    --accent-visited: #6b4ba1;
+    --text: #202122;
+    --text-muted: #54595d;
+    --text-dim: #72777d;
+    --sidebar-w: 260px;
+    --toc-w: 200px;
+    --header-h: 48px;
+    --font-serif: 'Linux Libertine', 'Georgia', serif;
+    --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    --font-mono: 'Courier New', monospace;
+    --infobox-bg: #eaf3fb;
+    --infobox-header: #cee0f2;
+    --infobox-border: #a2a9b1;
+    --tag-bg: #eaf3fb;
+    --tag-fg: #3366cc;
+    --tl-line: #a2a9b1;
+    --tl-dot: #3366cc;
+    --tl-dot-old: #a2a9b1;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,470 +39,594 @@
     font-family: var(--font-sans);
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
-  /* ── 헤더 ─────────────────────────────────────────────────── */
+  /* ── 헤더 ── */
   #header {
-    height: var(--header-h);
     background: var(--surface);
     border-bottom: 1px solid var(--border);
+    height: var(--header-h);
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 16px;
     gap: 16px;
-    flex-shrink: 0;
-    z-index: 10;
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
-  #header .logo {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -.3px;
+
+  .header-logo {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
     color: var(--text);
     white-space: nowrap;
+    text-decoration: none;
   }
-  #header .logo span { color: var(--accent); }
+
+  .header-logo em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-light);
+    flex-shrink: 0;
+  }
+
   #search-wrap {
     flex: 1;
-    max-width: 360px;
-    position: relative;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 0;
   }
+
   #search {
-    width: 100%;
-    background: var(--surface2);
+    flex: 1;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 7px 12px 7px 34px;
-    color: var(--text);
+    border-right: none;
+    border-radius: 2px 0 0 2px;
+    padding: 5px 10px;
     font-size: 13px;
     font-family: var(--font-sans);
+    color: var(--text);
+    background: var(--surface);
     outline: none;
-    transition: border-color .15s;
   }
+
   #search:focus { border-color: var(--accent); }
-  #search::placeholder { color: var(--text-dim); }
-  #search-wrap .icon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-dim);
-    font-size: 14px;
-    pointer-events: none;
-  }
-  #meta {
-    margin-left: auto;
+
+  .search-btn {
+    border: 1px solid var(--border);
+    border-radius: 0 2px 2px 0;
+    background: var(--bg);
+    padding: 5px 10px;
     font-size: 12px;
     color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+
+  #meta-info {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
     white-space: nowrap;
   }
 
-  /* ── 레이아웃 ─────────────────────────────────────────────── */
-  #layout {
+  #view-toggle {
     display: flex;
-    flex: 1;
-    overflow: hidden;
+    gap: 2px;
   }
 
-  /* ── 사이드바 ─────────────────────────────────────────────── */
+  .toggle-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .1s;
+  }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* ── 전체 레이아웃 ── */
+  #layout {
+    display: flex;
+    min-height: calc(100vh - var(--header-h));
+  }
+
+  /* ── 왼쪽 사이드바 (아이템 목록) ── */
   #sidebar {
     width: var(--sidebar-w);
     background: var(--surface);
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-light);
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    position: sticky;
+    top: var(--header-h);
+    height: calc(100vh - var(--header-h));
     overflow: hidden;
   }
-  #sidebar-header {
-    padding: 14px 16px 10px;
+
+  #sidebar-title {
+    padding: 10px 14px 8px;
     font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
+    font-weight: 500;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-light);
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
   }
+
   #item-count {
-    background: var(--surface2);
-    border: 1px solid var(--border);
+    background: var(--bg);
+    border: 1px solid var(--border-light);
     border-radius: 10px;
     padding: 1px 7px;
     font-size: 11px;
-    color: var(--text-muted);
-    font-weight: 500;
     text-transform: none;
     letter-spacing: 0;
   }
+
   #item-list {
     flex: 1;
     overflow-y: auto;
-    padding: 6px 0;
+    padding: 4px 0;
   }
+
   #item-list::-webkit-scrollbar { width: 4px; }
-  #item-list::-webkit-scrollbar-track { background: transparent; }
-  #item-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  #item-list::-webkit-scrollbar-thumb { background: var(--border-light); }
 
   .item-entry {
-    padding: 9px 16px;
+    padding: 7px 14px;
     cursor: pointer;
     border-left: 3px solid transparent;
-    transition: background .1s, border-color .1s;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+    transition: background .1s;
   }
-  .item-entry:hover { background: var(--surface2); }
+
+  .item-entry:hover { background: #f0f0f0; }
+
   .item-entry.active {
-    background: var(--surface2);
+    background: #eaf3fb;
     border-left-color: var(--accent);
   }
+
   .item-entry .entry-title {
     font-size: 13.5px;
-    font-weight: 500;
-    color: var(--text);
-    line-height: 1.3;
+    color: var(--accent);
+    line-height: 1.35;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color .1s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .item-entry.active .entry-title { color: var(--accent); }
-  .item-entry .entry-meta {
+
+  .item-entry:hover .entry-title { text-decoration-color: var(--accent); }
+  .item-entry.active .entry-title { text-decoration-color: var(--accent); }
+
+  .item-entry .entry-week {
     font-size: 11px;
     color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .entry-tags {
-    display: flex;
-    gap: 4px;
-    flex-wrap: nowrap;
-    overflow: hidden;
-  }
-  .entry-tag {
-    font-size: 10px;
-    background: var(--tag-bg);
-    color: var(--tag-fg);
-    border-radius: 3px;
-    padding: 1px 5px;
-    white-space: nowrap;
+    margin-top: 1px;
   }
 
-  /* ── 메인 콘텐츠 ──────────────────────────────────────────── */
+  /* ── 메인 콘텐츠 ── */
   #main {
     flex: 1;
     overflow-y: auto;
-    padding: 36px 48px;
+    display: flex;
+    justify-content: center;
+    padding: 24px 20px;
+  }
+
+  #article-wrap {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* ── 위키 문서 본문 ── */
+  #wiki-doc {
+    flex: 1;
+    min-width: 0;
+    display: none;
+  }
+
+  #wiki-doc.visible { display: block; }
+
+  /* 문서 제목 */
+  .doc-title {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.25;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .doc-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .doc-subtitle .sep { color: var(--border); }
+
+  /* 태그 */
+  .doc-tag {
+    display: inline-block;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border: 1px solid #c8d8f0;
+    border-radius: 2px;
+    padding: 0px 6px;
+    font-size: 11px;
+    text-decoration: none;
+    cursor: default;
+  }
+
+  /* 인포박스 (위키피디아 우측 박스) */
+  .infobox {
+    float: right;
+    clear: right;
+    margin: 0 0 16px 24px;
+    min-width: 220px;
+    max-width: 280px;
+    border: 1px solid var(--infobox-border);
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--surface);
+  }
+
+  .infobox-header {
+    background: var(--infobox-header);
+    border-bottom: 1px solid var(--infobox-border);
+    padding: 6px 10px;
+    font-weight: 500;
+    font-size: 13px;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .infobox-body { padding: 8px 10px; }
+
+  .infobox-row {
+    display: flex;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12.5px;
+  }
+
+  .infobox-row:last-child { border-bottom: none; }
+
+  .infobox-label {
+    color: var(--text-muted);
+    min-width: 64px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .infobox-val { color: var(--text); }
+
+  .infobox-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* 섹션 헤딩 */
+  .wiki-h2 {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 3px;
+    margin: 20px 0 10px;
+    color: var(--text);
+  }
+
+  .wiki-h3 {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+    color: var(--text);
+  }
+
+  /* 개요 텍스트 */
+  .summary-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  /* 타임라인 */
+  .timeline { position: relative; padding-left: 0; }
+
+  .tl-item {
+    display: flex;
+    gap: 0;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .tl-gutter {
+    width: 80px;
+    flex-shrink: 0;
+    padding-right: 16px;
+    padding-top: 3px;
+    text-align: right;
+    position: relative;
+  }
+
+  .tl-gutter::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 10px;
+    bottom: -10px;
+    width: 1px;
+    background: var(--tl-line);
+  }
+
+  .tl-item:last-child .tl-gutter::after { display: none; }
+
+  .tl-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    line-height: 1.3;
+  }
+
+  .tl-connector {
+    width: 24px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    align-items: center;
+    padding-top: 6px;
+    position: relative;
   }
-  #main::-webkit-scrollbar { width: 5px; }
-  #main::-webkit-scrollbar-track { background: transparent; }
-  #main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .tl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: var(--tl-dot-old);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .tl-item:first-child .tl-dot {
+    background: var(--tl-dot);
+    width: 12px;
+    height: 12px;
+  }
+
+  .tl-connector::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    background: var(--tl-line);
+  }
+
+  .tl-item:last-child .tl-connector::after { display: none; }
+
+  .tl-body {
+    flex: 1;
+    padding: 0 0 18px 12px;
+  }
+
+  .tl-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--infobox-header);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+    border-radius: 2px;
+    padding: 1px 6px;
+    margin-bottom: 5px;
+  }
+
+  .tl-item:first-child .tl-badge {
+    background: #dce9f8;
+    color: var(--accent);
+    border-color: #c8d8f0;
+  }
+
+  .tl-content {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .tl-sources {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* 연관 아이템 */
+  .related-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .related-link {
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+
+  .related-link:hover { color: #2a55aa; }
+
+  .no-content {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* 코멘트 */
+  .comment-item {
+    border-left: 3px solid var(--border-light);
+    padding: 6px 12px;
+    margin-bottom: 10px;
+    background: #fafafa;
+  }
+
+  .comment-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 3px;
+  }
+
+  .comment-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  /* 목차 (TOC) */
+  #toc {
+    width: var(--toc-w);
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    align-self: flex-start;
+    font-size: 12.5px;
+    display: none;
+  }
+
+  #toc.visible { display: block; }
+
+  .toc-box {
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    padding: 10px 12px;
+  }
+
+  .toc-title {
+    font-weight: 500;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .toc-list { list-style: none; }
+
+  .toc-item {
+    padding: 2px 0;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+
+  .toc-item:hover { color: #2a55aa; }
 
   /* 빈 상태 */
   #empty-state {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 12px;
+    padding: 80px 20px;
     color: var(--text-dim);
-  }
-  #empty-state .icon { font-size: 40px; opacity: .4; }
-  #empty-state p { font-size: 14px; }
-
-  /* 위키 문서 */
-  #wiki-doc { display: none; flex-direction: column; gap: 32px; }
-  #wiki-doc.visible { display: flex; }
-
-  /* 문서 헤더 */
-  .doc-header { display: flex; flex-direction: column; gap: 12px; }
-  .doc-title {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -.5px;
-    line-height: 1.2;
-    color: var(--text);
-  }
-  .doc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-  .doc-tag {
-    font-size: 12px;
-    background: var(--tag-bg);
-    color: var(--tag-fg);
-    border: 1px solid rgba(91,141,238,.25);
-    border-radius: 5px;
-    padding: 2px 9px;
-  }
-  .doc-updated {
-    font-size: 12px;
-    color: var(--text-dim);
+    font-style: italic;
+    font-family: var(--font-serif);
+    font-size: 16px;
   }
 
-  /* 섹션 */
-  .section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .section-header {
-    padding: 13px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-header .s-icon {
-    font-size: 14px;
-    opacity: .7;
-  }
-  .section-header .s-title {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .section-body { padding: 20px; }
-
-  /* 개요 */
-  .summary-text {
-    font-size: 15px;
-    line-height: 1.75;
-    color: var(--text);
-  }
-
-  /* 버전 타임라인 */
-  .timeline { display: flex; flex-direction: column; gap: 0; }
-  .tl-item {
-    display: flex;
-    gap: 16px;
-    position: relative;
-  }
-  .tl-item:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 71px;
-    top: 28px;
-    bottom: -1px;
-    width: 1px;
-    background: var(--border);
-  }
-  .tl-left {
-    width: 72px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    padding-top: 4px;
-    gap: 2px;
-  }
-  .tl-week {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    white-space: nowrap;
-  }
-  .tl-dot-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 0;
-  }
-  .tl-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--border);
-    border: 2px solid var(--surface);
-    flex-shrink: 0;
-    margin-right: -4px;
-    z-index: 1;
-  }
-  .tl-item:first-child .tl-dot {
-    background: var(--accent);
-    box-shadow: 0 0 8px rgba(91,141,238,.5);
-  }
-  .tl-right {
-    flex: 1;
-    padding: 0 0 24px 12px;
-  }
-  .tl-item:last-child .tl-right { padding-bottom: 0; }
-  .tl-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    background: rgba(91,141,238,.15);
-    color: var(--accent);
-    border-radius: 4px;
-    padding: 2px 7px;
-    margin-bottom: 8px;
-  }
-  .tl-item:not(:first-child) .tl-badge {
-    background: var(--surface2);
-    color: var(--text-dim);
-  }
-  .tl-content {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--text);
-  }
-  .tl-notes {
-    margin-top: 8px;
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-  }
-
-  /* 연관 아이템 */
-  .related-list { display: flex; flex-wrap: wrap; gap: 8px; }
-
-  /* ── 첨부 이미지 ── */
-  .attachment-card { display: flex; gap: 16px; padding: 14px; background: var(--bg-secondary); border-radius: 10px; margin-bottom: 12px; }
-  .attachment-img { width: 160px; min-width: 160px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
-  .attachment-img-placeholder { width: 160px; min-width: 160px; height: 120px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--bg); color: var(--text-dim); }
-  .attachment-body { flex: 1; }
-  .attachment-filename { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; font-family: monospace; }
-  .attachment-summary { font-size: 14px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
-  .attachment-ocr { font-size: 13px; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6; max-height: 120px; overflow-y: auto; }
-  .attachment-ocr-empty { font-size: 13px; color: var(--text-dim); font-style: italic; }
-
-  /* ── 코멘트 ── */
-  .comment-card { padding: 14px 16px; background: var(--bg-secondary); border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--accent); }
-  .comment-date { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
-  .comment-text { font-size: 14px; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
-  .related-chip {
-    font-size: 13px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 5px 12px;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: border-color .15s, color .15s;
-  }
-  .related-chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .no-related { font-size: 13px; color: var(--text-dim); }
-
-  /* 로딩 / 에러 */
-  #load-overlay {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 100;
-    transition: opacity .3s;
-  }
-  #load-overlay.hidden { opacity: 0; pointer-events: none; }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #load-msg { font-size: 13px; color: var(--text-muted); }
-
+  /* 에러 */
   #error-banner {
-    background: #2a1a1a;
-    border: 1px solid #5a2a2a;
-    border-radius: var(--radius);
-    padding: 14px 18px;
+    background: #fef6e4;
+    border: 1px solid #fc3;
+    border-left: 4px solid #fc3;
+    padding: 10px 14px;
     font-size: 13px;
-    color: #e08080;
-    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 16px;
     display: none;
+    line-height: 1.6;
   }
+
   #error-banner.visible { display: block; }
-  #error-banner code {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    background: rgba(255,255,255,.06);
-    padding: 1px 5px;
-    border-radius: 3px;
-  }
 
-  /* ── 뷰 토글 ─────────────────────────────────────────────── */
-  #view-toggle {
-    display: flex;
-    gap: 4px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 3px;
-  }
-  .toggle-btn {
-    background: none;
-    border: none;
-    border-radius: 5px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    transition: background .15s, color .15s;
-    white-space: nowrap;
-  }
-  .toggle-btn:hover { color: var(--text); }
-  .toggle-btn.active {
-    background: var(--surface);
-    color: var(--accent);
-    box-shadow: 0 1px 4px rgba(0,0,0,.3);
-  }
-
-  /* ── 그래프 뷰 ───────────────────────────────────────────── */
+  /* 그래프 뷰 */
   #graph-view {
     display: none;
-    position: relative;
     flex: 1;
-    overflow: hidden;
+    position: relative;
     background: var(--bg);
   }
+
   #graph-view.visible { display: block; }
 
   #graph-canvas {
     width: 100%;
-    height: 100%;
+    height: calc(100vh - var(--header-h));
     display: block;
     cursor: grab;
   }
+
   #graph-canvas:active { cursor: grabbing; }
 
   #graph-tooltip {
     position: absolute;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 12px;
     color: var(--text);
     pointer-events: none;
     opacity: 0;
     transition: opacity .12s;
-    max-width: 200px;
+    max-width: 180px;
     line-height: 1.4;
     z-index: 10;
+    box-shadow: 1px 2px 4px rgba(0,0,0,.12);
   }
+
   #graph-tooltip.visible { opacity: 1; }
 
   #graph-controls {
@@ -504,204 +635,131 @@
     right: 20px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    z-index: 10;
+    gap: 2px;
   }
+
   .gc-btn {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
     color: var(--text-muted);
     font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: border-color .15s, color .15s;
     font-family: var(--font-sans);
   }
-  .gc-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  #graph-legend {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
+  .gc-btn:hover { background: var(--bg); color: var(--accent); }
+
+  /* 로딩 */
+  #load-overlay {
+    position: fixed; inset: 0;
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    font-size: 11px;
-    color: var(--text-muted);
-    z-index: 10;
-    max-width: 180px;
-  }
-  .legend-title {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
-  #legend-items { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-  .legend-item {
     display: flex;
     align-items: center;
-    gap: 7px;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .legend-edge {
-    display: flex;
+    justify-content: center;
     flex-direction: column;
-    gap: 5px;
-    font-size: 11px;
-    color: var(--text-muted);
-    border-top: 1px solid var(--border);
-    padding-top: 8px;
+    gap: 14px;
+    z-index: 200;
+    transition: opacity .3s;
   }
-  .edge-demo {
-    display: inline-block;
-    width: 22px;
-    height: 2px;
-    background: #7a8099;
-    vertical-align: middle;
-    margin-right: 5px;
-    border-radius: 1px;
+
+  #load-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
   }
-  .edge-demo.thick { height: 3px; background: var(--accent); }
 
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  @media (max-width: 680px) {
-    #sidebar { width: 220px; }
-    #main { padding: 20px 18px; }
-    .doc-title { font-size: 20px; }
+  #load-msg {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+
+  /* clearfix */
+  .clearfix::after { content: ''; display: table; clear: both; }
+
+  @media (max-width: 900px) {
+    #toc { display: none !important; }
+    .infobox { max-width: 220px; min-width: 180px; }
+  }
+
+  @media (max-width: 640px) {
+    #sidebar { width: 200px; }
+    .infobox { float: none; max-width: 100%; margin: 0 0 16px 0; }
   }
 </style>
 </head>
 <body>
 
-<!-- 로딩 오버레이 -->
 <div id="load-overlay">
   <div class="spinner"></div>
-  <div id="load-msg">wiki.json 불러오는 중…</div>
+  <div id="load-msg">위키 데이터를 불러오는 중…</div>
 </div>
 
-<!-- 헤더 -->
 <div id="header">
-  <div class="logo">💡 아이디어 <span>위키</span></div>
+  <a class="header-logo" href="#" onclick="return false">💡 <em>아이디어</em> 위키</a>
+  <div class="header-divider"></div>
   <div id="search-wrap">
-    <span class="icon">🔍</span>
     <input id="search" type="text" placeholder="아이템 검색…" autocomplete="off">
+    <button class="search-btn">검색</button>
   </div>
   <div id="view-toggle">
-    <button class="toggle-btn active" id="btn-wiki" onclick="switchView('wiki')">📄 위키</button>
-    <button class="toggle-btn" id="btn-graph" onclick="switchView('graph')">🕸 그래프</button>
+    <button class="toggle-btn active" id="btn-wiki" onclick="switchView('wiki')">위키</button>
+    <button class="toggle-btn" id="btn-graph" onclick="switchView('graph')">그래프</button>
   </div>
-  <div id="meta">—</div>
+  <div id="meta-info">—</div>
 </div>
 
-<!-- 본문 -->
 <div id="layout">
+  <!-- 왼쪽 사이드바 -->
   <div id="sidebar">
-    <div id="sidebar-header">
+    <div id="sidebar-title">
       아이템 <span id="item-count">0</span>
     </div>
     <div id="item-list"></div>
   </div>
 
+  <!-- 그래프 뷰 -->
+  <div id="graph-view">
+    <canvas id="graph-canvas"></canvas>
+    <div id="graph-tooltip"></div>
+    <div id="graph-controls">
+      <button class="gc-btn" id="gc-zoom-in" title="확대">+</button>
+      <button class="gc-btn" id="gc-zoom-out" title="축소">−</button>
+      <button class="gc-btn" id="gc-reset" title="초기화">⌂</button>
+    </div>
+  </div>
+
+  <!-- 메인 -->
   <div id="main">
-    <div id="error-banner"></div>
-    <div id="empty-state">
-      <div class="icon">📄</div>
-      <p>사이드바에서 아이템을 선택하세요</p>
-    </div>
-    <div id="wiki-doc">
-      <div class="doc-header">
-        <div id="doc-title" class="doc-title"></div>
-        <div id="doc-tags" class="doc-tags"></div>
-        <div id="doc-updated" class="doc-updated"></div>
+    <div id="article-wrap">
+      <!-- 위키 문서 -->
+      <div id="wiki-doc">
+        <div id="error-banner"></div>
+        <div id="doc-content"></div>
       </div>
 
-      <!-- 개요 섹션 -->
-      <div class="section">
-        <div class="section-header">
-          <span class="s-icon">📋</span>
-          <span class="s-title">개요</span>
-        </div>
-        <div class="section-body">
-          <div id="doc-summary" class="summary-text"></div>
-        </div>
+      <!-- 빈 상태 -->
+      <div id="empty-state">
+        <div>← 왼쪽에서 아이템을 선택하세요</div>
       </div>
 
-      <!-- 버전 히스토리 섹션 -->
-      <div class="section">
-        <div class="section-header">
-          <span class="s-icon">🕐</span>
-          <span class="s-title">버전 히스토리</span>
-        </div>
-        <div class="section-body">
-          <div id="doc-timeline" class="timeline"></div>
-        </div>
-      </div>
-
-      <!-- 이미지 첨부 섹션 -->
-      <div class="section" id="attachments-section" style="display:none">
-        <div class="section-header">
-          <span class="s-icon">🖼️</span>
-          <span class="s-title">이미지 첨부</span>
-        </div>
-        <div class="section-body">
-          <div id="doc-attachments" class="attachments-list"></div>
-        </div>
-      </div>
-
-      <!-- 코멘트 섹션 -->
-      <div class="section" id="comments-section" style="display:none">
-        <div class="section-header">
-          <span class="s-icon">💬</span>
-          <span class="s-title">코멘트</span>
-        </div>
-        <div class="section-body">
-          <div id="doc-comments" class="comments-list"></div>
-        </div>
-      </div>
-
-      <!-- 연관 아이템 섹션 -->
-      <div class="section" id="related-section">
-        <div class="section-header">
-          <span class="s-icon">🔗</span>
-          <span class="s-title">연관 아이템</span>
-        </div>
-        <div class="section-body">
-          <div id="doc-related" class="related-list"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 그래프 뷰 패널 -->
-    <div id="graph-view">
-      <canvas id="graph-canvas"></canvas>
-      <div id="graph-tooltip"></div>
-      <div id="graph-controls">
-        <button class="gc-btn" id="gc-zoom-in" title="확대">+</button>
-        <button class="gc-btn" id="gc-zoom-out" title="축소">−</button>
-        <button class="gc-btn" id="gc-reset" title="초기화">⌂</button>
-      </div>
-      <div id="graph-legend">
-        <div class="legend-title">노드 색상 (태그)</div>
-        <div id="legend-items"></div>
-        <div class="legend-edge">
-          <span class="edge-demo thick"></span> 명시적 연결
-          <span class="edge-demo thin"></span> 연관 연결
+      <!-- 목차 -->
+      <div id="toc">
+        <div class="toc-box">
+          <div class="toc-title">목차</div>
+          <ul class="toc-list" id="toc-list"></ul>
         </div>
       </div>
     </div>
@@ -709,7 +767,6 @@
 </div>
 
 <script>
-// ── 샘플 데이터 (wiki.json이 없을 때 폴백) ───────────────────
 const SAMPLE_WIKI = {
   "schema_version": "1",
   "updated_at": "2026-05-26T09:00:00+00:00",
@@ -721,77 +778,19 @@ const SAMPLE_WIKI = {
       "tags": ["앱", "AI", "헬스"],
       "summary": "사용자의 일일 루틴을 분석해 AI가 맞춤형 피드백과 개선 제안을 제공하는 모바일 앱. 수면, 운동, 식사 패턴을 종합적으로 파악해 최적의 루틴을 설계해준다.",
       "versions": [
-        {
-          "week": "2026-05-25",
-          "content": "수면 트래킹과 운동 데이터를 연동해 상관관계를 분석하는 기능을 추가 구상. 수면 질이 좋을수록 다음날 운동 퍼포먼스가 높다는 패턴을 자동으로 감지하고 시각화.",
-          "source_note_ids": ["note_abc123"]
-        },
-        {
-          "week": "2026-05-18",
-          "content": "기본 아이디어 정리. 사용자가 매일 간단한 체크인만 하면 AI가 패턴을 학습해 점진적으로 더 나은 루틴을 제안. 푸시 알림으로 적절한 타이밍에 행동 유도.",
-          "source_note_ids": ["note_def456"]
-        },
-        {
-          "week": "2026-05-11",
-          "content": "처음 아이디어 메모. 요즘 루틴 관리가 너무 어렵다. 어떤 습관이 실제로 효과가 있는지 데이터로 확인하고 싶다. AI에게 맡기면 어떨까?",
-          "source_note_ids": ["note_ghi789"]
-        }
+        { "week": "2026-05-25", "content": "수면 트래킹과 운동 데이터를 연동해 상관관계를 분석하는 기능 추가 구상. 수면 질이 좋을수록 다음날 운동 퍼포먼스가 높다는 패턴을 자동으로 감지하고 시각화.", "source_note_ids": [] },
+        { "week": "2026-05-18", "content": "기본 아이디어 정리. 사용자가 매일 간단한 체크인만 하면 AI가 패턴을 학습해 점진적으로 더 나은 루틴을 제안.", "source_note_ids": [] }
       ],
       "related": ["item_demo02", "item_demo03"],
-      "explicit_related": ["item_demo03"],
-      "attachments": [
-        {
-          "type": "image",
-          "drive_id": "sample_img_001",
-          "filename": "루틴앱_스케치.jpg",
-          "ocr_text": "- 아침 루틴 체크인\n- 수면 시간 자동 기록\n- AI 피드백 카드\n- 주간 리포트",
-          "summary": "앱 UI 초기 스케치. 체크인 화면과 AI 피드백 카드 레이아웃 구상."
-        }
-      ],
-      "comments": [
-        {
-          "date": "2026-05-27",
-          "text": "수면 트래킹은 워치 연동으로 자동화하는 게 더 좋을 것 같다. 삼성 헬스 API 확인 필요.",
-          "attachments": []
-        }
-      ]
+      "comments": [{ "date": "2026-05-27", "text": "수면 트래킹은 워치 연동으로 자동화하는 게 더 좋을 것 같다.", "attachments": [] }]
     },
     {
       "id": "item_demo02",
       "title": "구독 관리 서비스",
       "tags": ["앱", "핀테크"],
-      "summary": "사용자가 가입한 모든 구독 서비스를 한눈에 보여주고, 사용하지 않는 구독을 탐지해 해지를 도와주는 서비스. 월간 구독료 합계와 절약 가능 금액을 시각화.",
+      "summary": "사용자가 가입한 모든 구독 서비스를 한눈에 보여주고, 사용하지 않는 구독을 탐지해 해지를 도와주는 서비스.",
       "versions": [
-        {
-          "week": "2026-05-25",
-          "content": "은행 API 연동으로 구독 결제 내역을 자동 감지하는 방식 검토. 정기 결제 패턴(매월 동일 금액)을 ML로 분류하면 사용자 수동 입력 없이 자동 등록 가능.",
-          "source_note_ids": ["note_jkl012"]
-        },
-        {
-          "week": "2026-05-18",
-          "content": "매달 얼마나 구독 서비스에 쓰는지 파악이 안 된다. 카드 명세서 긁어서 자동으로 분류해주는 앱이 있으면 좋겠다. 넷플릭스, 유튜브, 각종 SaaS 등.",
-          "source_note_ids": ["note_mno345"]
-        }
-      ],
-      "related": ["item_demo01"],
-      "comments": []
-    },
-    {
-      "id": "item_demo03",
-      "title": "개인 지식 그래프 도구",
-      "tags": ["생산성", "PKM", "그래프"],
-      "summary": "노트, 책, 아이디어를 자동으로 연결해 개인 지식 그래프를 구축하는 도구. Obsidian에서 영감을 받았지만 AI가 자동으로 링크를 생성하고 관련 개념을 제안.",
-      "versions": [
-        {
-          "week": "2026-05-25",
-          "content": "임베딩 기반 유사도 계산으로 자동 링크 제안 구현 방안 구체화. 사용자가 명시적으로 승인하면 링크 확정, 거부하면 학습 데이터로 활용.",
-          "source_note_ids": ["note_pqr678"]
-        },
-        {
-          "week": "2026-05-11",
-          "content": "Obsidian 쓰다가 링크를 수동으로 다 만들어야 하는 게 너무 귀찮다. AI가 알아서 연결해주면 어떨까. 이 아이디어 위키 프로젝트 자체도 비슷한 맥락.",
-          "source_note_ids": ["note_stu901"]
-        }
+        { "week": "2026-05-25", "content": "은행 API 연동으로 구독 결제 내역을 자동 감지하는 방식 검토.", "source_note_ids": [] }
       ],
       "related": ["item_demo01"],
       "comments": []
@@ -799,261 +798,222 @@ const SAMPLE_WIKI = {
   ]
 };
 
-// ── 전역 상태 ─────────────────────────────────────────────────
 let wiki = null;
 let activeId = null;
 
-// ── wiki.json 로드 ────────────────────────────────────────────
 async function loadWiki() {
-  // 1) 인라인 데이터가 주입된 경우 (스케줄러가 생성)
-  if (typeof WIKI_DATA !== 'undefined') {
-    return WIKI_DATA;
-  }
-
-  // 2) fetch 시도 (로컬 서버 또는 일부 브라우저 file:// 허용)
+  if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
   try {
     const resp = await fetch('./wiki.json');
     if (resp.ok) return await resp.json();
-  } catch (e) {
-    // file:// 프로토콜에서는 fetch가 차단될 수 있음 — 폴백으로 진행
-  }
-
-  // 3) 샘플 데이터로 폴백
+  } catch(e) {}
   return null;
 }
 
-// ── 날짜 포맷 ─────────────────────────────────────────────────
-function fmtDate(isoStr) {
-  if (!isoStr) return '';
-  try {
-    return new Date(isoStr).toLocaleDateString('ko-KR', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    });
-  } catch { return isoStr; }
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function fmtWeek(weekStr) {
-  if (!weekStr) return '';
-  try {
-    return new Date(weekStr).toLocaleDateString('ko-KR', {
-      year: 'numeric', month: 'short', day: 'numeric'
-    }) + ' 주';
-  } catch { return weekStr; }
+function fmtDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' }); }
+  catch { return iso; }
 }
 
-// ── 사이드바 렌더링 ───────────────────────────────────────────
+function fmtWeek(w) {
+  if (!w) return '';
+  try { return new Date(w).toLocaleDateString('ko-KR', { year:'numeric', month:'short', day:'numeric' }); }
+  catch { return w; }
+}
+
 function renderSidebar(items) {
   const list = document.getElementById('item-list');
-  const countEl = document.getElementById('item-count');
-
-  list.innerHTML = '';
-  countEl.textContent = items.length;
-
-  if (items.length === 0) {
-    list.innerHTML = '<div style="padding:20px 16px;font-size:13px;color:var(--text-dim)">검색 결과 없음</div>';
+  document.getElementById('item-count').textContent = items.length;
+  if (!items.length) {
+    list.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text-dim);font-style:italic">결과 없음</div>';
     return;
   }
-
-  items.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'item-entry' + (item.id === activeId ? ' active' : '');
-    div.dataset.id = item.id;
-
-    const latestWeek = item.versions?.[0]?.week || '';
-    const tagsHtml = (item.tags || []).slice(0, 3)
-      .map(t => `<span class="entry-tag">${esc(t)}</span>`).join('');
-
-    div.innerHTML = `
+  list.innerHTML = items.map(item => {
+    const week = item.versions?.[0]?.week || '';
+    return `<div class="item-entry${item.id === activeId ? ' active' : ''}" data-id="${esc(item.id)}">
       <div class="entry-title">${esc(item.title)}</div>
-      <div class="entry-meta">
-        <span>${latestWeek ? fmtWeek(latestWeek) : ''}</span>
-        <div class="entry-tags">${tagsHtml}</div>
-      </div>`;
-    div.addEventListener('click', () => selectItem(item.id));
-    list.appendChild(div);
-  });
+      ${week ? `<div class="entry-week">${fmtWeek(week)}</div>` : ''}
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.item-entry').forEach(el =>
+    el.addEventListener('click', () => selectItem(el.dataset.id))
+  );
 }
 
-// ── 아이템 선택 ───────────────────────────────────────────────
 function selectItem(id) {
   activeId = id;
-
-  // 사이드바 active 상태
-  document.querySelectorAll('.item-entry').forEach(el => {
-    el.classList.toggle('active', el.dataset.id === id);
-  });
+  document.querySelectorAll('.item-entry').forEach(el =>
+    el.classList.toggle('active', el.dataset.id === id)
+  );
 
   const item = wiki.items.find(i => i.id === id);
   if (!item) return;
 
-  // 빈 상태 숨김
   document.getElementById('empty-state').style.display = 'none';
   const doc = document.getElementById('wiki-doc');
   doc.classList.add('visible');
 
-  // 타이틀
-  document.getElementById('doc-title').textContent = item.title;
-
-  // 태그
-  const tagsEl = document.getElementById('doc-tags');
-  tagsEl.innerHTML = (item.tags || []).map(t => `<span class="doc-tag">${esc(t)}</span>`).join('');
-
-  // 업데이트 날짜
   const latestWeek = item.versions?.[0]?.week;
-  document.getElementById('doc-updated').textContent =
-    latestWeek ? `마지막 업데이트: ${fmtWeek(latestWeek)}` : '';
+  const tagsHtml = (item.tags||[]).map(t => `<span class="doc-tag">${esc(t)}</span>`).join(' ');
 
-  // 개요
-  document.getElementById('doc-summary').textContent = item.summary || '—';
+  const relatedItems = (item.related||[]).map(rid => wiki.items.find(i=>i.id===rid)).filter(Boolean);
 
-  // 타임라인
-  const timeline = document.getElementById('doc-timeline');
-  if (!item.versions || item.versions.length === 0) {
-    timeline.innerHTML = '<div style="font-size:13px;color:var(--text-dim)">버전 기록 없음</div>';
-  } else {
-    timeline.innerHTML = item.versions.map((v, i) => `
-      <div class="tl-item">
-        <div class="tl-left">
-          <div class="tl-week">${v.week || ''}</div>
-          <div class="tl-dot-wrap"><div class="tl-dot"></div></div>
-        </div>
-        <div class="tl-right">
-          <div class="tl-badge">${i === 0 ? '최신' : 'v' + (item.versions.length - i)}</div>
-          <div class="tl-content">${esc(v.content || '')}</div>
-          ${v.source_note_ids?.length
-            ? `<div class="tl-notes">노트 ${v.source_note_ids.length}개 기반</div>`
-            : ''}
-        </div>
-      </div>`).join('');
-  }
+  const versionsHtml = !item.versions?.length
+    ? '<p class="no-content">버전 기록 없음</p>'
+    : item.versions.map((v, i) => `
+        <div class="tl-item">
+          <div class="tl-gutter"><div class="tl-date">${v.week||''}</div></div>
+          <div class="tl-connector"><div class="tl-dot"></div></div>
+          <div class="tl-body">
+            <div class="tl-badge">${i===0 ? '최신' : fmtWeek(v.week)}</div>
+            <div class="tl-content">${esc(v.content||'')}</div>
+            ${v.source_note_ids?.length ? `<div class="tl-sources">노트 ${v.source_note_ids.length}개 기반</div>` : ''}
+          </div>
+        </div>`).join('');
 
-  // 연관 아이템
-  const relatedEl = document.getElementById('doc-related');
-  const related = (item.related || [])
-    .map(rid => wiki.items.find(i => i.id === rid))
-    .filter(Boolean);
+  const relatedHtml = !relatedItems.length
+    ? '<p class="no-content">연관 아이템 없음</p>'
+    : `<div class="related-list">${relatedItems.map(r =>
+        `<span class="related-link" data-id="${r.id}">${esc(r.title)}</span>`
+      ).join('<span style="color:var(--border);margin:0 2px"> · </span>')}</div>`;
 
-  if (related.length === 0) {
-    relatedEl.innerHTML = '<span class="no-related">연관 아이템 없음</span>';
-  } else {
-    relatedEl.innerHTML = related.map(r =>
-      `<div class="related-chip" data-id="${r.id}">${esc(r.title)}</div>`
-    ).join('');
-    relatedEl.querySelectorAll('.related-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        selectItem(chip.dataset.id);
-        // 사이드바 스크롤
-        const entry = document.querySelector(`.item-entry[data-id="${chip.dataset.id}"]`);
-        entry?.scrollIntoView({ block: 'nearest' });
-      });
-    });
-  }
-
-  // 이미지 첨부
-  const attachmentsSection = document.getElementById('attachments-section');
-  const attachmentsEl = document.getElementById('doc-attachments');
-  const attachments = item.attachments || [];
-  if (attachments.length === 0) {
-    attachmentsSection.style.display = 'none';
-  } else {
-    attachmentsSection.style.display = '';
-    attachmentsEl.innerHTML = attachments.map(att => `
-      <div class="attachment-card">
-        <div class="attachment-img-placeholder">🖼️</div>
-        <div class="attachment-body">
-          <div class="attachment-filename">${esc(att.filename || att.drive_id || '')}</div>
-          <div class="attachment-summary">${esc(att.summary || '')}</div>
-          ${att.ocr_text
-            ? `<div class="attachment-ocr">${esc(att.ocr_text)}</div>`
-            : `<div class="attachment-ocr-empty">텍스트 없음</div>`}
-        </div>
-      </div>`).join('');
-  }
-
-  // 코멘트
-  const commentsSection = document.getElementById('comments-section');
-  const commentsEl = document.getElementById('doc-comments');
-  const comments = (item.comments || []).slice().sort((a, b) => b.date.localeCompare(a.date));
-  if (comments.length === 0) {
-    commentsSection.style.display = 'none';
-  } else {
-    commentsSection.style.display = '';
-    commentsEl.innerHTML = comments.map(c => `
-      <div class="comment-card">
+  const comments = (item.comments||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const commentsHtml = !comments.length ? '' : `
+    <h2 class="wiki-h2" id="sec-comments">코멘트</h2>
+    ${comments.map(c => `
+      <div class="comment-item">
         <div class="comment-date">${esc(c.date)}</div>
-        <div class="comment-text">${esc(c.text || '')}</div>
-      </div>`).join('');
-  }
+        <div class="comment-text">${esc(c.text||'')}</div>
+      </div>`).join('')}`;
 
-  // 스크롤 맨 위로
+  const hasAttachments = item.attachments?.length > 0;
+  const attachmentsHtml = !hasAttachments ? '' : `
+    <h2 class="wiki-h2" id="sec-attachments">이미지 첨부</h2>
+    ${item.attachments.map(att => `
+      <div style="border:1px solid var(--border-light);padding:10px;margin-bottom:10px;display:flex;gap:12px;background:var(--surface)">
+        <div style="width:120px;height:90px;background:var(--bg);border:1px solid var(--border-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🖼️</div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${esc(att.filename||'')}</div>
+          <div style="font-size:13.5px;font-weight:500;margin-bottom:6px">${esc(att.summary||'')}</div>
+          ${att.ocr_text ? `<div style="font-size:12.5px;color:var(--text-muted);white-space:pre-wrap">${esc(att.ocr_text)}</div>` : ''}
+        </div>
+      </div>`).join('')}`;
+
+  const tocItems = [
+    { id: 'sec-summary', label: '개요' },
+    { id: 'sec-history', label: '버전 히스토리' },
+    ...(hasAttachments ? [{ id: 'sec-attachments', label: '이미지 첨부' }] : []),
+    ...(comments.length ? [{ id: 'sec-comments', label: '코멘트' }] : []),
+    { id: 'sec-related', label: '연관 아이템' },
+  ];
+
+  document.getElementById('toc-list').innerHTML = tocItems.map(t =>
+    `<li class="toc-item" onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'})">${t.label}</li>`
+  ).join('');
+  document.getElementById('toc').classList.add('visible');
+
+  document.getElementById('doc-content').innerHTML = `
+    <h1 class="doc-title">${esc(item.title)}</h1>
+    <div class="doc-subtitle">
+      ${latestWeek ? `<span>마지막 수정: ${fmtWeek(latestWeek)}</span><span class="sep">|</span>` : ''}
+      <span>버전 ${item.versions?.length||0}개</span>
+      ${tagsHtml ? `<span class="sep">|</span>${tagsHtml}` : ''}
+    </div>
+    <div class="clearfix">
+      <div class="infobox">
+        <div class="infobox-header">아이디어 요약</div>
+        <div class="infobox-body">
+          <div class="infobox-row">
+            <div class="infobox-label">분류</div>
+            <div class="infobox-val infobox-tags">${(item.tags||[]).map(t=>`<span class="doc-tag">${esc(t)}</span>`).join(' ')}</div>
+          </div>
+          <div class="infobox-row">
+            <div class="infobox-label">버전 수</div>
+            <div class="infobox-val">${item.versions?.length||0}개</div>
+          </div>
+          ${latestWeek ? `<div class="infobox-row">
+            <div class="infobox-label">최신</div>
+            <div class="infobox-val">${fmtWeek(latestWeek)}</div>
+          </div>` : ''}
+          ${relatedItems.length ? `<div class="infobox-row">
+            <div class="infobox-label">연관</div>
+            <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <h2 class="wiki-h2" id="sec-summary">개요</h2>
+      <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
+    </div>
+
+    <h2 class="wiki-h2" id="sec-history">버전 히스토리</h2>
+    <div class="timeline">${versionsHtml}</div>
+
+    ${attachmentsHtml}
+    ${commentsHtml}
+
+    <h2 class="wiki-h2" id="sec-related">연관 아이템</h2>
+    ${relatedHtml}
+  `;
+
+  doc.querySelectorAll('.related-link').forEach(el =>
+    el.addEventListener('click', () => {
+      selectItem(el.dataset.id);
+      document.querySelector(`.item-entry[data-id="${el.dataset.id}"]`)?.scrollIntoView({ block:'nearest' });
+    })
+  );
+
   document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── 검색 ──────────────────────────────────────────────────────
-function filterItems(query) {
+function filterItems(q) {
   if (!wiki) return;
-  const q = query.toLowerCase().trim();
-  if (!q) {
-    renderSidebar(wiki.items);
-    return;
-  }
-  const filtered = wiki.items.filter(item =>
-    item.title.toLowerCase().includes(q) ||
-    (item.tags || []).some(t => t.toLowerCase().includes(q)) ||
-    (item.summary || '').toLowerCase().includes(q)
-  );
-  renderSidebar(filtered);
+  const query = q.toLowerCase().trim();
+  if (!query) { renderSidebar(wiki.items); return; }
+  renderSidebar(wiki.items.filter(item =>
+    item.title.toLowerCase().includes(query) ||
+    (item.tags||[]).some(t => t.toLowerCase().includes(query)) ||
+    (item.summary||'').toLowerCase().includes(query)
+  ));
 }
 
-// ── XSS 방지 ─────────────────────────────────────────────────
-function esc(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// ── 에러 표시 ─────────────────────────────────────────────────
 function showError(msg) {
   const el = document.getElementById('error-banner');
   el.innerHTML = msg;
   el.classList.add('visible');
 }
 
-// ── 뷰 전환 ──────────────────────────────────────────────────
 let currentView = 'wiki';
+let graphState = null;
 
 function switchView(view) {
   currentView = view;
-  const wikiPanel = document.getElementById('wiki-doc');
-  const emptyState = document.getElementById('empty-state');
   const graphPanel = document.getElementById('graph-view');
+  const mainPanel = document.getElementById('main');
   const btnWiki = document.getElementById('btn-wiki');
   const btnGraph = document.getElementById('btn-graph');
 
   if (view === 'graph') {
-    document.getElementById('main').style.display = 'none';
+    mainPanel.style.display = 'none';
     graphPanel.classList.add('visible');
     btnGraph.classList.add('active');
     btnWiki.classList.remove('active');
-    if (wiki) renderGraph(wiki.items || []);
+    if (wiki) renderGraph(wiki.items||[]);
   } else {
-    document.getElementById('main').style.display = '';
+    mainPanel.style.display = '';
     graphPanel.classList.remove('visible');
     btnWiki.classList.add('active');
     btnGraph.classList.remove('active');
   }
 }
 
-// ── 그래프 뷰 ─────────────────────────────────────────────────
-const TAG_COLORS = [
-  '#5b8dee', '#3ecf8e', '#f5a623', '#e05b7f',
-  '#9b59b6', '#1abc9c', '#e67e22', '#e74c3c',
-  '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
-];
-
-let graphState = null;
+const TAG_COLORS = ['#3366cc','#cc3333','#339933','#cc6600','#663399','#006666','#993366','#336699'];
 
 function renderGraph(items) {
   const canvas = document.getElementById('graph-canvas');
@@ -1061,434 +1021,205 @@ function renderGraph(items) {
   const parent = document.getElementById('graph-view');
   const ctx = canvas.getContext('2d');
 
-  // DPI 보정
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = window.devicePixelRatio||1;
   const W = parent.clientWidth;
   const H = parent.clientHeight;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
+  canvas.width = W*dpr; canvas.height = H*dpr;
   ctx.scale(dpr, dpr);
 
-  // 태그 색상 맵
-  const allTags = [...new Set(items.flatMap(i => i.tags || []))];
-  const tagColorMap = {};
-  allTags.forEach((t, i) => { tagColorMap[t] = TAG_COLORS[i % TAG_COLORS.length]; });
+  const allTags = [...new Set(items.flatMap(i=>i.tags||[]))];
+  const tagColor = {};
+  allTags.forEach((t,i) => { tagColor[t] = TAG_COLORS[i%TAG_COLORS.length]; });
 
-  // 노드 초기화
   const nodeMap = {};
   items.forEach(item => { nodeMap[item.id] = item; });
 
   const nodes = items.map((item, i) => {
-    const angle = (2 * Math.PI * i) / items.length;
-    const r = Math.min(W, H) * 0.3;
+    const angle = 2*Math.PI*i/items.length;
+    const r = Math.min(W,H)*0.3;
     return {
-      id: item.id,
-      title: item.title,
-      tags: item.tags || [],
-      color: tagColorMap[(item.tags || [])[0]] || '#5b8dee',
-      x: W / 2 + r * Math.cos(angle) + (Math.random() - 0.5) * 40,
-      y: H / 2 + r * Math.sin(angle) + (Math.random() - 0.5) * 40,
-      vx: 0, vy: 0,
-      radius: 10,
+      id: item.id, title: item.title, tags: item.tags||[],
+      color: tagColor[(item.tags||[])[0]]||'#3366cc',
+      x: W/2+r*Math.cos(angle)+(Math.random()-.5)*30,
+      y: H/2+r*Math.sin(angle)+(Math.random()-.5)*30,
+      vx:0, vy:0, radius:10
     };
   });
 
-  // 엣지 구성 (related → 일반, explicit → 굵게)
-  // explicit: 노트에서 명시적으로 언급한 경우 — wiki.json에 edge_type 필드가 있으면 사용, 없으면 related는 모두 일반
-  const edges = [];
-  const seen = new Set();
+  const edges = [], seen = new Set();
   items.forEach(item => {
-    (item.related || []).forEach(rid => {
-      const key = [item.id, rid].sort().join('--');
-      if (seen.has(key)) return;
+    (item.related||[]).forEach(rid => {
+      const key = [item.id,rid].sort().join('--');
+      if (seen.has(key)||!nodeMap[rid]) return;
       seen.add(key);
-      if (!nodeMap[rid]) return;
-      // explicit_related 필드가 있으면 굵은 엣지
-      const isExplicit = (item.explicit_related || []).includes(rid) ||
-                         (nodeMap[rid]?.explicit_related || []).includes(item.id);
-      edges.push({ from: item.id, to: rid, explicit: isExplicit });
+      const explicit = (item.explicit_related||[]).includes(rid);
+      edges.push({ from:item.id, to:rid, explicit });
     });
   });
 
-  // 태그 공유 엣지 (같은 태그를 가진 아이템 간 연결)
-  for (let i = 0; i < items.length; i++) {
-    for (let j = i + 1; j < items.length; j++) {
-      const tagsI = new Set(items[i].tags || []);
-      const tagsJ = new Set(items[j].tags || []);
-      const shared = [...tagsI].filter(t => tagsJ.has(t));
-      if (shared.length > 0) {
-        const key = [items[i].id, items[j].id].sort().join('--');
-        if (!seen.has(key)) {
-          seen.add(key);
-          edges.push({ from: items[i].id, to: items[j].id, explicit: false, tagShared: true });
-        }
-      }
-    }
-  }
-
-  // 노드 인덱스 맵
   const nodeIdx = {};
-  nodes.forEach((n, i) => { nodeIdx[n.id] = i; });
+  nodes.forEach((n,i) => { nodeIdx[n.id]=i; });
 
-  // 뷰 상태
-  let transform = { x: 0, y: 0, scale: 1 };
-  let dragging = null;
-  let panning = null;
-  let hoveredNode = null;
-  let animFrame = null;
+  let transform = {x:0,y:0,scale:1};
+  let dragging=null, panning=null, hoveredNode=null;
+  let simRunning=true, frameCnt=0, animFrame=null;
 
-  // force simulation
   function tick() {
-    const alpha = 0.08;
-    const repulse = 3200;
-    const linkDist = 120;
-    const linkStr = 0.04;
-    const centerStr = 0.012;
-
-    // 반발력
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i], b = nodes[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        const d2 = dx * dx + dy * dy + 0.01;
-        const f = repulse / d2;
-        const fx = f * dx / Math.sqrt(d2), fy = f * dy / Math.sqrt(d2);
-        a.vx -= fx; a.vy -= fy;
-        b.vx += fx; b.vy += fy;
-      }
+    const repulse=4000, linkDist=130, linkStr=0.04, alpha=0.08, centerStr=0.012;
+    for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++) {
+      const a=nodes[i],b=nodes[j];
+      let dx=b.x-a.x, dy=b.y-a.y;
+      const d2=dx*dx+dy*dy+.01, f=repulse/d2, d=Math.sqrt(d2);
+      a.vx-=f*dx/d; a.vy-=f*dy/d; b.vx+=f*dx/d; b.vy+=f*dy/d;
     }
-
-    // 링크 인력
     edges.forEach(e => {
-      const a = nodes[nodeIdx[e.from]], b = nodes[nodeIdx[e.to]];
-      if (!a || !b) return;
-      let dx = b.x - a.x, dy = b.y - a.y;
-      const d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const f = (d - linkDist) * linkStr;
-      a.vx += f * dx / d; a.vy += f * dy / d;
-      b.vx -= f * dx / d; b.vy -= f * dy / d;
+      const a=nodes[nodeIdx[e.from]], b=nodes[nodeIdx[e.to]];
+      if(!a||!b) return;
+      let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+      const f=(d-linkDist)*linkStr;
+      a.vx+=f*dx/d; a.vy+=f*dy/d; b.vx-=f*dx/d; b.vy-=f*dy/d;
     });
-
-    // 중앙 인력
+    nodes.forEach(n => { n.vx+=(W/2-n.x)*centerStr; n.vy+=(H/2-n.y)*centerStr; });
     nodes.forEach(n => {
-      n.vx += (W / 2 - n.x) * centerStr;
-      n.vy += (H / 2 - n.y) * centerStr;
-    });
-
-    // 감쇠 + 위치 업데이트 (드래그 중인 노드 제외)
-    nodes.forEach(n => {
-      if (dragging && dragging.node === n) return;
-      n.vx *= (1 - alpha);
-      n.vy *= (1 - alpha);
-      n.x += n.vx;
-      n.y += n.vy;
+      if(dragging&&dragging.node===n) return;
+      n.vx*=(1-alpha); n.vy*=(1-alpha);
+      n.x+=n.vx; n.y+=n.vy;
     });
   }
 
   function draw() {
-    ctx.clearRect(0, 0, W, H);
-
+    ctx.clearRect(0,0,W,H);
     ctx.save();
-    ctx.translate(transform.x, transform.y);
-    ctx.scale(transform.scale, transform.scale);
+    ctx.translate(transform.x,transform.y);
+    ctx.scale(transform.scale,transform.scale);
 
-    // 엣지
     edges.forEach(e => {
-      const a = nodes[nodeIdx[e.from]], b = nodes[nodeIdx[e.to]];
-      if (!a || !b) return;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      if (e.explicit) {
-        ctx.strokeStyle = 'rgba(91,141,238,0.55)';
-        ctx.lineWidth = 2.5;
-      } else if (e.tagShared) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-        ctx.lineWidth = 1;
-      } else {
-        ctx.strokeStyle = 'rgba(122,128,153,0.3)';
-        ctx.lineWidth = 1.5;
-      }
+      const a=nodes[nodeIdx[e.from]], b=nodes[nodeIdx[e.to]];
+      if(!a||!b) return;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle = e.explicit ? 'rgba(51,102,204,0.6)' : 'rgba(162,169,177,0.5)';
+      ctx.lineWidth = e.explicit ? 2.5 : 1.5;
       ctx.stroke();
     });
 
-    // 노드
     nodes.forEach(n => {
-      const isHov = hoveredNode === n;
-      const r = isHov ? n.radius + 3 : n.radius;
-
-      // 글로우
-      if (isHov) {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, r + 6, 0, 2 * Math.PI);
-        ctx.fillStyle = n.color + '22';
-        ctx.fill();
-      }
-
-      // 노드 원
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, r, 0, 2 * Math.PI);
-      ctx.fillStyle = isHov ? n.color : n.color + 'cc';
+      const isHov = hoveredNode===n;
+      const r = isHov ? n.radius+3 : n.radius;
+      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI);
+      ctx.fillStyle = isHov ? n.color : n.color+'cc';
       ctx.fill();
-      ctx.strokeStyle = isHov ? '#fff' : n.color;
-      ctx.lineWidth = isHov ? 2 : 1;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // 레이블
-      const fontSize = isHov ? 12 : 11;
-      ctx.font = `${fontSize}px Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif`;
-      ctx.fillStyle = isHov ? '#e8eaf0' : '#9aa0b8';
+      ctx.font = `${isHov?12:11}px "Noto Sans KR", sans-serif`;
+      ctx.fillStyle = isHov ? '#202122' : '#54595d';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      const maxW = 90;
       let label = n.title;
-      if (ctx.measureText(label).width > maxW) {
-        while (label.length > 2 && ctx.measureText(label + '…').width > maxW) {
-          label = label.slice(0, -1);
-        }
-        label += '…';
+      const maxW = 85;
+      if(ctx.measureText(label).width>maxW) {
+        while(label.length>2&&ctx.measureText(label+'…').width>maxW) label=label.slice(0,-1);
+        label+='…';
       }
-      ctx.fillText(label, n.x, n.y + r + 4);
+      ctx.fillText(label, n.x, n.y+r+4);
     });
-
     ctx.restore();
   }
 
-  let simRunning = true;
-  let frameCnt = 0;
   function loop() {
-    if (simRunning) {
-      tick();
-      frameCnt++;
-      if (frameCnt > 300) simRunning = false; // 300프레임 후 물리 정지
-    }
+    if(simRunning){tick();frameCnt++;if(frameCnt>300)simRunning=false;}
     draw();
-    animFrame = requestAnimationFrame(loop);
+    animFrame=requestAnimationFrame(loop);
   }
 
-  // 기존 애니메이션 정지
-  if (graphState?.animFrame) cancelAnimationFrame(graphState.animFrame);
-  graphState = { animFrame: null, nodes, edges, nodeIdx, transform };
+  if(graphState?.animFrame) cancelAnimationFrame(graphState.animFrame);
+  graphState = {animFrame:null};
 
-  // 마우스 이벤트
   function canvasPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left - transform.x) / transform.scale,
-      y: (e.clientY - rect.top - transform.y) / transform.scale,
-    };
+    const rect=canvas.getBoundingClientRect();
+    return {x:(e.clientX-rect.left-transform.x)/transform.scale, y:(e.clientY-rect.top-transform.y)/transform.scale};
   }
 
-  function hitNode(cx, cy) {
-    for (let i = nodes.length - 1; i >= 0; i--) {
-      const n = nodes[i];
-      const dx = cx - n.x, dy = cy - n.y;
-      if (dx * dx + dy * dy <= (n.radius + 6) ** 2) return n;
+  function hitNode(cx,cy) {
+    for(let i=nodes.length-1;i>=0;i--) {
+      const n=nodes[i], dx=cx-n.x, dy=cy-n.y;
+      if(dx*dx+dy*dy<=(n.radius+6)**2) return n;
     }
     return null;
   }
 
   canvas.onmousedown = e => {
-    const { x, y } = canvasPos(e);
-    const hit = hitNode(x, y);
-    if (hit) {
-      dragging = { node: hit, ox: x - hit.x, oy: y - hit.y };
-      simRunning = true; frameCnt = 0;
-    } else {
-      panning = { sx: e.clientX, sy: e.clientY, tx: transform.x, ty: transform.y };
-    }
+    const {x,y}=canvasPos(e), hit=hitNode(x,y);
+    if(hit) { dragging={node:hit,ox:x-hit.x,oy:y-hit.y}; simRunning=true; frameCnt=0; }
+    else panning={sx:e.clientX,sy:e.clientY,tx:transform.x,ty:transform.y};
   };
 
   canvas.onmousemove = e => {
-    if (dragging) {
-      const { x, y } = canvasPos(e);
-      dragging.node.x = x - dragging.ox;
-      dragging.node.y = y - dragging.oy;
-      dragging.node.vx = 0; dragging.node.vy = 0;
-      return;
-    }
-    if (panning) {
-      transform.x = panning.tx + (e.clientX - panning.sx);
-      transform.y = panning.ty + (e.clientY - panning.sy);
-      return;
-    }
-    const { x, y } = canvasPos(e);
-    const hit = hitNode(x, y);
-    const prev = hoveredNode;
-    hoveredNode = hit;
-    if (hit !== prev) { simRunning = true; frameCnt = 0; }
-
-    // 툴팁
-    if (hit) {
-      const rect = canvas.getBoundingClientRect();
-      const tx = e.clientX - rect.left + 14;
-      const ty = e.clientY - rect.top - 10;
-      tooltip.style.left = tx + 'px';
-      tooltip.style.top = ty + 'px';
-      const tagStr = hit.tags.length ? hit.tags.map(t => `#${t}`).join(' ') : '';
-      tooltip.innerHTML = `<b>${esc(hit.title)}</b>${tagStr ? '<br><span style="color:#5b8dee;font-size:10px">' + esc(tagStr) + '</span>' : ''}`;
+    if(dragging){const{x,y}=canvasPos(e);dragging.node.x=x-dragging.ox;dragging.node.y=y-dragging.oy;return;}
+    if(panning){transform.x=panning.tx+(e.clientX-panning.sx);transform.y=panning.ty+(e.clientY-panning.sy);return;}
+    const{x,y}=canvasPos(e),hit=hitNode(x,y),prev=hoveredNode;
+    hoveredNode=hit;
+    if(hit!==prev){simRunning=true;frameCnt=0;}
+    if(hit){
+      const rect=canvas.getBoundingClientRect();
+      tooltip.style.left=(e.clientX-rect.left+14)+'px';
+      tooltip.style.top=(e.clientY-rect.top-10)+'px';
+      tooltip.innerHTML=`<b>${esc(hit.title)}</b>${hit.tags.length?'<br><span style="color:#3366cc;font-size:10px">'+hit.tags.map(t=>'#'+esc(t)).join(' ')+'</span>':''}`;
       tooltip.classList.add('visible');
-      canvas.style.cursor = 'pointer';
-    } else {
-      tooltip.classList.remove('visible');
-      canvas.style.cursor = 'grab';
-    }
+      canvas.style.cursor='pointer';
+    } else { tooltip.classList.remove('visible'); canvas.style.cursor='grab'; }
   };
 
-  canvas.onmouseup = e => {
-    if (dragging) { dragging = null; return; }
-    if (panning) { panning = null; return; }
-  };
+  canvas.onmouseup = () => { dragging=null; panning=null; };
 
   canvas.onclick = e => {
-    if (dragging || panning) return;
-    const { x, y } = canvasPos(e);
-    const hit = hitNode(x, y);
-    if (hit) {
-      switchView('wiki');
-      selectItem(hit.id);
-      const entry = document.querySelector(`.item-entry[data-id="${hit.id}"]`);
-      entry?.scrollIntoView({ block: 'nearest' });
-    }
+    const{x,y}=canvasPos(e),hit=hitNode(x,y);
+    if(hit){switchView('wiki');selectItem(hit.id);document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});}
   };
 
-  // 휠 줌
   canvas.onwheel = e => {
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const delta = e.deltaY > 0 ? 0.85 : 1.18;
-    const newScale = Math.max(0.2, Math.min(4, transform.scale * delta));
-    transform.x = mx - (mx - transform.x) * (newScale / transform.scale);
-    transform.y = my - (my - transform.y) * (newScale / transform.scale);
-    transform.scale = newScale;
+    const rect=canvas.getBoundingClientRect(), mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const delta=e.deltaY>0?.85:1.18, ns=Math.max(.2,Math.min(4,transform.scale*delta));
+    transform.x=mx-(mx-transform.x)*(ns/transform.scale);
+    transform.y=my-(my-transform.y)*(ns/transform.scale);
+    transform.scale=ns;
   };
 
-  // 터치 지원 (모바일)
-  let lastTouchDist = null;
-  canvas.ontouchstart = e => {
-    if (e.touches.length === 1) {
-      const t = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const cx = (t.clientX - rect.left - transform.x) / transform.scale;
-      const cy = (t.clientY - rect.top - transform.y) / transform.scale;
-      const hit = hitNode(cx, cy);
-      if (hit) dragging = { node: hit, ox: cx - hit.x, oy: cy - hit.y };
-      else panning = { sx: t.clientX, sy: t.clientY, tx: transform.x, ty: transform.y };
-    } else if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      lastTouchDist = Math.sqrt(dx*dx + dy*dy);
-    }
-    e.preventDefault();
-  };
-  canvas.ontouchmove = e => {
-    if (e.touches.length === 1 && dragging) {
-      const t = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      dragging.node.x = (t.clientX - rect.left - transform.x) / transform.scale - dragging.ox;
-      dragging.node.y = (t.clientY - rect.top - transform.y) / transform.scale - dragging.oy;
-    } else if (e.touches.length === 1 && panning) {
-      const t = e.touches[0];
-      transform.x = panning.tx + (t.clientX - panning.sx);
-      transform.y = panning.ty + (t.clientY - panning.sy);
-    } else if (e.touches.length === 2 && lastTouchDist) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const d = Math.sqrt(dx*dx + dy*dy);
-      const delta = d / lastTouchDist;
-      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - canvas.getBoundingClientRect().left;
-      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - canvas.getBoundingClientRect().top;
-      const newScale = Math.max(0.2, Math.min(4, transform.scale * delta));
-      transform.x = mx - (mx - transform.x) * (newScale / transform.scale);
-      transform.y = my - (my - transform.y) * (newScale / transform.scale);
-      transform.scale = newScale;
-      lastTouchDist = d;
-    }
-    e.preventDefault();
-  };
-  canvas.ontouchend = e => {
-    if (e.touches.length === 0) { dragging = null; panning = null; lastTouchDist = null; }
-  };
-  canvas.setAttribute('touch-action', 'none');
+  document.getElementById('gc-zoom-in').onclick=()=>{transform.scale=Math.min(4,transform.scale*1.25);simRunning=true;frameCnt=0;};
+  document.getElementById('gc-zoom-out').onclick=()=>{transform.scale=Math.max(.2,transform.scale*.8);simRunning=true;frameCnt=0;};
+  document.getElementById('gc-reset').onclick=()=>{transform={x:0,y:0,scale:1};simRunning=true;frameCnt=0;};
 
-  // 버튼 컨트롤
-  document.getElementById('gc-zoom-in').onclick = () => {
-    transform.scale = Math.min(4, transform.scale * 1.25);
-    simRunning = true; frameCnt = 0;
-  };
-  document.getElementById('gc-zoom-out').onclick = () => {
-    transform.scale = Math.max(0.2, transform.scale * 0.8);
-    simRunning = true; frameCnt = 0;
-  };
-  document.getElementById('gc-reset').onclick = () => {
-    transform = { x: 0, y: 0, scale: 1 };
-    simRunning = true; frameCnt = 0;
-  };
-
-  // 범례 렌더링
-  const legendEl = document.getElementById('legend-items');
-  legendEl.innerHTML = allTags.slice(0, 8).map(t =>
-    `<div class="legend-item"><div class="legend-dot" style="background:${tagColorMap[t]}"></div>${esc(t)}</div>`
-  ).join('');
-  if (allTags.length > 8) {
-    legendEl.innerHTML += `<div class="legend-item" style="color:var(--text-dim)">+${allTags.length - 8}개 더</div>`;
-  }
-
-  // 리사이즈 핸들러
-  const resizeObs = new ResizeObserver(() => {
-    const nW = parent.clientWidth;
-    const nH = parent.clientHeight;
-    canvas.width = nW * dpr;
-    canvas.height = nH * dpr;
-    ctx.scale(dpr, dpr);
-    // canvas css 크기는 100%이므로 자동
-  });
-  resizeObs.observe(parent);
-
-  animFrame = requestAnimationFrame(loop);
-  graphState.animFrame = animFrame;
+  animFrame=requestAnimationFrame(loop);
+  graphState.animFrame=animFrame;
 }
-
 
 async function init() {
   const overlay = document.getElementById('load-overlay');
-  const metaEl = document.getElementById('meta');
-
   let data = await loadWiki();
   let usingSample = false;
 
   if (!data) {
     usingSample = true;
     data = SAMPLE_WIKI;
-    showError(
-      '⚠️ <b>wiki.json을 찾을 수 없습니다.</b> 샘플 데이터로 표시 중입니다.<br>' +
-      '이 파일(<code>viewer/index.html</code>)과 같은 폴더에 <code>wiki.json</code>을 두거나, ' +
-      '스케줄러가 생성한 뷰어를 사용하세요.'
-    );
+    showError('⚠️ <b>wiki.json을 찾을 수 없습니다.</b> 샘플 데이터로 표시 중입니다.');
   }
 
   wiki = data;
 
-  // 메타 정보
+  const count = wiki.items?.length||0;
   const updatedAt = fmtDate(wiki.updated_at);
-  const count = wiki.items?.length || 0;
-  metaEl.textContent = `${count}개 아이템${updatedAt ? ' · ' + updatedAt : ''}${usingSample ? ' (샘플)' : ''}`;
+  document.getElementById('meta-info').textContent =
+    `아이템 ${count}개${updatedAt?' · '+updatedAt:''}${usingSample?' (샘플)':''}`;
 
-  renderSidebar(wiki.items || []);
-
-  // 검색 이벤트
+  renderSidebar(wiki.items||[]);
   document.getElementById('search').addEventListener('input', e => filterItems(e.target.value));
 
-  // 첫 번째 아이템 자동 선택
-  if (wiki.items?.length > 0) {
-    selectItem(wiki.items[0].id);
-  }
+  if (wiki.items?.length>0) selectItem(wiki.items[0].id);
 
-  // 로딩 오버레이 제거
   overlay.classList.add('hidden');
-  setTimeout(() => overlay.style.display = 'none', 350);
+  setTimeout(()=>overlay.style.display='none', 350);
 }
 
 init();
