@@ -1,46 +1,70 @@
-# my-idea-wiki
+# 💡 아이디어 위키 (my-idea-wiki)
 
-아이디어 노트 자동 위키화 시스템.
+구글 드라이브에 아이디어 노트를 올리면 AI가 자동으로 위키 문서로 정리해주는 파이프라인입니다.
 
-Google Drive에 업로드한 노트를 AI(Claude/Gemini)가 자동으로 아이템별 위키로 정리하고,  
-로컬 HTML 뷰어로 Obsidian 스타일 그래프와 함께 열람하는 파이프라인입니다.
+노트가 흩어지고 맥락을 잃어버리는 문제를 해결하기 위해,  
+Claude(폴백: Gemini)가 노트를 아이템별로 묶고 버전을 누적하며,  
+로컬 HTML 뷰어와 그래프 뷰로 아이디어의 전체 지형을 한눈에 파악할 수 있습니다.
 
-## 구조
+---
+
+## 시스템 흐름
 
 ```
-src/
-  drive/       # Google Drive API v3 연동 (노트 읽기, JSON 저장)
-  pipeline/    # 위키화 처리 (Claude → Gemini 폴백)
-  telegram/    # 봇 명령어 및 알람
-  utils/       # 공통 유틸
-tests/
-credentials/   # 서비스 계정 JSON (gitignore됨)
+[1] 구글 드라이브 notes 폴더에 노트 업로드
+
+[2] 자동 위키화 (Render Cron Job, 기본 매주 월요일)
+    노트 읽기 → Claude API (폴백: Gemini) → wiki.json 생성/업데이트
+    → 구글 드라이브 wikis 폴더에 저장 → 텔레그램 결과 알람
+
+[3] 결과 확인
+    wikis 폴더의 index.html 다운로드 또는 동기화 → 브라우저에서 열기
+    위키 문서 + 그래프 뷰로 아이디어 탐색
 ```
 
-## 설정
+또는 텔레그램에서 `/run`으로 즉시 실행할 수 있습니다.
 
-```bash
-cp .env.example .env
-# .env 파일에 각 API 키와 폴더 ID 입력
-```
+---
 
-## 실행
+## 주요 기능
 
-```bash
-pip install -r requirements.txt
-uvicorn src.main:app --reload
-```
+- **자동 위키화** — 노트를 아이템별로 분류하고, 같은 주제의 노트는 버전으로 누적
+- **태그 시스템** — `#태그명` 형식으로 수동 태그 지정 (AI 자동 분류보다 우선)
+- **병합 지능** — 기존 위키 아이템을 컨텍스트로 활용해 중복 생성 방지
+- **Claude → Gemini 폴백** — API 실패 시 자동 전환, 이중 실패 시 텔레그램 알람
+- **텔레그램 봇** — `/run` `/status` `/schedule` `/set` 명령으로 원격 제어
+- **로컬 HTML 뷰어** — 위키 문서 + Obsidian 스타일 그래프 뷰, 라이트/다크 테마
 
-## 환경변수
+---
 
-| 변수 | 설명 |
+## 빠른 시작 (사용자)
+
+1. **텔레그램 봇 생성** — @BotFather에서 봇 토큰과 Chat ID 발급
+2. **구글 드라이브 폴더 설정** — `notes`, `wikis` 폴더 생성 후 서비스 계정 공유
+3. **`wikis` 폴더에 빈 파일 업로드** — `wiki.json`과 `index.html` 미리 업로드 필수  
+   *(구글 드라이브 설정에서 "Google 문서 자동변환" 옵션 해제 후 업로드)*
+4. **텔레그램에서 `/run`** — 노트를 `notes` 폴더에 올리고 명령 전송
+5. **결과 확인** — `wikis/index.html` 다운로드 후 브라우저에서 열기
+
+> 자세한 내용은 **[instruction.md](./instruction.md)** 참고
+
+---
+
+## 기술 스택
+
+| 구분 | 기술 |
 |------|------|
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 키 경로 |
-| `DRIVE_NOTES_FOLDER_ID` | 노트 업로드 폴더 ID |
-| `DRIVE_WIKI_FOLDER_ID` | wiki.json 저장 폴더 ID |
-| `ANTHROPIC_API_KEY` | Claude API 키 |
-| `GEMINI_API_KEY` | Gemini API 키 (폴백용) |
-| `TELEGRAM_BOT_TOKEN` | 텔레그램 봇 토큰 |
-| `TELEGRAM_CHAT_ID` | 알람 수신 chat ID |
-| `TELEGRAM_WEBHOOK_URL` | Render Web Service URL |
-| `SCHEDULE_CRON` | Cron 표현식 (기본: `0 9 * * 1`) |
+| 서버 | Python, FastAPI, Render (Cron Job + Web Service) |
+| AI | Anthropic Claude API, Google Gemini API |
+| 저장 | Google Drive API v3 |
+| 알람/제어 | Telegram Bot API (Webhook) |
+| 뷰어 | Vanilla JS, D3-like Canvas 그래프 (단일 HTML 파일) |
+
+---
+
+## 문서
+
+| 문서 | 대상 | 내용 |
+|------|------|------|
+| [instruction.md](./instruction.md) | 사용자 | 봇 설정, 노트 작성법, 뷰어 사용법 |
+| [dev_manual.md](./dev_manual.md) | 개발자 | Render 배포, 환경변수, API 목록, 코드 구조 |
