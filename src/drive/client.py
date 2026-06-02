@@ -172,19 +172,33 @@ def read_notes_from_folder(
     folder_id: str, modified_after: Optional[str] = None
 ) -> list[dict]:
     """
-    List and read all notes from a Drive folder.
+    List and read all text/docs notes from a Drive folder.
+    PDF files are excluded here — they are handled separately in runner.py
+    via download_file_bytes() + process_pdf_with_claude().
 
     Args:
         folder_id: Google Drive folder ID.
         modified_after: Only return notes modified after this ISO 8601 datetime.
 
     Returns:
-        List of dicts with keys: id, name, content, tags, modifiedTime.
+        List of dicts with keys: id, name, content, tags, modifiedTime, mimeType.
     """
     files = list_notes(folder_id, modified_after=modified_after)
     notes = []
 
     for f in files:
+        # PDF는 runner.py에서 별도 처리 — mimeType만 담아 반환
+        if f["mimeType"] == PDF_MIME_TYPE:
+            notes.append({
+                "id": f["id"],
+                "name": f["name"],
+                "content": "",
+                "tags": [],
+                "modifiedTime": f["modifiedTime"],
+                "mimeType": f["mimeType"],
+            })
+            continue
+
         try:
             content = read_note(f["id"], f["mimeType"])
             tags = extract_tags(content)
@@ -195,6 +209,7 @@ def read_notes_from_folder(
                     "content": content,
                     "tags": tags,
                     "modifiedTime": f["modifiedTime"],
+                    "mimeType": f["mimeType"],
                 }
             )
         except Exception as e:
