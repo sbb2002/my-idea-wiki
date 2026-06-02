@@ -6,7 +6,10 @@ import os
 import io
 import re
 from typing import Optional
+import json as _json
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
@@ -43,16 +46,35 @@ _ALL_DRIVES_PARAMS = {
 
 
 def get_drive_service():
-    """Build and return an authenticated Drive API service."""
-    creds_value = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "./credentials/service_account.json")
+    """Build and return an authenticated Drive API service.
 
+    OAuth 우선 사용. GOOGLE_REFRESH_TOKEN이 없으면 서비스 계정으로 폴백.
+    """
+    refresh_token = os.getenv("GOOGLE_REFRESH_TOKEN")
+    client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+
+    if refresh_token and client_id and client_secret:
+        credentials = Credentials(
+            token=None,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=SCOPES,
+        )
+        # Access Token이 없거나 만료됐으면 자동 갱신
+        if not credentials.valid:
+            credentials.refresh(Request())
+        return build("drive", "v3", credentials=credentials)
+
+    # 폴백: 서비스 계정
+    creds_value = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "./credentials/service_account.json")
     if creds_value.strip().startswith("{"):
-        import json as _json
         info = _json.loads(creds_value)
         credentials = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
     else:
         credentials = service_account.Credentials.from_service_account_file(creds_value, scopes=SCOPES)
-
     return build("drive", "v3", credentials=credentials)
 
 

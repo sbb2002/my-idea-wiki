@@ -27,6 +27,8 @@ import dotenv
 dotenv.load_dotenv()
 
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
@@ -46,6 +48,25 @@ INITIAL_INDEX_HTML = """<!DOCTYPE html>
 
 
 def get_service():
+    """OAuth 우선, 없으면 서비스 계정 폴백."""
+    refresh_token = os.getenv("GOOGLE_REFRESH_TOKEN")
+    client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+
+    if refresh_token and client_id and client_secret:
+        credentials = Credentials(
+            token=None,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=SCOPES,
+        )
+        if not credentials.valid:
+            credentials.refresh(Request())
+        return build("drive", "v3", credentials=credentials)
+
+    # 폴백: 서비스 계정
     creds_value = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "./credentials/service_account.json")
     if creds_value.strip().startswith("{"):
         info = json.loads(creds_value)
