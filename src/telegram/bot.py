@@ -162,6 +162,9 @@ def _handle_help(chat_id: str | int) -> None:
         "📖 <b>사용 가능한 명령어</b>\n\n"
         "/run\n"
         "  → 즉시 위키화 실행. 드라이브 노트 폴더의 새 노트를 처리합니다.\n\n"
+        "/rerun\n"
+        "  → 전체 재처리. last_processed_at을 초기화하고 모든 노트를 다시 위키화합니다.\n"
+        "  (노트가 스킵되거나 결과가 이상할 때 사용)\n\n"
         "/status\n"
         "  → 마지막 실행 결과 조회 (처리 건수, 신규/업데이트 수, 오류 등)\n\n"
         "/schedule\n"
@@ -176,6 +179,60 @@ def _handle_help(chat_id: str | int) -> None:
         "  → 이 도움말 표시"
     )
     _reply(chat_id, text)
+
+
+def _handle_rerun(chat_id: str | int) -> None:
+    """last_processed_at을 초기화하고 전체 노트를 재처리한다."""
+    global _pipeline_running, _last_run_result
+
+    if _pipeline_running:
+        _reply(chat_id, "⏳ 이미 위키화 작업이 진행 중입니다.")
+        return
+
+    _reply(chat_id, "🔄 전체 재처리를 시작합니다... (last_processed_at 초기화)")
+
+    def _run_in_thread():
+        global _pipeline_running, _last_run_result
+        _pipeline_running = True
+        try:
+            # wiki.json의 last_processed_at을 None으로 초기화 후 파이프라인 실행
+            from src.pipeline.runner import run_pipeline
+            import os
+            from src.drive.client import find_file_in_folder, upload_json
+            from src.pipeline.wiki_store import load_wiki, dump_wiki
+
+            wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
+            wiki_file_id = find_file_in_folder(wiki_folder_id, "wiki.json")
+            if wiki_file_id:
+                from src.drive.client import read_note
+                wiki = load_wiki(read_note(wiki_file_id))
+                wiki["last_processed_at"] = None
+                upload_json(wiki_folder_id, "wiki.json", dump_wiki(wiki), existing_file_id=wiki_file_id)
+
+            result = run_pipeline()
+            _last_run_result = {
+                **result,
+                "run_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            }
+            from src.telegram.notifier import notify_result
+            notify_result(result)
+            from src.telegram.notifier import _viewer_url
+            viewer = _viewer_url()
+            if viewer:
+                _reply(chat_id, f"📄 뷰어에서 결과를 확인하세요:\n{viewer}")
+        except Exception as e:
+            _reply(chat_id, f"❌ 재처리 중 오류: {e}")
+            _last_run_result = {
+                "status": "failure",
+                "errors": [str(e)],
+                "run_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            }
+        finally:
+            _pipeline_running = False
+
+    import threading
+    thread = threading.Thread(target=_run_in_thread, daemon=True)
+    thread.start()
 
 
 def _handle_cancel(chat_id: str | int) -> None:
@@ -225,6 +282,8 @@ def handle_update(update: dict) -> None:
 
     if command_part == "/run":
         _handle_run(chat_id)
+    elif command_part == "/rerun":
+        _handle_rerun(chat_id)
     elif command_part == "/status":
         _handle_status(chat_id)
     elif command_part == "/schedule":
