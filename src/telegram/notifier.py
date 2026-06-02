@@ -40,11 +40,11 @@ def _today() -> str:
 
 
 def _viewer_url() -> str:
-    """Drive 뷰어 index.html의 공유 URL을 반환한다. 환경변수 미설정 시 빈 문자열."""
-    file_id = os.getenv("DRIVE_VIEWER_FILE_ID", "")
-    if not file_id:
+    """Drive wikis 폴더 URL을 반환한다. 환경변수 미설정 시 빈 문자열."""
+    folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID", "")
+    if not folder_id:
         return ""
-    return f"https://drive.google.com/file/d/{file_id}/view"
+    return f"https://drive.google.com/drive/folders/{folder_id}"
 
 
 def notify_success(processed: int, new_items: int, updated_items: int, api_used: str) -> bool:
