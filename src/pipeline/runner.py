@@ -22,7 +22,7 @@ from src.pipeline.wiki_store import (
     load_wiki, dump_wiki, upsert_item, make_version, current_week_str,
     make_attachment, add_attachment_to_item, add_comment_to_item,
 )
-from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude
+from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude
 from src.pipeline.gemini_processor import wikify_with_gemini
 
 WIKI_FILENAME = "wiki.json"
@@ -77,6 +77,34 @@ def run_pipeline() -> dict:
         result["status"] = "failure"
         result["errors"].append(f"Drive 읽기 실패: {e}")
         return result
+
+    # ── 2-B. PDF 노트 전처리 (Vision 분석 → 텍스트 노트로 변환) ───
+    pdf_notes = [n for n in notes if n.get("mimeType") == "application/pdf"]
+    text_notes = [n for n in notes if n.get("mimeType") != "application/pdf"]
+
+    for pdf_note in pdf_notes:
+        try:
+            pdf_bytes = download_file_bytes(pdf_note["id"])
+            pdf_result = process_pdf_with_claude(pdf_bytes, pdf_note["name"])
+            # PDF 분석 결과를 텍스트 노트로 변환해 파이프라인에 합류
+            text_notes.append({
+                "id": pdf_note["id"],
+                "name": pdf_note["name"],
+                "mimeType": "text/plain",
+                "modifiedTime": pdf_note["modifiedTime"],
+                "content": (
+                    "[PDF 분석 결과: " + pdf_note["name"] + "]\n\n"
+                    + pdf_result.get("full_text", "") + "\n\n"
+                    + "전체 요약: " + pdf_result.get("overall_summary", "")
+                ),
+                "tags": pdf_result.get("tags", []),
+            })
+            result["ocr_processed"] += 1
+        except Exception as e:
+            result["ocr_skipped"] += 1
+            result["errors"].append(f"PDF 처리 실패 ({pdf_note.get('name', '?')}): {e}")
+
+    notes = text_notes
 
     if not notes:
         # 노트가 없어도 OCR / 코멘트 처리는 계속 진행

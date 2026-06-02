@@ -19,6 +19,8 @@ SUPPORTED_MIME_TYPES = [
 
 TAG_PATTERN = re.compile(r"#(\w+)")
 
+PDF_MIME_TYPE = "application/pdf"
+
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}
 IMAGE_MIME_TYPES = {
     ".jpg": "image/jpeg",
@@ -71,7 +73,7 @@ def list_notes(folder_id: str, modified_after: Optional[str] = None) -> list[dic
     query_parts = [
         f"'{folder_id}' in parents",
         "trashed = false",
-        "(mimeType = 'text/plain' or mimeType = 'application/vnd.google-apps.document')",
+        "(mimeType = 'text/plain' or mimeType = 'application/vnd.google-apps.document' or mimeType = 'application/pdf')",
     ]
     if modified_after:
         query_parts.append(f"modifiedTime > '{modified_after}'")

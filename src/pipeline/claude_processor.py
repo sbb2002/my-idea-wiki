@@ -209,3 +209,131 @@ def ocr_image_with_claude(image_bytes: bytes, mime_type: str, filename: str) -> 
         raw = raw.strip()
 
     return json.loads(raw)
+
+
+PDF_SYSTEM_PROMPT = """당신은 아이디어 노트 PDF를 분석하는 어시스턴트입니다.
+
+PDF의 각 페이지 이미지를 보고 다음을 추출하세요:
+- 타이핑된 텍스트
+- 손글씨 텍스트
+- 이미지/스크린샷 내의 텍스트
+- 도형, 화살표, 선이 나타내는 관계나 구조
+- 그림/스케치가 표현하는 내용 (묘사)
+- 체크박스 상태 (체크됨/미체크)
+
+반드시 JSON 형식으로만 응답하세요.
+{
+  "pages": [
+    {
+      "page": 1,
+      "text_content": "추출한 모든 텍스트 (타이핑+손글씨 포함)",
+      "visual_description": "그림, 스크린샷, 도형 등 시각 요소 묘사",
+      "summary": "이 페이지의 핵심 내용 요약 (2-3문장)"
+    }
+  ],
+  "overall_summary": "전체 PDF의 핵심 아이디어 요약 (3-5문장)",
+  "tags": ["관련 태그1", "태그2"]
+}"""
+
+
+def process_pdf_with_claude(pdf_bytes: bytes, filename: str) -> dict:
+    """
+    PDF를 페이지별 이미지로 변환해 Claude Vision으로 분석한다.
+
+    Args:
+        pdf_bytes: PDF raw bytes
+        filename: 파일명 (로그용)
+
+    Returns:
+        {
+            "overall_summary": str,
+            "tags": list[str],
+            "pages": list[{"page": int, "text_content": str,
+                           "visual_description": str, "summary": str}],
+            "full_text": str,  # 모든 페이지 text_content 합본
+        }
+
+    Raises:
+        Exception: API 호출 또는 변환 실패 시
+    """
+    try:
+        import fitz  # PyMuPDF
+    except ImportError:
+        raise RuntimeError("PyMuPDF가 설치되지 않았습니다. pip install pymupdf 실행 후 재시도하세요.")
+
+    import io as _io
+
+    # ── PDF → 페이지별 PNG 변환 ──
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    page_images = []
+    mat = fitz.Matrix(1.5, 1.5)  # 1.5x: 품질과 토큰의 균형
+
+    for page in doc:
+        pix = page.get_pixmap(matrix=mat)
+        png_bytes = pix.tobytes("png")
+        # 빈 페이지 스킵 (흰 픽셀만 있는 경우)
+        if pix.width * pix.height > 0:
+            # 픽셀 샘플링으로 빈 페이지 감지 (평균 밝기 254 이상이면 빈 페이지)
+            samples = pix.samples
+            avg = sum(samples[::100]) / (len(samples[::100]) or 1)
+            if avg < 253:
+                page_images.append(png_bytes)
+
+    if not page_images:
+        return {
+            "overall_summary": "빈 PDF",
+            "tags": [],
+            "pages": [],
+            "full_text": "",
+        }
+
+    # ── Claude Vision 호출 ──
+    import base64
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    content_blocks = []
+    for i, png in enumerate(page_images):
+        b64 = base64.standard_b64encode(png).decode("utf-8")
+        content_blocks.append({
+            "type": "text",
+            "text": f"=== 페이지 {i + 1} ==="
+        })
+        content_blocks.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": b64,
+            }
+        })
+
+    content_blocks.append({
+        "type": "text",
+        "text": f"파일명: {filename}\n위 PDF 페이지들을 분석해서 JSON으로 응답해주세요."
+    })
+
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4096,
+        system=PDF_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": content_blocks}],
+    )
+
+    raw = message.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    parsed = json.loads(raw)
+
+    # full_text: 모든 페이지 텍스트 합본
+    pages = parsed.get("pages", [])
+    full_text = "\n\n".join(
+        f"[페이지 {p['page']}]\n{p.get('text_content', '')}\n{p.get('visual_description', '')}"
+        for p in pages
+    ).strip()
+
+    parsed["full_text"] = full_text
+    return parsed
