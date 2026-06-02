@@ -9,7 +9,7 @@ import hashlib
 import hmac
 import os
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,12 +28,15 @@ async def health():
 
 
 @app.post("/webhook")
-async def telegram_webhook(request: Request):
+async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     텔레그램이 POST하는 Update JSON을 수신한다.
 
     선택적 보안: TELEGRAM_WEBHOOK_SECRET 환경변수가 설정된 경우
     X-Telegram-Bot-Api-Secret-Token 헤더를 검증한다.
+
+    handle_update()는 BackgroundTasks로 실행해 응답 반환 후에도
+    파이프라인 스레드가 살아있도록 한다.
     """
     secret = os.getenv("TELEGRAM_WEBHOOK_SECRET")
     if secret:
@@ -46,7 +49,6 @@ async def telegram_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    # 비동기 컨텍스트에서 동기 핸들러 호출 (블로킹 최소화)
-    handle_update(update)
+    background_tasks.add_task(handle_update, update)
 
     return {"ok": True}
