@@ -345,6 +345,44 @@ def list_comment_files(folder_id: str, modified_after: Optional[str] = None) -> 
     return comment_files
 
 
+def upload_image_bytes(
+    folder_id: str,
+    filename: str,
+    image_bytes: bytes,
+    mime_type: str = "image/jpeg",
+) -> str:
+    """
+    Drive 폴더에 이미지 bytes를 새 파일로 업로드한다.
+
+    Args:
+        folder_id: 업로드 대상 Drive 폴더 ID.
+        filename: 생성할 파일명.
+        image_bytes: 이미지 raw bytes.
+        mime_type: 이미지 MIME type (default: image/jpeg).
+
+    Returns:
+        업로드된 파일의 Drive ID.
+    """
+    service = get_drive_service()
+    media = MediaIoBaseUpload(
+        io.BytesIO(image_bytes),
+        mimetype=mime_type,
+        resumable=False,
+    )
+    metadata = {"name": filename, "parents": [folder_id]}
+    file = (
+        service.files()
+        .create(
+            body=metadata,
+            media_body=media,
+            fields="id",
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+    return file["id"]
+
+
 def find_file_in_folder(folder_id: str, filename: str) -> Optional[str]:
     """
     Find a file by name in a Drive folder.

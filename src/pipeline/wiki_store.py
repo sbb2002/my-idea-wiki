@@ -100,9 +100,17 @@ def upsert_item(wiki: dict, title: str, tags: list[str], summary: str, version: 
 
 # ── 유틸 ───────────────────────────────────────────────────────
 
-def make_attachment(drive_id: str, filename: str, ocr_text: str, summary: str, tags: list[str]) -> dict:
+def make_attachment(
+    drive_id: str,
+    filename: str,
+    ocr_text: str,
+    summary: str,
+    tags: list[str],
+    pic_drive_id: str | None = None,
+    description: str | None = None,
+) -> dict:
     """이미지 첨부 파일 dict를 생성한다."""
-    return {
+    att = {
         "type": "image",
         "drive_id": drive_id,
         "filename": filename,
@@ -110,6 +118,11 @@ def make_attachment(drive_id: str, filename: str, ocr_text: str, summary: str, t
         "summary": summary,
         "tags": tags,
     }
+    if pic_drive_id:
+        att["pic_drive_id"] = pic_drive_id
+    if description:
+        att["description"] = description
+    return att
 
 
 def add_attachment_to_item(wiki: dict, item_id: str, attachment: dict) -> bool:

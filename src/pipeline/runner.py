@@ -21,6 +21,7 @@ from src.drive.client import (
 from src.pipeline.wiki_store import (
     load_wiki, dump_wiki, upsert_item, make_version, current_week_str,
     make_attachment, add_attachment_to_item, add_comment_to_item,
+    find_item_by_title,
 )
 from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude
 from src.pipeline.gemini_processor import wikify_with_gemini
@@ -79,13 +80,23 @@ def run_pipeline() -> dict:
         return result
 
     # ── 2-B. PDF 노트 전처리 (Vision 분석 → 텍스트 노트로 변환) ───
+    pic_folder_id = os.getenv("DRIVE_PIC_FOLDER_ID")
     pdf_notes = [n for n in notes if n.get("mimeType") == "application/pdf"]
     text_notes = [n for n in notes if n.get("mimeType") != "application/pdf"]
 
     for pdf_note in pdf_notes:
         try:
             pdf_bytes = download_file_bytes(pdf_note["id"])
-            pdf_result = process_pdf_with_claude(pdf_bytes, pdf_note["name"])
+            pdf_result = process_pdf_with_claude(pdf_bytes, pdf_note["name"], pic_folder_id=pic_folder_id)
+
+            # drawings 수집 — 위키화 후 첨부로 연결하기 위해 보관
+            pdf_note["_drawings"] = [
+                d
+                for page in pdf_result.get("pages", [])
+                for d in page.get("drawings", [])
+                if d.get("pic_drive_id")
+            ]
+
             # PDF 분석 결과를 텍스트 노트로 변환해 파이프라인에 합류
             text_notes.append({
                 "id": pdf_note["id"],
@@ -98,6 +109,7 @@ def run_pipeline() -> dict:
                     + "전체 요약: " + pdf_result.get("overall_summary", "")
                 ),
                 "tags": pdf_result.get("tags", []),
+                "_drawings": pdf_note["_drawings"],  # drawings 전달
             })
             result["ocr_processed"] += 1
         except Exception as e:
@@ -167,6 +179,24 @@ def run_pipeline() -> dict:
                     result["new_items"] += 1
                 else:
                     result["updated_items"] += 1
+
+                # PDF drawings → 해당 아이템에 첨부로 연결 (#14)
+                item_obj = find_item_by_title(wiki, ai_item["title"])
+                if item_obj:
+                    for note_name in source_names:
+                        note_entry = next((n for n in notes if n["name"] == note_name), None)
+                        if note_entry and note_entry.get("_drawings"):
+                            for drawing in note_entry["_drawings"]:
+                                att = make_attachment(
+                                    drive_id=drawing["pic_drive_id"],
+                                    filename=f"{note_name}_drawing",
+                                    ocr_text="",
+                                    summary=drawing.get("description", ""),
+                                    tags=[],
+                                    pic_drive_id=drawing["pic_drive_id"],
+                                    description=drawing.get("description", ""),
+                                )
+                                add_attachment_to_item(wiki, item_obj["id"], att)
             except Exception as e:
                 skipped += 1
                 result["errors"].append(f"아이템 처리 실패 ({ai_item.get('title', '?')}): {e}")
