@@ -92,6 +92,10 @@ def _handle_run(chat_id: str | int) -> None:
 
 
 def _handle_status(chat_id: str | int) -> None:
+    if _pipeline_running:
+        _reply(chat_id, "⏳ 현재 위키화가 진행 중입니다. 완료되면 결과 알람이 전송됩니다.")
+        return
+
     if _last_run_result is None:
         _reply(chat_id, "ℹ️ 아직 실행된 기록이 없습니다.\n/run 으로 위키화를 시작하세요.")
         return
@@ -166,15 +170,13 @@ def _handle_help(chat_id: str | int) -> None:
         "  → 전체 재처리. last_processed_at을 초기화하고 모든 노트를 다시 위키화합니다.\n"
         "  (노트가 스킵되거나 결과가 이상할 때 사용)\n\n"
         "/status\n"
-        "  → 마지막 실행 결과 조회 (처리 건수, 신규/업데이트 수, 오류 등)\n\n"
+        "  → 현재 실행 중이면 진행 중 안내, 완료됐으면 마지막 실행 결과 조회\n\n"
         "/schedule\n"
         "  → 현재 자동 실행 주기(Cron 표현식) 확인\n\n"
         "/set &lt;cron 표현식&gt;\n"
         "  → 실행 주기 메모 변경\n"
         "  예: <code>/set 0 9 * * 1</code> (매주 월요일 오전 9시 UTC)\n"
         "  ⚠️ 실제 Render Cron Job 스케줄은 Render 대시보드에서 변경하세요.\n\n"
-        "/cancel\n"
-        "  → 진행 중인 작업 상태 확인 (강제 중단 불가)\n\n"
         "/help\n"
         "  → 이 도움말 표시"
     )
@@ -235,24 +237,6 @@ def _handle_rerun(chat_id: str | int) -> None:
     thread.start()
 
 
-def _handle_cancel(chat_id: str | int) -> None:
-    global _pipeline_running
-
-    if _pipeline_running:
-        # 실행 중인 스레드를 강제 종료할 수는 없으므로 안내만
-        _reply(
-            chat_id,
-            "⚠️ 현재 위키화가 진행 중입니다. 강제 중단은 지원되지 않습니다.\n"
-            "잠시 후 자동으로 완료됩니다.",
-        )
-    else:
-        _reply(
-            chat_id,
-            "ℹ️ 현재 예약된 실행이 없습니다.\n"
-            "Render Cron Job 스케줄을 취소하려면 Render 대시보드에서 직접 중지해주세요.",
-        )
-
-
 # ── Webhook 진입점 ───────────────────────────────────────────────
 
 def handle_update(update: dict) -> None:
@@ -291,7 +275,7 @@ def handle_update(update: dict) -> None:
     elif command_part == "/set":
         _handle_set(chat_id, args)
     elif command_part == "/cancel":
-        _handle_cancel(chat_id)
+        _handle_help(chat_id)  # /cancel 제거 — /help로 안내
     elif command_part == "/help":
         _handle_help(chat_id)
     else:
