@@ -39,13 +39,24 @@ def _today() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
+def _viewer_url() -> str:
+    """Drive 뷰어 index.html의 공유 URL을 반환한다. 환경변수 미설정 시 빈 문자열."""
+    file_id = os.getenv("DRIVE_VIEWER_FILE_ID", "")
+    if not file_id:
+        return ""
+    return f"https://drive.google.com/file/d/{file_id}/view"
+
+
 def notify_success(processed: int, new_items: int, updated_items: int, api_used: str) -> bool:
     """✅ 성공 알람."""
+    viewer = _viewer_url()
+    viewer_line = f"\n• 뷰어: {viewer}" if viewer else ""
     text = (
         f"✅ [{_today()}] 위키화 완료\n"
         f"• 처리: {processed}개 노트\n"
         f"• 신규: {new_items}개 / 업데이트: {updated_items}개\n"
         f"• 사용 API: {api_used}"
+        f"{viewer_line}"
     )
     return send_message(text)
 
@@ -53,10 +64,13 @@ def notify_success(processed: int, new_items: int, updated_items: int, api_used:
 def notify_partial(processed: int, succeeded: int, skipped: int, errors: list[str]) -> bool:
     """⚠️ 부분 성공 알람."""
     error_summary = "\n".join(f"  - {e}" for e in errors[:3])  # 최대 3개만 표시
+    viewer = _viewer_url()
+    viewer_line = f"\n• 뷰어: {viewer}" if viewer else ""
     text = (
         f"⚠️ [{_today()}] 일부 실패\n"
         f"• {processed}개 중 {succeeded}개 처리, {skipped}개 스킵\n"
         f"• 오류:\n{error_summary}"
+        f"{viewer_line}"
     )
     return send_message(text)
 

@@ -18,7 +18,7 @@ from typing import Optional
 
 import httpx
 
-from src.telegram.notifier import send_message, _bot_url, _chat_id
+from src.telegram.notifier import send_message, _bot_url, _chat_id, _viewer_url
 
 # ── 상태 저장 (메모리, 재시작 시 소멸 허용) ─────────────────────
 _last_run_result: Optional[dict] = None
@@ -71,6 +71,11 @@ def _handle_run(chat_id: str | int) -> None:
             }
             from src.telegram.notifier import notify_result
             notify_result(result)
+
+            # /run 완료 후 뷰어 URL 별도 안내
+            viewer = _viewer_url()
+            if viewer:
+                _reply(chat_id, f"📄 뷰어에서 결과를 확인하세요:\n{viewer}")
         except Exception as e:
             error_msg = f"❌ 위키화 실행 중 오류: {e}"
             _reply(chat_id, error_msg)
@@ -152,6 +157,27 @@ def _handle_set(chat_id: str | int, args: str) -> None:
     _reply(chat_id, text)
 
 
+def _handle_help(chat_id: str | int) -> None:
+    text = (
+        "📖 <b>사용 가능한 명령어</b>\n\n"
+        "/run\n"
+        "  → 즉시 위키화 실행. 드라이브 노트 폴더의 새 노트를 처리합니다.\n\n"
+        "/status\n"
+        "  → 마지막 실행 결과 조회 (처리 건수, 신규/업데이트 수, 오류 등)\n\n"
+        "/schedule\n"
+        "  → 현재 자동 실행 주기(Cron 표현식) 확인\n\n"
+        "/set &lt;cron 표현식&gt;\n"
+        "  → 실행 주기 메모 변경\n"
+        "  예: <code>/set 0 9 * * 1</code> (매주 월요일 오전 9시 UTC)\n"
+        "  ⚠️ 실제 Render Cron Job 스케줄은 Render 대시보드에서 변경하세요.\n\n"
+        "/cancel\n"
+        "  → 진행 중인 작업 상태 확인 (강제 중단 불가)\n\n"
+        "/help\n"
+        "  → 이 도움말 표시"
+    )
+    _reply(chat_id, text)
+
+
 def _handle_cancel(chat_id: str | int) -> None:
     global _pipeline_running
 
@@ -207,14 +233,10 @@ def handle_update(update: dict) -> None:
         _handle_set(chat_id, args)
     elif command_part == "/cancel":
         _handle_cancel(chat_id)
+    elif command_part == "/help":
+        _handle_help(chat_id)
     else:
         _reply(
             chat_id,
-            "❓ 알 수 없는 명령어입니다.\n\n"
-            "사용 가능한 명령어:\n"
-            "/run — 즉시 위키화 실행\n"
-            "/status — 마지막 실행 결과\n"
-            "/schedule — 현재 실행 주기\n"
-            "/set &lt;cron&gt; — 주기 변경\n"
-            "/cancel — 예약 취소",
+            "❓ 알 수 없는 명령어입니다.\n/help 로 사용법을 확인하세요.",
         )
