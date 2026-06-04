@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>아이디어 위키</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Linux+Libertine:ital,wght@0,400;0,600;1,400&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
@@ -12,6 +12,7 @@
     --sidebar-w: 260px;
     --toc-w: 200px;
     --header-h: 48px;
+    --bottom-bar-h: 56px;
     --font-serif: 'Linux Libertine', 'Georgia', serif;
     --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
     --font-mono: 'Courier New', monospace;
@@ -41,6 +42,8 @@
     --graph-bg: #f8f9fa;
     --graph-node-label: #54595d;
     --graph-node-label-hover: #202122;
+    --bottom-bar-bg: #ffffff;
+    --bottom-bar-active: #3366cc;
   }
 
   /* ── 테마: 다크 모던 ── */
@@ -67,6 +70,8 @@
     --graph-bg: #0e0f11;
     --graph-node-label: #7a8099;
     --graph-node-label-hover: #e8eaf0;
+    --bottom-bar-bg: #16181c;
+    --bottom-bar-active: #5b8dee;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -77,6 +82,7 @@
     color: var(--text);
     font-size: 14px;
     line-height: 1.6;
+    overflow-x: hidden;
   }
 
   /* ── 헤더 ── */
@@ -87,10 +93,23 @@
     display: flex;
     align-items: center;
     padding: 0 16px;
-    gap: 16px;
+    gap: 12px;
     position: sticky;
     top: 0;
     z-index: 100;
+  }
+
+  /* 모바일 햄버거 버튼 */
+  #hamburger {
+    display: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    line-height: 1;
+    font-size: 22px;
   }
 
   .header-logo {
@@ -100,6 +119,7 @@
     color: var(--text);
     white-space: nowrap;
     text-decoration: none;
+    flex-shrink: 0;
   }
 
   .header-logo em {
@@ -133,6 +153,7 @@
     color: var(--text);
     background: var(--surface);
     outline: none;
+    min-width: 0;
   }
 
   #search:focus { border-color: var(--accent); }
@@ -146,6 +167,8 @@
     color: var(--text-muted);
     cursor: pointer;
     font-family: var(--font-sans);
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   #meta-info {
@@ -153,11 +176,13 @@
     font-size: 12px;
     color: var(--text-dim);
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   #view-toggle {
     display: flex;
     gap: 2px;
+    flex-shrink: 0;
   }
 
   .toggle-btn {
@@ -170,6 +195,7 @@
     cursor: pointer;
     border-radius: 2px;
     transition: background .1s;
+    white-space: nowrap;
   }
 
   .toggle-btn.active {
@@ -196,6 +222,19 @@
     top: var(--header-h);
     height: calc(100vh - var(--header-h));
     overflow: hidden;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    z-index: 80;
+  }
+
+  /* 모바일 오버레이 드로어 */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 79;
+    opacity: 0;
+    transition: opacity .25s;
   }
 
   #sidebar-title {
@@ -225,6 +264,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   #item-list::-webkit-scrollbar { width: 4px; }
@@ -243,6 +283,9 @@
     background: #eaf3fb;
     border-left-color: var(--accent);
   }
+
+  [data-theme="dark"] .item-entry:hover { background: #1e2026; }
+  [data-theme="dark"] .item-entry.active { background: #1a2540; }
 
   .item-entry .entry-title {
     font-size: 13.5px;
@@ -272,6 +315,7 @@
     display: flex;
     justify-content: center;
     padding: 24px 20px;
+    -webkit-overflow-scrolling: touch;
   }
 
   #article-wrap {
@@ -328,7 +372,7 @@
     cursor: default;
   }
 
-  /* 인포박스 (위키피디아 우측 박스) */
+  /* 인포박스 */
   .infobox {
     float: right;
     clear: right;
@@ -393,7 +437,6 @@
     color: var(--text);
   }
 
-  /* 개요 텍스트 */
   .summary-text {
     font-size: 14px;
     line-height: 1.7;
@@ -401,7 +444,6 @@
     margin-bottom: 16px;
   }
 
-  /* 상세 내용 (body 마크다운) */
   .wiki-body { margin-bottom: 8px; }
   .body-h3 {
     font-size: 15px;
@@ -625,6 +667,55 @@
 
   #toc.visible { display: block; }
 
+  /* 모바일 TOC — 접힘 가능 */
+  #toc-mobile {
+    display: none;
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    margin-bottom: 14px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #toc-mobile.visible { display: block; }
+
+  #toc-mobile-toggle {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+  }
+
+  #toc-mobile-arrow {
+    transition: transform .2s;
+    font-size: 10px;
+  }
+
+  #toc-mobile-list {
+    display: none;
+    padding: 4px 12px 10px;
+    list-style: none;
+  }
+
+  #toc-mobile-list.open { display: block; }
+
+  #toc-mobile-list li {
+    padding: 3px 0;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
   .toc-box {
     border: 1px solid var(--border-light);
     background: var(--surface);
@@ -696,6 +787,7 @@
     height: calc(100vh - var(--header-h));
     display: block;
     cursor: grab;
+    touch-action: none;
   }
 
   #graph-canvas:active { cursor: grabbing; }
@@ -728,17 +820,18 @@
   }
 
   .gc-btn {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-sans);
+    touch-action: manipulation;
   }
 
   .gc-btn:hover { background: var(--bg); color: var(--accent); }
@@ -775,17 +868,208 @@
     font-style: italic;
   }
 
+  /* 하단 탭바 (모바일 전용) */
+  #bottom-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-bar-h);
+    background: var(--bottom-bar-bg);
+    border-top: 1px solid var(--border-light);
+    z-index: 90;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bb-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 4px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    border-radius: 6px;
+    transition: color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bb-tab .bb-icon { font-size: 20px; line-height: 1; }
+  .bb-tab.active { color: var(--bottom-bar-active); }
+
   /* clearfix */
   .clearfix::after { content: ''; display: table; clear: both; }
 
+  /* 이미지 첨부 카드 — 모바일 세로 스택 */
+  .attach-card {
+    border: 1px solid var(--border-light);
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    background: var(--surface);
+    align-items: flex-start;
+  }
+
+  .attach-thumb {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border: 1px solid var(--border-light);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: block;
+  }
+
+  .attach-thumb-placeholder {
+    width: 120px;
+    height: 90px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .attach-meta { flex: 1; min-width: 0; }
+
+  .attach-filename {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .attach-summary {
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .attach-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-style: italic;
+  }
+
+  .attach-ocr {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+  }
+
+  /* ── 반응형 ── */
+
+  /* 중간 (태블릿) */
   @media (max-width: 900px) {
     #toc { display: none !important; }
     .infobox { max-width: 220px; min-width: 180px; }
+    #meta-info { display: none; }
+    .header-divider { display: none; }
   }
 
+  /* 모바일 */
   @media (max-width: 640px) {
-    #sidebar { width: 200px; }
-    .infobox { float: none; max-width: 100%; margin: 0 0 16px 0; }
+    :root {
+      --header-h: 48px;
+      --sidebar-w: 280px;
+    }
+
+    body {
+      padding-bottom: var(--bottom-bar-h);
+    }
+
+    /* 헤더 축소 */
+    #hamburger { display: flex; }
+    #view-toggle { display: none; }
+
+    /* 사이드바를 슬라이드인 드로어로 전환 */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      transform: translateX(-100%);
+      z-index: 80;
+      box-shadow: 2px 0 12px rgba(0,0,0,.18);
+    }
+
+    #sidebar.open {
+      transform: translateX(0);
+    }
+
+    #sidebar-overlay {
+      display: block;
+    }
+
+    #sidebar-overlay.open {
+      opacity: 1;
+    }
+
+    /* 메인 패딩 축소 */
+    #main {
+      padding: 16px 12px;
+    }
+
+    /* 하단 탭바 표시 */
+    #bottom-bar { display: flex; }
+
+    /* 인포박스: float 해제, 전체 너비 */
+    .infobox {
+      float: none;
+      max-width: 100%;
+      min-width: unset;
+      width: 100%;
+      margin: 0 0 16px 0;
+    }
+
+    /* 문서 제목 크기 축소 */
+    .doc-title { font-size: 22px; }
+
+    /* 타임라인 거터 축소 */
+    .tl-gutter { width: 56px; }
+    .tl-date { font-size: 10px; }
+
+    /* 이미지 첨부 카드: 모바일에서 세로 스택 */
+    .attach-card { flex-direction: column; }
+    .attach-thumb, .attach-thumb-placeholder {
+      width: 100%;
+      height: 180px;
+    }
+
+    /* TOC 모바일 버전 표시 */
+    #toc-mobile { display: block; }
+
+    /* 그래프 캔버스 높이 조정 */
+    #graph-canvas {
+      height: calc(100vh - var(--header-h) - var(--bottom-bar-h));
+    }
+
+    /* 그래프 컨트롤 버튼 크기 */
+    .gc-btn { width: 44px; height: 44px; }
+
+    #search-wrap { max-width: unset; }
+    .header-logo { font-size: 17px; }
+  }
+
+  @media (max-width: 380px) {
+    .header-logo { display: none; }
   }
 </style>
 </head>
@@ -796,7 +1080,11 @@
   <div id="load-msg">위키 데이터를 불러오는 중…</div>
 </div>
 
+<!-- 사이드바 오버레이 -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <div id="header">
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="메뉴">☰</button>
   <a class="header-logo" href="#" onclick="return false">💡 <em>아이디어</em> 위키</a>
   <div class="header-divider"></div>
   <div id="search-wrap">
@@ -818,6 +1106,7 @@
     border-radius: 2px;
     white-space: nowrap;
     transition: background .1s, color .1s;
+    flex-shrink: 0;
   ">🌙 다크</button>
   <div id="meta-info">—</div>
 </div>
@@ -848,6 +1137,14 @@
       <!-- 위키 문서 -->
       <div id="wiki-doc">
         <div id="error-banner"></div>
+        <!-- 모바일 TOC (접힘 가능) -->
+        <div id="toc-mobile">
+          <button id="toc-mobile-toggle" onclick="toggleMobileToc()">
+            <span>목차</span>
+            <span id="toc-mobile-arrow">▼</span>
+          </button>
+          <ul id="toc-mobile-list"></ul>
+        </div>
         <div id="doc-content"></div>
       </div>
 
@@ -856,7 +1153,7 @@
         <div>← 왼쪽에서 아이템을 선택하세요</div>
       </div>
 
-      <!-- 목차 -->
+      <!-- 목차 (데스크탑) -->
       <div id="toc">
         <div class="toc-box">
           <div class="toc-title">목차</div>
@@ -865,6 +1162,26 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- 하단 탭바 (모바일 전용) -->
+<div id="bottom-bar">
+  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')">
+    <span class="bb-icon">☰</span>
+    <span>목록</span>
+  </button>
+  <button class="bb-tab" id="bb-wiki" onclick="bbTab('wiki')">
+    <span class="bb-icon">📄</span>
+    <span>위키</span>
+  </button>
+  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')">
+    <span class="bb-icon">🕸️</span>
+    <span>그래프</span>
+  </button>
+  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()">
+    <span class="bb-icon" id="bb-theme-icon">🌙</span>
+    <span>테마</span>
+  </button>
 </div>
 
 <script>
@@ -882,7 +1199,7 @@ const SAMPLE_WIKI = {
         { "week": "2026-05-25", "content": "수면 트래킹과 운동 데이터를 연동해 상관관계를 분석하는 기능 추가 구상. 수면 질이 좋을수록 다음날 운동 퍼포먼스가 높다는 패턴을 자동으로 감지하고 시각화.", "source_note_ids": [] },
         { "week": "2026-05-18", "content": "기본 아이디어 정리. 사용자가 매일 간단한 체크인만 하면 AI가 패턴을 학습해 점진적으로 더 나은 루틴을 제안.", "source_note_ids": [] }
       ],
-      "related": ["item_demo02", "item_demo03"],
+      "related": ["item_demo02"],
       "comments": [{ "date": "2026-05-27", "text": "수면 트래킹은 워치 연동으로 자동화하는 게 더 좋을 것 같다.", "attachments": [] }]
     },
     {
@@ -901,11 +1218,10 @@ const SAMPLE_WIKI = {
 
 let wiki = null;
 let activeId = null;
+let tocItems = [];
 
 async function loadWiki() {
-  // 1순위: 인라인 주입 데이터
   if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
-  // 2순위: 로컬 wiki.json (같은 폴더에 있을 때)
   try {
     const resp = await fetch('./wiki.json');
     if (resp.ok) return await resp.json();
@@ -919,8 +1235,6 @@ function esc(str) {
 }
 
 function renderMarkdown(md) {
-  // 마크다운 → HTML (##소제목, **bold**, `code`, - 목록, 줄바꿈)
-  // XSS 방지: esc 후 변환
   let html = String(md||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/^### (.+)$/gm, '<h4 class="body-h4">$1</h4>')
@@ -940,7 +1254,6 @@ function renderMarkdown(md) {
   return html;
 }
 
-
 function fmtDate(iso) {
   if (!iso) return '';
   try { return new Date(iso).toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' }); }
@@ -951,6 +1264,59 @@ function fmtWeek(w) {
   if (!w) return '';
   try { return new Date(w).toLocaleDateString('ko-KR', { year:'numeric', month:'short', day:'numeric' }); }
   catch { return w; }
+}
+
+// ── 사이드바 드로어 (모바일) ────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.contains('open');
+  if (isOpen) closeSidebar();
+  else openSidebar();
+}
+
+function openSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.add('open');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── 하단 탭바 ───────────────────────────────────────────────
+function bbTab(tab) {
+  ['list','wiki','graph'].forEach(t => {
+    document.getElementById('bb-'+t)?.classList.toggle('active', t === tab);
+  });
+
+  if (tab === 'list') {
+    openSidebar();
+    // 목록 탭은 다른 뷰 전환 없이 드로어만 열기
+    document.getElementById('bb-list').classList.add('active');
+  } else if (tab === 'wiki') {
+    closeSidebar();
+    switchView('wiki');
+  } else if (tab === 'graph') {
+    closeSidebar();
+    switchView('graph');
+  }
+}
+
+// ── 모바일 TOC 접힘 ─────────────────────────────────────────
+function toggleMobileToc() {
+  const list = document.getElementById('toc-mobile-list');
+  const arrow = document.getElementById('toc-mobile-arrow');
+  const isOpen = list.classList.contains('open');
+  list.classList.toggle('open', !isOpen);
+  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function renderSidebar(items) {
@@ -968,8 +1334,47 @@ function renderSidebar(items) {
     </div>`;
   }).join('');
   list.querySelectorAll('.item-entry').forEach(el =>
-    el.addEventListener('click', () => selectItem(el.dataset.id))
+    el.addEventListener('click', () => {
+      selectItem(el.dataset.id);
+      // 모바일에서 아이템 선택 시 드로어 닫기 + 위키 뷰로 전환
+      if (window.innerWidth <= 640) {
+        closeSidebar();
+        switchView('wiki');
+        // 하단 탭바 업데이트
+        ['list','wiki','graph'].forEach(t =>
+          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
+        );
+      }
+    })
   );
+}
+
+function buildAttachHtml(item) {
+  if (!item.attachments?.length) return '';
+  return `
+    <h2 class="wiki-h2" id="sec-attachments">이미지 첨부</h2>
+    ${item.attachments.map(att => {
+      const picUrl = att.pic_drive_id
+        ? `https://lh3.googleusercontent.com/d/${att.pic_drive_id}`
+        : null;
+      const thumbHtml = picUrl
+        ? `<img class="attach-thumb" src="${picUrl}"
+              alt="${esc(att.description || att.summary || '')}"
+              onclick="window.open('https://drive.google.com/file/d/${att.pic_drive_id}/view','_blank')"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+           /><div class="attach-thumb-placeholder" style="display:none">🖼️</div>`
+        : `<div class="attach-thumb-placeholder">🖼️</div>`;
+      return `
+      <div class="attach-card">
+        ${thumbHtml}
+        <div class="attach-meta">
+          <div class="attach-filename">${esc(att.filename||'')}</div>
+          <div class="attach-summary">${esc(att.summary||'')}</div>
+          ${att.description ? `<div class="attach-desc">${esc(att.description)}</div>` : ''}
+          ${att.ocr_text ? `<div class="attach-ocr">${esc(att.ocr_text)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('')}`;
 }
 
 function selectItem(id) {
@@ -987,7 +1392,6 @@ function selectItem(id) {
 
   const latestWeek = item.versions?.[0]?.week;
   const tagsHtml = (item.tags||[]).map(t => `<span class="doc-tag">${esc(t)}</span>`).join(' ');
-
   const relatedItems = (item.related||[]).map(rid => wiki.items.find(i=>i.id===rid)).filter(Boolean);
 
   const versionsHtml = !item.versions?.length
@@ -1018,34 +1422,11 @@ function selectItem(id) {
         <div class="comment-text">${esc(c.text||'')}</div>
       </div>`).join('')}`;
 
-  const hasAttachments = item.attachments?.length > 0;
-  const attachmentsHtml = !hasAttachments ? '' : `
-    <h2 class="wiki-h2" id="sec-attachments">이미지 첨부</h2>
-    ${item.attachments.map(att => {
-      const picUrl = att.pic_drive_id
-        ? `https://lh3.googleusercontent.com/d/${att.pic_drive_id}`
-        : null;
-      const imgHtml = picUrl
-        ? `<img src="${picUrl}" alt="${esc(att.description || att.summary || '')}"
-            style="width:120px;height:90px;object-fit:cover;border:1px solid var(--border-light);flex-shrink:0;cursor:pointer"
-            onclick="window.open('https://drive.google.com/file/d/${att.pic_drive_id}/view','_blank')"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-           /><div style="display:none;width:120px;height:90px;background:var(--bg);border:1px solid var(--border-light);align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🖼️</div>`
-        : `<div style="width:120px;height:90px;background:var(--bg);border:1px solid var(--border-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🖼️</div>`;
-      const descText = att.description ? `<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:4px;font-style:italic">${esc(att.description)}</div>` : '';
-      return `
-      <div style="border:1px solid var(--border-light);padding:10px;margin-bottom:10px;display:flex;gap:12px;background:var(--surface)">
-        ${imgHtml}
-        <div>
-          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${esc(att.filename||'')}</div>
-          <div style="font-size:13.5px;font-weight:500;margin-bottom:6px">${esc(att.summary||'')}</div>
-          ${descText}
-          ${att.ocr_text ? `<div style="font-size:12.5px;color:var(--text-muted);white-space:pre-wrap">${esc(att.ocr_text)}</div>` : ''}
-        </div>
-      </div>`;
-    }).join('')}`;
+  const attachmentsHtml = buildAttachHtml(item);
+  const hasAttachments = !!item.attachments?.length;
 
-  const tocItems = [
+  // TOC 구성
+  tocItems = [
     { id: 'sec-summary', label: '개요' },
     ...(item.body ? [{ id: 'sec-body', label: '상세 내용' }] : []),
     { id: 'sec-history', label: '버전 히스토리' },
@@ -1055,10 +1436,20 @@ function selectItem(id) {
     { id: 'sec-related', label: '연관 아이템' },
   ];
 
-  document.getElementById('toc-list').innerHTML = tocItems.map(t =>
+  const tocHtml = tocItems.map(t =>
     `<li class="toc-item" onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'})">${t.label}</li>`
   ).join('');
+
+  // 데스크탑 TOC
+  document.getElementById('toc-list').innerHTML = tocHtml;
   document.getElementById('toc').classList.add('visible');
+
+  // 모바일 TOC
+  const mobileTocList = document.getElementById('toc-mobile-list');
+  mobileTocList.innerHTML = tocItems.map(t =>
+    `<li onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'});toggleMobileToc()">${t.label}</li>`
+  ).join('');
+  document.getElementById('toc-mobile').classList.add('visible');
 
   document.getElementById('doc-content').innerHTML = `
     <h1 class="doc-title">${esc(item.title)}</h1>
@@ -1159,17 +1550,18 @@ function switchView(view) {
   if (view === 'graph') {
     mainPanel.style.display = 'none';
     graphPanel.classList.add('visible');
-    btnGraph.classList.add('active');
-    btnWiki.classList.remove('active');
+    btnGraph?.classList.add('active');
+    btnWiki?.classList.remove('active');
     if (wiki) renderGraph(wiki.items||[]);
   } else {
     mainPanel.style.display = '';
     graphPanel.classList.remove('visible');
-    btnWiki.classList.add('active');
-    btnGraph.classList.remove('active');
+    btnWiki?.classList.add('active');
+    btnGraph?.classList.remove('active');
   }
 }
 
+// ── 그래프 렌더링 (터치 지원 포함) ──────────────────────────
 const TAG_COLORS = ['#3366cc','#cc3333','#339933','#cc6600','#663399','#006666','#993366','#336699'];
 
 function renderGraph(items) {
@@ -1270,7 +1662,9 @@ function renderGraph(items) {
       ctx.stroke();
 
       ctx.font = `${isHov?12:11}px "Noto Sans KR", sans-serif`;
-      ctx.fillStyle = isHov ? getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label-hover').trim() : getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label').trim();
+      ctx.fillStyle = isHov
+        ? getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label-hover').trim()
+        : getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label').trim();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       let label = n.title;
@@ -1293,29 +1687,33 @@ function renderGraph(items) {
   if(graphState?.animFrame) cancelAnimationFrame(graphState.animFrame);
   graphState = {animFrame:null};
 
-  function canvasPos(e) {
+  function canvasPos(clientX, clientY) {
     const rect=canvas.getBoundingClientRect();
-    return {x:(e.clientX-rect.left-transform.x)/transform.scale, y:(e.clientY-rect.top-transform.y)/transform.scale};
+    return {
+      x:(clientX-rect.left-transform.x)/transform.scale,
+      y:(clientY-rect.top-transform.y)/transform.scale
+    };
   }
 
   function hitNode(cx,cy) {
     for(let i=nodes.length-1;i>=0;i--) {
       const n=nodes[i], dx=cx-n.x, dy=cy-n.y;
-      if(dx*dx+dy*dy<=(n.radius+6)**2) return n;
+      if(dx*dx+dy*dy<=(n.radius+8)**2) return n;
     }
     return null;
   }
 
+  // ── 마우스 이벤트 ──
   canvas.onmousedown = e => {
-    const {x,y}=canvasPos(e), hit=hitNode(x,y);
+    const {x,y}=canvasPos(e.clientX, e.clientY), hit=hitNode(x,y);
     if(hit) { dragging={node:hit,ox:x-hit.x,oy:y-hit.y}; simRunning=true; frameCnt=0; }
     else panning={sx:e.clientX,sy:e.clientY,tx:transform.x,ty:transform.y};
   };
 
   canvas.onmousemove = e => {
-    if(dragging){const{x,y}=canvasPos(e);dragging.node.x=x-dragging.ox;dragging.node.y=y-dragging.oy;return;}
+    if(dragging){const{x,y}=canvasPos(e.clientX,e.clientY);dragging.node.x=x-dragging.ox;dragging.node.y=y-dragging.oy;return;}
     if(panning){transform.x=panning.tx+(e.clientX-panning.sx);transform.y=panning.ty+(e.clientY-panning.sy);return;}
-    const{x,y}=canvasPos(e),hit=hitNode(x,y),prev=hoveredNode;
+    const{x,y}=canvasPos(e.clientX,e.clientY),hit=hitNode(x,y),prev=hoveredNode;
     hoveredNode=hit;
     if(hit!==prev){simRunning=true;frameCnt=0;}
     if(hit){
@@ -1331,7 +1729,7 @@ function renderGraph(items) {
   canvas.onmouseup = () => { dragging=null; panning=null; };
 
   canvas.onclick = e => {
-    const{x,y}=canvasPos(e),hit=hitNode(x,y);
+    const{x,y}=canvasPos(e.clientX,e.clientY),hit=hitNode(x,y);
     if(hit){switchView('wiki');selectItem(hit.id);document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});}
   };
 
@@ -1344,6 +1742,99 @@ function renderGraph(items) {
     transform.scale=ns;
   };
 
+  // ── 터치 이벤트 (핀치줌 + 드래그) ──
+  let lastTouches = null;
+  let touchDragging = null;
+  let touchPanning = null;
+  let pinchStartDist = null;
+  let pinchStartScale = null;
+  let pinchStartCenter = null;
+  let pinchStartTx = null, pinchStartTy = null;
+  let tapTimeout = null;
+  let tapCandidate = null;
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    simRunning = true; frameCnt = 0;
+
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      const {x,y} = canvasPos(t.clientX, t.clientY);
+      const hit = hitNode(x, y);
+
+      tapCandidate = hit;
+      if (tapTimeout) clearTimeout(tapTimeout);
+      tapTimeout = setTimeout(() => { tapCandidate = null; }, 300);
+
+      if (hit) {
+        touchDragging = { node: hit, ox: x - hit.x, oy: y - hit.y };
+      } else {
+        touchPanning = { sx: t.clientX, sy: t.clientY, tx: transform.x, ty: transform.y };
+      }
+    } else if (e.touches.length === 2) {
+      touchDragging = null; touchPanning = null;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const cx = (t1.clientX + t2.clientX) / 2;
+      const cy = (t1.clientY + t2.clientY) / 2;
+      const rect = canvas.getBoundingClientRect();
+      pinchStartCenter = { x: cx - rect.left, y: cy - rect.top };
+      pinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      pinchStartScale = transform.scale;
+      pinchStartTx = transform.x;
+      pinchStartTy = transform.y;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      if (touchDragging) {
+        const {x,y} = canvasPos(t.clientX, t.clientY);
+        touchDragging.node.x = x - touchDragging.ox;
+        touchDragging.node.y = y - touchDragging.oy;
+      } else if (touchPanning) {
+        transform.x = touchPanning.tx + (t.clientX - touchPanning.sx);
+        transform.y = touchPanning.ty + (t.clientY - touchPanning.sy);
+      }
+    } else if (e.touches.length === 2 && pinchStartDist !== null) {
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const ratio = dist / pinchStartDist;
+      const ns = Math.max(.2, Math.min(4, pinchStartScale * ratio));
+      const cx = pinchStartCenter.x;
+      const cy = pinchStartCenter.y;
+      transform.scale = ns;
+      transform.x = cx - (cx - pinchStartTx) * (ns / pinchStartScale);
+      transform.y = cy - (cy - pinchStartTy) * (ns / pinchStartScale);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (e.touches.length === 0) {
+      // 탭으로 노드 클릭
+      if (tapCandidate && touchDragging?.node === tapCandidate) {
+        const hit = tapCandidate;
+        switchView('wiki');
+        selectItem(hit.id);
+        document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});
+        // 모바일 하단탭 업데이트
+        ['list','wiki','graph'].forEach(t =>
+          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
+        );
+      }
+      touchDragging = null; touchPanning = null;
+      pinchStartDist = null;
+    } else if (e.touches.length === 1) {
+      // 핀치 종료 후 한 손가락만 남은 경우
+      const t = e.touches[0];
+      touchPanning = { sx: t.clientX, sy: t.clientY, tx: transform.x, ty: transform.y };
+      pinchStartDist = null;
+    }
+  }, { passive: false });
+
   document.getElementById('gc-zoom-in').onclick=()=>{transform.scale=Math.min(4,transform.scale*1.25);simRunning=true;frameCnt=0;};
   document.getElementById('gc-zoom-out').onclick=()=>{transform.scale=Math.max(.2,transform.scale*.8);simRunning=true;frameCnt=0;};
   document.getElementById('gc-reset').onclick=()=>{transform={x:0,y:0,scale:1};simRunning=true;frameCnt=0;};
@@ -1352,7 +1843,7 @@ function renderGraph(items) {
   graphState.animFrame=animFrame;
 }
 
-// ── 테마 전환 ─────────────────────────────────────────────────
+// ── 테마 전환 ────────────────────────────────────────────────
 const THEMES = [
   { key: 'wiki', label: '🌙 다크', next: 'dark' },
   { key: 'dark', label: '☀️ 라이트', next: 'wiki' },
@@ -1363,6 +1854,8 @@ function applyTheme(key) {
   const t = THEMES.find(t => t.key === key) || THEMES[0];
   const btn = document.getElementById('theme-toggle');
   if (btn) btn.textContent = t.label;
+  const bbIcon = document.getElementById('bb-theme-icon');
+  if (bbIcon) bbIcon.textContent = key === 'dark' ? '☀️' : '🌙';
   try { localStorage.setItem('wiki-theme', key); } catch(e) {}
 }
 
@@ -1373,7 +1866,6 @@ function toggleTheme() {
 }
 
 async function init() {
-  // 저장된 테마 복원
   try {
     const saved = localStorage.getItem('wiki-theme');
     if (saved) applyTheme(saved);
