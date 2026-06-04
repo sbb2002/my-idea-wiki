@@ -40,7 +40,20 @@ def _today() -> str:
 
 
 def _viewer_url() -> str:
-    """Drive wikis 폴더 URL을 반환한다. 환경변수 미설정 시 빈 문자열."""
+    """
+    GitHub Pages 뷰어 URL을 반환한다.
+    GITHUB_TOKEN 이 설정된 경우 gh-pages URL을 우선 사용하고,
+    미설정이면 Drive wikis 폴더 URL을 폴백으로 반환한다.
+    """
+    if os.getenv("GITHUB_TOKEN"):
+        try:
+            from src.github.gh_pages import gh_pages_url
+            url = gh_pages_url()
+            if url:
+                return url
+        except Exception:
+            pass
+    # 폴백: Drive 폴더
     folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID", "")
     if not folder_id:
         return ""

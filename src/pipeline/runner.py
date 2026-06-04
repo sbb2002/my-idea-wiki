@@ -5,8 +5,9 @@
   1. Drive에서 신규/변경 노트 읽기 (incremental)
   2. Claude API로 위키화 시도
   3. 실패 시 Gemini API 폴백
-  4. wiki.json 업데이트 후 Drive에 저장
-  5. HTML 뷰어 생성 후 Drive에 저장
+  4. wiki.json 업데이트
+  5. gh-pages 브랜치에 wiki.json + index.html push
+     (GITHUB_TOKEN 설정 시, Drive에는 wiki.json 백업만 저장)
   6. 처리 결과 집계 반환
 """
 import os
@@ -205,7 +206,7 @@ def run_pipeline() -> dict:
 
     result["skipped"] = skipped
 
-    # ── 5. wiki.json Drive 저장 ─────────────────────────────────
+    # ── 5. 위키 데이터 저장 및 gh-pages 배포 ──────────────────────
     wiki["last_processed_at"] = datetime.now(timezone.utc).isoformat()
 
     # ── 5-B. 이미지 OCR 처리 ────────────────────────────────────
@@ -286,11 +287,28 @@ def run_pipeline() -> dict:
         except Exception as e:
             result["errors"].append(f"코멘트 처리 실패 ({cf.get('name', '?')}): {e}")
 
+    wiki_json_str = dump_wiki(wiki)
+
+    # ── 5-A. gh-pages 브랜치에 wiki.json + index.html push ──────
+    github_token = os.getenv("GITHUB_TOKEN", "")
+    if github_token:
+        try:
+            from src.github.gh_pages import push_wiki_to_gh_pages
+            push_wiki_to_gh_pages(wiki_json_str)
+            print("[INFO] gh-pages push 완료")
+        except Exception as e:
+            # push 실패는 치명적이지 않음 — 경고만 남기고 계속
+            print(f"[WARN] gh-pages push 실패: {e}")
+            result["errors"].append(f"gh-pages push 실패 (무시됨): {e}")
+    else:
+        print("[WARN] GITHUB_TOKEN 미설정 — gh-pages push 건너뜀")
+
+    # ── 5-B. Drive wiki.json 백업 저장 (pic/ 폴더 상위 유지 목적) ──
     try:
         upload_json(
             folder_id=wiki_folder_id,
             filename=WIKI_FILENAME,
-            content=dump_wiki(wiki),
+            content=wiki_json_str,
             existing_file_id=wiki_file_id,
         )
     except Exception as e:
@@ -298,34 +316,15 @@ def run_pipeline() -> dict:
         err_str = str(e)
         if "storageQuotaExceeded" in err_str or "storage quota" in err_str.lower():
             result["errors"].append(
-                f"wiki.json 저장 실패: {e}\n도움말: 지정한 공유 wiki 폴더에 비어있는 index.html과 wiki.json을 업로드하십시오. 업로드 시 구글독스로 변환되지 않도록 설정하여 주십시오."
+                f"wiki.json Drive 저장 실패: {e}\n"
+                "도움말: wiki 폴더에 비어있는 wiki.json을 업로드하십시오. "
+                "구글독스로 변환되지 않도록 설정하여 주십시오."
             )
         else:
-            result["errors"].append(f"wiki.json 저장 실패: {e}")
+            result["errors"].append(f"wiki.json Drive 저장 실패: {e}")
         return result
 
-    # ── 6. HTML 뷰어 생성 후 Drive 저장 ────────────────────────
-    try:
-        from src.viewer.builder import build_viewer_html
-        viewer_html = build_viewer_html(dump_wiki(wiki))
-        viewer_file_id = find_file_in_folder(wiki_folder_id, VIEWER_FILENAME)
-        upload_json(
-            folder_id=wiki_folder_id,
-            filename=VIEWER_FILENAME,
-            content=viewer_html,
-            existing_file_id=viewer_file_id,
-            mime_type="text/html",
-        )
-    except Exception as e:
-        err_str = str(e)
-        if "storageQuotaExceeded" in err_str or "storage quota" in err_str.lower():
-            msg = f"index.html 저장 실패: {e}\n도움말: 지정한 공유 wiki 폴더에 비어있는 index.html과 wiki.json을 업로드하십시오. 업로드 시 구글독스로 변환되지 않도록 설정하여 주십시오."
-        else:
-            msg = f"뷰어 생성 실패 (무시됨): {e}"
-        print(f"[WARN] HTML 뷰어 생성 실패 (무시): {e}")
-        result["errors"].append(msg)
-
-    # ── 7. 최종 상태 결정 ──────────────────────────────────────
+    # ── 6. 최종 상태 결정 ──────────────────────────────────────
     if skipped > 0 and (result["new_items"] + result["updated_items"]) > 0:
         result["status"] = "partial"
     elif result["processed"] > 0 and skipped == result["processed"]:
