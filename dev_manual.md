@@ -12,9 +12,14 @@ python -m src.cron_job     uvicorn src.main:app
        └──────────┬───────────────┘
                   ▼
          Google Drive API
-         (notes 폴더 읽기 / wikis 폴더 쓰기 / pic 폴더 이미지 저장)
+         (notes 폴더 읽기 / wiki.json 백업 / pic 폴더 이미지 저장)
                   │
          Claude API (Vision 포함) → Gemini API (폴백)
+                  │
+         GitHub Contents API
+         (gh-pages 브랜치에 wiki.json + index.html push)
+                  │
+         GitHub Pages  →  사용자 브라우저 (PC/모바일)
                   │
          Telegram Bot API (알람/명령)
 ```
@@ -65,12 +70,15 @@ Render 대시보드 → 서비스 선택 → **Environment** 탭에서 설정합
 | `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth 클라이언트 보안 비밀 | `GOCSPX-...` |
 | `GOOGLE_REFRESH_TOKEN` | OAuth Refresh Token (`get_oauth_token.py`로 발급) | `1//0e...` |
 | `DRIVE_NOTES_FOLDER_ID` | 노트 업로드 폴더 ID | `1ABC123...` |
-| `DRIVE_WIKI_FOLDER_ID` | 위키 결과물 저장 폴더 ID | `1DEF456...` |
+| `DRIVE_WIKI_FOLDER_ID` | wikis/ 폴더 ID (wiki.json 백업 및 pic/ 상위) | `1DEF456...` |
 | `DRIVE_PIC_FOLDER_ID` | PDF 그림 크롭 저장 폴더 ID (`wikis/pic/`) | `1GHI789...` |
 | `ANTHROPIC_API_KEY` | Claude API 키 | `sk-ant-...` |
 | `GEMINI_API_KEY` | Gemini API 키 (폴백) | `AIza...` |
 | `TELEGRAM_BOT_TOKEN` | 텔레그램 봇 토큰 | `123456:ABC...` |
 | `TELEGRAM_CHAT_ID` | 알람 수신 Chat ID | `987654321` |
+| `GITHUB_TOKEN` | gh-pages push용 PAT (`repo` 스코프 필요) | `github_pat_...` |
+| `GITHUB_REPO` | 레포 경로 (선택, 기본값 `sbb2002/my-idea-wiki`) | `owner/repo` |
+| `GITHUB_BRANCH` | 배포 대상 브랜치 (선택, 기본값 `gh-pages`) | `gh-pages` |
 
 ### idea-wiki-web 환경변수
 
@@ -107,9 +115,14 @@ Render 대시보드 → 서비스 선택 → **Environment** 탭에서 설정합
 ### Google Cloud
 | API | 용도 | 비활성화 위치 |
 |-----|------|---------------|
-| **Google Drive API v3** | 노트 읽기, wiki.json/index.html/이미지 저장 | [GCP Console](https://console.cloud.google.com) → APIs & Services → Enabled APIs → Drive API → Disable |
+| **Google Drive API v3** | 노트 읽기, wiki.json 백업, 이미지 저장 | [GCP Console](https://console.cloud.google.com) → APIs & Services → Enabled APIs → Drive API → Disable |
 | **서비스 계정** | Drive API 인증 (폴백) | GCP Console → IAM & Admin → Service Accounts → 해당 계정 → Disable |
 | **OAuth 2.0 클라이언트** | Drive API 인증 (우선) | GCP Console → APIs & Services → Credentials → OAuth 클라이언트 → Delete |
+
+### GitHub
+| 항목 | 용도 | 비활성화 위치 |
+|------|------|---------------|
+| **Personal Access Token** | gh-pages 브랜치에 wiki.json + index.html push | [github.com/settings/tokens](https://github.com/settings/tokens) → 해당 토큰 → Delete |
 
 ### Telegram
 | 항목 | 용도 | 비활성화 위치 |
@@ -150,13 +163,14 @@ uvicorn src.main:app --reload
 ```
 
 ### 로컬 실행 전 Google Drive 사전 준비
-`wikis` 폴더에 빈 `wiki.json`과 `index.html`이 없으면 저장 시 에러가 발생합니다.
+`wikis` 폴더에 빈 `wiki.json`이 없으면 저장 시 에러가 발생합니다.
 (서비스 계정 인증 사용 시 파일 신규 생성 불가 — 업데이트만 가능. OAuth 사용 시 자동 생성 가능.)
+`index.html`은 더 이상 Drive에 저장하지 않으므로 사전 업로드 불필요합니다.
 
 ```
 에러:
-  - wiki.json 저장 실패: <HttpError 403...>
-  도움말: 지정한 공유 wiki 폴더에 비어있는 index.html과 wiki.json을 업로드하십시오...
+  - wiki.json Drive 저장 실패: <HttpError 403...>
+  도움말: wikis 폴더에 비어있는 wiki.json을 업로드하십시오...
 ```
 
 위 에러가 나오면 `instruction.md` 1-2절의 파일 업로드 절차를 따르세요.
@@ -176,8 +190,12 @@ my-idea-wiki/
 │   ├── drive/
 │   │   └── client.py        # Google Drive API v3 래퍼
 │   │                        # (OAuth 우선 / 서비스 계정 폴백, upload_image_bytes 포함)
+│   ├── github/
+│   │   └── gh_pages.py      # GitHub Contents API 래퍼
+│   │                        # (push_file, push_wiki_to_gh_pages, gh_pages_url)
 │   ├── pipeline/
 │   │   ├── runner.py        # 위키화 파이프라인 오케스트레이터
+│   │   │                    # (gh-pages push 포함, Drive는 wiki.json 백업만)
 │   │   ├── claude_processor.py   # Claude API 호출
 │   │   │                         # (wikify / OCR / PDF Vision + 그림 크롭 업로드)
 │   │   ├── gemini_processor.py   # Gemini API 호출 (폴백)
@@ -185,14 +203,15 @@ my-idea-wiki/
 │   │                        # (make_attachment: pic_drive_id, description 지원)
 │   ├── telegram/
 │   │   ├── bot.py           # Webhook 핸들러 및 명령어 처리 (/help 포함)
-│   │   └── notifier.py      # 알람 전송 (완료 시 wikis 폴더 URL 포함)
+│   │   └── notifier.py      # 알람 전송 (GitHub Pages URL 우선, Drive 폴더 폴백)
 │   ├── viewer/
 │   │   └── builder.py       # wiki.json을 index.html에 인라인 주입
 │   └── utils/
 │       └── time_utils.py    # 주차 계산 등 공통 유틸
 ├── viewer/
-│   └── index.html           # 로컬 HTML 뷰어 (위키 + 그래프 뷰)
-│                            # pic_drive_id 있으면 Drive 이미지 인라인 표시
+│   └── index.html           # HTML 뷰어 템플릿 (위키 + 그래프 뷰, 모바일 반응형)
+│                            # — gh-pages push 시 WIKI_DATA 인라인 주입 후 배포
+│                            # — pic_drive_id 있으면 Drive 이미지 인라인 표시
 └── scripts/
     ├── get_oauth_token.py   # OAuth Refresh Token 최초 발급
     ├── setup_drive.py       # Drive 폴더 구조 생성 (wikis/, wikis/pic/)
@@ -205,7 +224,7 @@ my-idea-wiki/
 
 ### 위키화 파이프라인 (`runner.py`)
 ```
-1. wiki.json 로드 (Drive)
+1. wiki.json 로드 (Drive 백업에서)
 2. last_processed_at 이후 수정된 노트만 읽기 (incremental)
 3. PDF 노트 전처리
    ├─ PyMuPDF로 페이지별 PNG 변환 (1.5x 스케일)
@@ -220,8 +239,10 @@ my-idea-wiki/
 7. PDF에서 크롭된 그림을 해당 아이템 attachments에 pic_drive_id와 함께 저장
 8. 이미지 파일 OCR 처리 (Claude Vision)
 9. 코멘트 파일 처리
-10. wiki.json 저장, index.html 업데이트 (Drive)
-11. 텔레그램으로 결과 알람 전송 (wikis 폴더 URL 포함)
+10. gh-pages 브랜치에 wiki.json + index.html(WIKI_DATA 인라인 주입) push
+    (GITHUB_TOKEN 설정 시. 실패해도 치명적이지 않음)
+11. Drive에 wiki.json 백업 저장
+12. 텔레그램으로 결과 알람 전송 (GitHub Pages URL 포함)
 ```
 
 ### 텔레그램 Webhook 흐름
@@ -230,7 +251,7 @@ my-idea-wiki/
 → Telegram → Render Web Service (슬립 중이면 콜드 스타트 30초~1분)
 → bot.py: 즉시 "시작합니다" 응답 (timeout 방지)
 → 백그라운드 스레드에서 run_pipeline() 실행
-→ 완료 후 결과 알람 + wikis 폴더 URL 전송
+→ 완료 후 결과 알람 + GitHub Pages URL 전송
 ```
 
 ### Drive 인증 흐름 (`client.py`)
@@ -240,10 +261,23 @@ get_drive_service() 호출 시:
 2. 없으면 → GOOGLE_SERVICE_ACCOUNT_JSON으로 서비스 계정 인증 (파일 업데이트만 가능)
 ```
 
-### 뷰어 빌드 흐름 (`builder.py`)
+### 뷰어 배포 흐름 (`builder.py` + `gh_pages.py`)
 ```
 build_viewer_html(wiki_json_str) 호출 시:
 1. viewer/index.html 템플릿 읽기
 2. wiki.json 데이터를 WIKI_DATA 전역변수로 <head> 직전에 주입
-3. file:// 프로토콜에서 fetch 없이 동작하는 단일 HTML 반환
+3. WIKI_DATA 인라인 포함 단일 HTML 반환
+
+push_wiki_to_gh_pages(wiki_json_str) 호출 시:
+1. build_viewer_html()로 index.html 생성
+2. GitHub Contents API PUT /repos/{repo}/contents/wiki.json (branch: gh-pages)
+3. GitHub Contents API PUT /repos/{repo}/contents/index.html (branch: gh-pages)
+4. GitHub Pages가 자동으로 https://{owner}.github.io/{repo}/ 에 서빙
+```
+
+### Drive 인증 흐름 (`client.py`)
+```
+get_drive_service() 호출 시:
+1. GOOGLE_REFRESH_TOKEN 있으면 → OAuth 2.0으로 인증 (파일 신규 생성 가능)
+2. 없으면 → GOOGLE_SERVICE_ACCOUNT_JSON으로 서비스 계정 인증 (파일 업데이트만 가능)
 ```
