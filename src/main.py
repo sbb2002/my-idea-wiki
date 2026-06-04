@@ -2,24 +2,73 @@
 FastAPI 앱 — Render Web Service 진입점.
 
 엔드포인트:
-  GET  /health    — 헬스 체크
+  GET  /health    — 헬스 체크 (Render keep-alive용으로도 사용)
   POST /webhook   — 텔레그램 Webhook 수신
+
+슬립 방지 전략:
+  파이프라인 실행 중에는 asyncio로 self-ping을 30초마다 보내
+  Render가 idle로 판단해 프로세스를 죽이지 않도록 한다.
 """
-import hashlib
+import asyncio
 import hmac
+import logging
 import os
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from dotenv import load_dotenv
 
 load_dotenv()
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+log = logging.getLogger("idea-wiki")
+
 from src.telegram.bot import handle_update, _mark_started
 
 app = FastAPI(title="Idea Wiki System")
-
-# 서버 시작 시 warm 상태로 표시 (다음 /run은 콜드 스타트 안내 없음)
 _mark_started()
+
+# 파이프라인 실행 중 self-ping 태스크 핸들
+_keepalive_task: asyncio.Task | None = None
+
+
+async def _self_ping_loop():
+    """파이프라인 실행 중 30초마다 /health를 self-ping해 슬립 방지."""
+    import aiohttp
+    port = os.getenv("PORT", "10000")
+    url = f"http://localhost:{port}/health"
+    log.info("[keep-alive] self-ping 시작")
+    try:
+        async with aiohttp.ClientSession() as session:
+            while True:
+                await asyncio.sleep(30)
+                try:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as r:
+                        log.info(f"[keep-alive] ping {r.status}")
+                except Exception as e:
+                    log.warning(f"[keep-alive] ping 실패: {e}")
+    except asyncio.CancelledError:
+        log.info("[keep-alive] self-ping 종료")
+
+
+def start_keepalive():
+    global _keepalive_task
+    if _keepalive_task is None or _keepalive_task.done():
+        try:
+            loop = asyncio.get_event_loop()
+            _keepalive_task = loop.create_task(_self_ping_loop())
+        except RuntimeError:
+            pass
+
+
+def stop_keepalive():
+    global _keepalive_task
+    if _keepalive_task and not _keepalive_task.done():
+        _keepalive_task.cancel()
+        _keepalive_task = None
 
 
 @app.get("/health")
@@ -28,15 +77,10 @@ async def health():
 
 
 @app.post("/webhook")
-async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
+async def telegram_webhook(request: Request):
     """
-    텔레그램이 POST하는 Update JSON을 수신한다.
-
-    선택적 보안: TELEGRAM_WEBHOOK_SECRET 환경변수가 설정된 경우
-    X-Telegram-Bot-Api-Secret-Token 헤더를 검증한다.
-
-    handle_update()는 BackgroundTasks로 실행해 응답 반환 후에도
-    파이프라인 스레드가 살아있도록 한다.
+    텔레그램 Update를 수신해 asyncio 태스크로 처리한다.
+    파이프라인 실행 중에는 self-ping으로 슬립을 방지한다.
     """
     secret = os.getenv("TELEGRAM_WEBHOOK_SECRET")
     if secret:
@@ -49,6 +93,17 @@ async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    background_tasks.add_task(handle_update, update)
+    log.info(f"[webhook] update 수신: {list(update.keys())}")
 
+    async def _run():
+        start_keepalive()
+        try:
+            await asyncio.to_thread(handle_update, update)
+        except Exception as e:
+            log.error(f"[webhook] handle_update 오류: {e}", exc_info=True)
+        finally:
+            stop_keepalive()
+            log.info("[webhook] 처리 완료")
+
+    asyncio.create_task(_run())
     return {"ok": True}

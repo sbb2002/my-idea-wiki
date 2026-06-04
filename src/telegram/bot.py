@@ -11,6 +11,7 @@ FastAPI의 POST /webhook 요청을 처리하고 5개 명령어를 구현한다.
   /cancel   — 예약된 실행 취소
 """
 import asyncio
+import logging
 import os
 import threading
 from datetime import datetime, timezone
@@ -19,6 +20,8 @@ from typing import Optional
 import httpx
 
 from src.telegram.notifier import send_message, _bot_url, _chat_id, _viewer_url
+
+log = logging.getLogger("idea-wiki.bot")
 
 # ── 상태 저장 (메모리, 재시작 시 소멸 허용) ─────────────────────
 _last_run_result: Optional[dict] = None
@@ -55,30 +58,29 @@ def _handle_run(chat_id: str | int) -> None:
         _reply(chat_id, "⏳ 이미 위키화 작업이 진행 중입니다.")
         return
 
-    # 콜드 스타트 직후 첫 요청이 아니라면 warm 상태이므로 안내 불필요
-    # 어쨌든 즉시 응답 후 백그라운드 실행
     _reply(chat_id, "🚀 위키화를 시작합니다...")
+    log.info("[run] 파이프라인 시작")
 
     def _run_in_thread():
         global _pipeline_running, _last_run_result
         _pipeline_running = True
         try:
+            log.info("[run] run_pipeline() 호출")
             from src.pipeline.runner import run_pipeline
             result = run_pipeline()
+            log.info(f"[run] 완료: {result}")
             _last_run_result = {
                 **result,
                 "run_at": datetime.now(timezone.utc).isoformat(),
             }
             from src.telegram.notifier import notify_result
             notify_result(result)
-
-            # /run 완료 후 뷰어 URL 별도 안내
             viewer = _viewer_url()
             if viewer:
                 _reply(chat_id, f"📄 뷰어에서 결과를 확인하세요:\n{viewer}")
         except Exception as e:
-            error_msg = f"❌ 위키화 실행 중 오류: {e}"
-            _reply(chat_id, error_msg)
+            log.error(f"[run] 오류: {e}", exc_info=True)
+            _reply(chat_id, f"❌ 위키화 실행 중 오류: {e}")
             _last_run_result = {
                 "status": "failure",
                 "errors": [str(e)],
@@ -86,8 +88,9 @@ def _handle_run(chat_id: str | int) -> None:
             }
         finally:
             _pipeline_running = False
+            log.info("[run] 스레드 종료")
 
-    thread = threading.Thread(target=_run_in_thread, daemon=True)
+    thread = threading.Thread(target=_run_in_thread, daemon=False)
     thread.start()
 
 
@@ -192,48 +195,50 @@ def _handle_rerun(chat_id: str | int) -> None:
         return
 
     _reply(chat_id, "🔄 전체 재처리를 시작합니다... (last_processed_at 초기화)")
+    log.info("[rerun] 전체 재처리 시작")
 
     def _run_in_thread():
         global _pipeline_running, _last_run_result
         _pipeline_running = True
         try:
-            # wiki.json의 last_processed_at을 None으로 초기화 후 파이프라인 실행
             from src.pipeline.runner import run_pipeline
-            import os
-            from src.drive.client import find_file_in_folder, upload_json
+            from src.drive.client import find_file_in_folder, upload_json, read_note
             from src.pipeline.wiki_store import load_wiki, dump_wiki
 
             wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
+            log.info(f"[rerun] wiki.json last_processed_at 초기화 (폴더: {wiki_folder_id})")
             wiki_file_id = find_file_in_folder(wiki_folder_id, "wiki.json")
             if wiki_file_id:
-                from src.drive.client import read_note
                 wiki = load_wiki(read_note(wiki_file_id))
                 wiki["last_processed_at"] = None
                 upload_json(wiki_folder_id, "wiki.json", dump_wiki(wiki), existing_file_id=wiki_file_id)
+                log.info("[rerun] last_processed_at 초기화 완료")
 
+            log.info("[rerun] run_pipeline() 호출")
             result = run_pipeline()
+            log.info(f"[rerun] 완료: {result}")
             _last_run_result = {
                 **result,
-                "run_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+                "run_at": datetime.now(timezone.utc).isoformat(),
             }
             from src.telegram.notifier import notify_result
             notify_result(result)
-            from src.telegram.notifier import _viewer_url
             viewer = _viewer_url()
             if viewer:
                 _reply(chat_id, f"📄 뷰어에서 결과를 확인하세요:\n{viewer}")
         except Exception as e:
+            log.error(f"[rerun] 오류: {e}", exc_info=True)
             _reply(chat_id, f"❌ 재처리 중 오류: {e}")
             _last_run_result = {
                 "status": "failure",
                 "errors": [str(e)],
-                "run_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+                "run_at": datetime.now(timezone.utc).isoformat(),
             }
         finally:
             _pipeline_running = False
+            log.info("[rerun] 스레드 종료")
 
-    import threading
-    thread = threading.Thread(target=_run_in_thread, daemon=True)
+    thread = threading.Thread(target=_run_in_thread, daemon=False)
     thread.start()
 
 
