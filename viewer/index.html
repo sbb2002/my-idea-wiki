@@ -945,12 +945,12 @@ function selectItem(id) {
     <h2 class="wiki-h2" id="sec-attachments">이미지 첨부</h2>
     ${item.attachments.map(att => {
       const picUrl = att.pic_drive_id
-        ? `https://drive.google.com/uc?id=${att.pic_drive_id}`
+        ? `https://lh3.googleusercontent.com/d/${att.pic_drive_id}`
         : null;
       const imgHtml = picUrl
         ? `<img src="${picUrl}" alt="${esc(att.description || att.summary || '')}"
             style="width:120px;height:90px;object-fit:cover;border:1px solid var(--border-light);flex-shrink:0;cursor:pointer"
-            onclick="window.open('${picUrl}','_blank')"
+            onclick="window.open('https://drive.google.com/file/d/${att.pic_drive_id}/view','_blank')"
             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
            /><div style="display:none;width:120px;height:90px;background:var(--bg);border:1px solid var(--border-light);align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🖼️</div>`
         : `<div style="width:120px;height:90px;background:var(--bg);border:1px solid var(--border-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🖼️</div>`;
