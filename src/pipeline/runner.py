@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from src.drive.client import (
     read_notes_from_folder, upload_json, find_file_in_folder,
     list_images, list_comment_files, download_file_bytes, IMAGE_MIME_TYPES,
-    read_note,
+    read_note, list_all_note_ids,
 )
 from src.pipeline.wiki_store import (
     load_wiki, dump_wiki, upsert_item, make_version, current_week_str,
@@ -329,5 +329,25 @@ def run_pipeline() -> dict:
         result["status"] = "partial"
     elif result["processed"] > 0 and skipped == result["processed"]:
         result["status"] = "failure"
+
+    # ── 7. 고아 아이템 감지 ────────────────────────────────────
+    # Drive에 존재하지 않는 source_note_ids만 가진 아이템을 고아로 표시
+    try:
+        live_ids = list_all_note_ids(notes_folder_id)
+        orphan_titles = []
+        for item in wiki["items"]:
+            all_ids = []
+            for v in item.get("versions", []):
+                all_ids.extend(v.get("source_note_ids", []))
+            # 이미지 첨부 ID도 포함
+            for att in item.get("attachments", []):
+                if att.get("drive_id"):
+                    all_ids.append(att["drive_id"])
+            if all_ids and not any(nid in live_ids for nid in all_ids):
+                orphan_titles.append(item["title"])
+        result["orphan_items"] = orphan_titles
+    except Exception as e:
+        result["orphan_items"] = []
+        result["errors"].append(f"고아 아이템 감지 실패 (무시됨): {e}")
 
     return result

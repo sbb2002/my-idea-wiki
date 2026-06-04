@@ -108,7 +108,13 @@ def upsert_item(
             existing["body"] = body
         if see_also is not None:
             existing["see_also"] = see_also
-        existing["versions"].insert(0, version)  # 최신이 앞
+        # 동일 week 버전이 이미 있으면 content만 업데이트 (중복 삽입 방지)
+        same_week = next((v for v in existing["versions"] if v.get("week") == version.get("week")), None)
+        if same_week:
+            same_week["content"] = version["content"]
+            same_week["source_note_ids"] = list(set(same_week.get("source_note_ids", []) + version.get("source_note_ids", [])))
+        else:
+            existing["versions"].insert(0, version)  # 최신이 앞
         return existing, False
 
 

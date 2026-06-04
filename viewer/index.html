@@ -427,6 +427,33 @@
     padding-bottom: 3px;
     margin: 20px 0 10px;
     color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .wiki-h2::after {
+    content: '▼';
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .wiki-h2.collapsed::after {
+    transform: rotate(-90deg);
+  }
+
+  .wiki-section-body {
+    overflow: hidden;
+    max-height: 9999px;
+    transition: max-height 0.3s ease;
+  }
+
+  .wiki-section-body.collapsed {
+    max-height: 0;
   }
 
   .wiki-h3 {
@@ -479,6 +506,37 @@
     border: 1px solid var(--border-light);
     border-radius: 3px;
     padding: 1px 5px;
+  }
+
+  .body-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13.5px;
+    margin: 10px 0 14px;
+    overflow-x: auto;
+    display: block;
+  }
+  .body-table th, .body-table td {
+    border: 1px solid var(--border-light);
+    padding: 6px 10px;
+    text-align: left;
+    color: var(--text);
+  }
+  .body-table th {
+    background: var(--infobox-header);
+    font-weight: 600;
+  }
+  .body-table tr:nth-child(even) td {
+    background: var(--surface);
+  }
+
+  .body-inline-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 8px 0;
+    display: block;
+    border: 1px solid var(--border-light);
   }
 
   /* 같이 보기 */
@@ -1039,6 +1097,27 @@
       margin: 0 0 16px 0;
     }
 
+    /* 모바일 인포박스 토글 */
+    .infobox-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .infobox-toggle-icon { font-style: normal; transition: transform 0.2s; }
+    .infobox.collapsed .infobox-toggle-icon { transform: rotate(-90deg); }
+    .infobox-body {
+      overflow: hidden;
+      max-height: 600px;
+      transition: max-height 0.25s ease, padding 0.25s ease;
+    }
+    .infobox.collapsed .infobox-body {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
     /* 문서 제목 크기 축소 */
     .doc-title { font-size: 22px; }
 
@@ -1234,9 +1313,71 @@ function esc(str) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function renderMarkdown(md) {
-  let html = String(md||'')
+function renderMarkdown(md, attachments) {
+  // 파이프 테이블 전처리: 연속된 파이프 라인을 <table>로 변환
+  function parseTables(text) {
+    const lines = text.split('\n');
+    const out = [];
+    let tableLines = [];
+    function flushTable() {
+      if (!tableLines.length) return;
+      let thead = '', tbody = '';
+      tableLines.forEach((row, i) => {
+        // 구분선 (---|---) 스킵
+        if (/^\|?\s*[-:]+[\s|:-]*$/.test(row)) return;
+        const cells = row.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        const tag = i === 0 ? 'th' : 'td';
+        const cellsHtml = cells.map(c => `<${tag}>${c}</${tag}>`).join('');
+        if (i === 0) thead = `<thead><tr>${cellsHtml}</tr></thead>`;
+        else tbody += `<tr>${cellsHtml}</tr>`;
+      });
+      out.push(`<table class="body-table"><${thead ? thead : ''}<tbody>${tbody}</tbody></table>`);
+      tableLines = [];
+    }
+    lines.forEach(line => {
+      if (/^\|.+\|/.test(line)) {
+        tableLines.push(line);
+      } else {
+        flushTable();
+        out.push(line);
+      }
+    });
+    flushTable();
+    return out.join('\n');
+  }
+
+  // 이미지 참조 변환: ![alt](pic_drive_id) 또는 ![alt](attachment:filename)
+  const atts = attachments || [];
+  const attByFilename = {};
+  atts.forEach(a => { if (a.filename) attByFilename[a.filename] = a; });
+
+  const mdResolved = String(md||'').replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, ref) => {
+    // attachment:filename 형식
+    if (ref.startsWith('attachment:')) {
+      const fname = ref.slice('attachment:'.length);
+      const att = attByFilename[fname];
+      if (att?.pic_drive_id) {
+        return `<img src="https://lh3.googleusercontent.com/d/${att.pic_drive_id}" alt="${alt}" class="body-inline-img">`;
+      }
+      return match;
+    }
+    // pic_drive_id 직접 참조 (영숫자 Drive ID 형식)
+    if (/^[A-Za-z0-9_-]{10,}$/.test(ref)) {
+      return `<img src="https://lh3.googleusercontent.com/d/${ref}" alt="${alt}" class="body-inline-img">`;
+    }
+    return match;
+  });
+
+  let html = parseTables(mdResolved)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // 이미 변환된 table 태그 복원
+    .replace(/&lt;table/g,'<table').replace(/&lt;\/table&gt;/g,'</table>')
+    .replace(/&lt;thead&gt;/g,'<thead>').replace(/&lt;\/thead&gt;/g,'</thead>')
+    .replace(/&lt;tbody&gt;/g,'<tbody>').replace(/&lt;\/tbody&gt;/g,'</tbody>')
+    .replace(/&lt;tr&gt;/g,'<tr>').replace(/&lt;\/tr&gt;/g,'</tr>')
+    .replace(/&lt;th&gt;/g,'<th>').replace(/&lt;\/th&gt;/g,'</th>')
+    .replace(/&lt;td&gt;/g,'<td>').replace(/&lt;\/td&gt;/g,'</td>')
+    .replace(/class=&quot;body-table&quot;&gt;/g,'class="body-table">')
     .replace(/^### (.+)$/gm, '<h4 class="body-h4">$1</h4>')
     .replace(/^## (.+)$/gm, '<h3 class="body-h3">$1</h3>')
     .replace(/^# (.+)$/gm, '<h3 class="body-h3">$1</h3>')
@@ -1247,7 +1388,7 @@ function renderMarkdown(md) {
     .replace(/(<li>[^]*?<\/li>\n?)+/g, m => `<ul class="body-ul">${m}</ul>`)
     .split(/\n\n+/)
     .map(block => {
-      if (/^<[hul]/.test(block.trim())) return block;
+      if (/^<[hult]/.test(block.trim())) return block;
       return `<p class="body-p">${block.replace(/\n/g,'<br>')}</p>`;
     })
     .join('\n');
@@ -1453,14 +1594,9 @@ function selectItem(id) {
 
   document.getElementById('doc-content').innerHTML = `
     <h1 class="doc-title">${esc(item.title)}</h1>
-    <div class="doc-subtitle">
-      ${latestWeek ? `<span>마지막 수정: ${fmtWeek(latestWeek)}</span><span class="sep">|</span>` : ''}
-      <span>버전 ${item.versions?.length||0}개</span>
-      ${tagsHtml ? `<span class="sep">|</span>${tagsHtml}` : ''}
-    </div>
     <div class="clearfix">
       <div class="infobox">
-        <div class="infobox-header">아이디어 요약</div>
+        <div class="infobox-header">아이디어 요약<i class="infobox-toggle-icon">▼</i></div>
         <div class="infobox-body">
           <div class="infobox-row">
             <div class="infobox-label">분류</div>
@@ -1487,7 +1623,7 @@ function selectItem(id) {
 
     ${item.body ? `
     <h2 class="wiki-h2" id="sec-body">상세 내용</h2>
-    <div class="wiki-body">${renderMarkdown(item.body)}</div>` : ''}
+    <div class="wiki-body">${renderMarkdown(item.body, item.attachments||[])}</div>` : ''}
 
     ${item.see_also?.length ? `
     <h2 class="wiki-h2" id="sec-see-also">같이 보기</h2>
@@ -1516,6 +1652,40 @@ function selectItem(id) {
       document.querySelector(`.item-entry[data-id="${el.dataset.id}"]`)?.scrollIntoView({ block:'nearest' });
     })
   );
+
+  // 모바일에서 인포박스 기본 접힘 + 헤더 클릭 토글
+  const infobox = doc.querySelector('.infobox');
+  if (infobox) {
+    const isMobile = window.innerWidth <= 640;
+    if (isMobile) {
+      infobox.classList.add('collapsed');
+    }
+    infobox.querySelector('.infobox-header')?.addEventListener('click', () => {
+      if (window.innerWidth <= 640) {
+        infobox.classList.toggle('collapsed');
+      }
+    });
+  }
+
+  // wiki-h2 섹션 래핑 및 접기/펼치기
+  const content = document.getElementById('doc-content');
+  const h2els = content.querySelectorAll('.wiki-h2');
+  h2els.forEach(h2 => {
+    // h2 다음 형제 요소들을 wiki-section-body로 래핑
+    const body = document.createElement('div');
+    body.className = 'wiki-section-body';
+    let sibling = h2.nextElementSibling;
+    while (sibling && !sibling.classList.contains('wiki-h2')) {
+      const next = sibling.nextElementSibling;
+      body.appendChild(sibling);
+      sibling = next;
+    }
+    h2.insertAdjacentElement('afterend', body);
+    h2.addEventListener('click', () => {
+      h2.classList.toggle('collapsed');
+      body.classList.toggle('collapsed');
+    });
+  });
 
   document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
 }

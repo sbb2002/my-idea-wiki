@@ -414,3 +414,33 @@ def find_file_in_folder(folder_id: str, filename: str) -> Optional[str]:
     )
     files = response.get("files", [])
     return files[0]["id"] if files else None
+
+
+def list_all_note_ids(folder_id: str) -> set[str]:
+    """
+    notes 폴더의 현재 존재하는 모든 파일 ID를 반환한다.
+    고아 아이템 감지에 사용.
+    """
+    service = get_drive_service()
+    query = (
+        f"'{folder_id}' in parents and trashed = false and "
+        "(mimeType = 'text/plain' or mimeType = 'application/vnd.google-apps.document' or mimeType = 'application/pdf')"
+    )
+    results = []
+    page_token = None
+    while True:
+        response = (
+            service.files()
+            .list(
+                q=query,
+                fields="nextPageToken, files(id)",
+                pageToken=page_token,
+                **_ALL_DRIVES_PARAMS,
+            )
+            .execute()
+        )
+        results.extend(response.get("files", []))
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
+    return {f["id"] for f in results}

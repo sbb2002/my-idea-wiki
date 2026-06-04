@@ -98,6 +98,19 @@ def notify_failure(errors: list[str]) -> bool:
     return send_message(text)
 
 
+def notify_orphans(titles: list[str]) -> bool:
+    """🔍 고아 아이템 감지 알람 — Drive에서 원본 노트가 삭제된 아이템."""
+    items_str = "\n".join(f"  • {t}" for t in titles[:10])
+    suffix = f"\n  … 외 {len(titles) - 10}개" if len(titles) > 10 else ""
+    text = (
+        f"🔍 [{_today()}] 고아 아이템 감지\n"
+        f"Drive에서 원본 노트가 삭제된 아이템이 wiki.json에 잔류 중입니다.\n"
+        f"{items_str}{suffix}\n"
+        f"필요 시 wiki.json에서 수동으로 삭제하세요."
+    )
+    return send_message(text)
+
+
 def notify_result(result: dict) -> bool:
     """
     run_pipeline() 반환값을 받아 적절한 알람을 전송한다.
@@ -107,10 +120,14 @@ def notify_result(result: dict) -> bool:
     processed = result.get("processed", 0)
 
     if processed == 0:
-        return True  # 처리할 노트 없음 — 알람 불필요
+        # 처리할 노트 없어도 고아 아이템이 있으면 알람
+        orphans = result.get("orphan_items", [])
+        if orphans:
+            notify_orphans(orphans)
+        return True
 
     if status == "success":
-        return notify_success(
+        ok = notify_success(
             processed=processed,
             new_items=result.get("new_items", 0),
             updated_items=result.get("updated_items", 0),
@@ -118,11 +135,18 @@ def notify_result(result: dict) -> bool:
         )
     elif status == "partial":
         succeeded = result.get("new_items", 0) + result.get("updated_items", 0)
-        return notify_partial(
+        ok = notify_partial(
             processed=processed,
             succeeded=succeeded,
             skipped=result.get("skipped", 0),
             errors=result.get("errors", []),
         )
     else:  # failure
-        return notify_failure(errors=result.get("errors", []))
+        ok = notify_failure(errors=result.get("errors", []))
+
+    # 고아 아이템 알람 (status와 무관하게 별도 전송)
+    orphans = result.get("orphan_items", [])
+    if orphans:
+        notify_orphans(orphans)
+
+    return ok
