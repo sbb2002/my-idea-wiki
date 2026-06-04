@@ -1243,21 +1243,17 @@
   </div>
 </div>
 
-<!-- 하단 탭바 (모바일 전용) -->
+<!-- 하단 탭바 (모바일 전용) — #37: 위키 탭 제거, 목록/그래프 ON-OFF 토글 -->
 <div id="bottom-bar">
-  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')">
+  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')" title="목록 열기/닫기">
     <span class="bb-icon">☰</span>
     <span>목록</span>
   </button>
-  <button class="bb-tab" id="bb-wiki" onclick="bbTab('wiki')">
-    <span class="bb-icon">📄</span>
-    <span>위키</span>
-  </button>
-  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')">
+  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')" title="그래프 보기">
     <span class="bb-icon">🕸️</span>
     <span>그래프</span>
   </button>
-  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()">
+  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()" title="테마 변경">
     <span class="bb-icon" id="bb-theme-icon">🌙</span>
     <span>테마</span>
   </button>
@@ -1434,22 +1430,30 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
-// ── 하단 탭바 ───────────────────────────────────────────────
+// ── 하단 탭바 — #37: 목록/그래프 ON-OFF 토글 ──────────────
 function bbTab(tab) {
-  ['list','wiki','graph'].forEach(t => {
-    document.getElementById('bb-'+t)?.classList.toggle('active', t === tab);
-  });
-
   if (tab === 'list') {
-    openSidebar();
-    // 목록 탭은 다른 뷰 전환 없이 드로어만 열기
-    document.getElementById('bb-list').classList.add('active');
-  } else if (tab === 'wiki') {
-    closeSidebar();
-    switchView('wiki');
+    const sidebar = document.getElementById('sidebar');
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      closeSidebar();
+      document.getElementById('bb-list').classList.remove('active');
+    } else {
+      openSidebar();
+      document.getElementById('bb-list').classList.add('active');
+      document.getElementById('bb-graph').classList.remove('active');
+    }
   } else if (tab === 'graph') {
-    closeSidebar();
-    switchView('graph');
+    const isGraph = currentView === 'graph';
+    if (isGraph) {
+      switchView('wiki');
+      document.getElementById('bb-graph').classList.remove('active');
+    } else {
+      closeSidebar();
+      document.getElementById('bb-list').classList.remove('active');
+      switchView('graph');
+      document.getElementById('bb-graph').classList.add('active');
+    }
   }
 }
 
