@@ -1,42 +1,41 @@
 """
 HTML 뷰어 생성 유틸리티.
 
-viewer/index.html 템플릿에 wiki.json 데이터를 인라인으로 삽입해
-file:// 프로토콜에서도 fetch 없이 동작하는 독립 HTML을 생성한다.
+viewer/index.html 템플릿에 wiki.json의 Drive ID만 심어
+브라우저가 실행 시 Drive에서 직접 fetch하도록 한다.
+
+사용자는 index.html을 한 번만 받으면 되고,
+이후 /run 결과는 Drive의 wiki.json이 업데이트되면 자동 반영된다.
 
 사용법:
   from src.viewer.builder import build_viewer_html
-  html = build_viewer_html(wiki_json_str)
+  html = build_viewer_html(wiki_drive_id)
 """
 from pathlib import Path
 
 _TEMPLATE_PATH = Path(__file__).parent.parent.parent / "viewer" / "index.html"
 
 
-def build_viewer_html(wiki_json_str: str) -> str:
+def build_viewer_html(wiki_drive_id: str) -> str:
     """
-    wiki.json 문자열을 받아 데이터가 인라인으로 삽입된 HTML을 반환한다.
+    wiki.json의 Drive File ID를 받아 WIKI_DRIVE_ID가 심긴 HTML을 반환한다.
 
-    viewer/index.html의 loadWiki() 함수에서 WIKI_DATA 전역 변수를
-    먼저 확인하도록 설계되어 있으므로, <head> 닫히기 직전에 주입한다.
+    브라우저 실행 시 loadWiki()가 Drive에서 wiki.json을 fetch한다.
+    인라인 데이터 주입 없이 index.html은 고정 파일로 유지된다.
+
+    Args:
+        wiki_drive_id: Drive의 wiki.json 파일 ID
+
+    Returns:
+        WIKI_DRIVE_ID가 <head>에 주입된 HTML 문자열
     """
     template = _TEMPLATE_PATH.read_text(encoding="utf-8")
 
-    # wiki 데이터를 JSON으로 직렬화 (XSS 방지: </script> 이스케이프)
-    wiki_json_safe = wiki_json_str.replace("</script>", "<\\/script>")
-
     inject_script = (
         "<script>\n"
-        "// AUTO-GENERATED: wiki.json 인라인 데이터\n"
-        f"const WIKI_DATA = {wiki_json_safe};\n"
+        "// AUTO-GENERATED: wiki.json Drive File ID\n"
+        f"const WIKI_DRIVE_ID = '{wiki_drive_id}';\n"
         "</script>\n"
     )
 
-    # <head> 닫히기 직전에 주입
     return template.replace("</head>", inject_script + "</head>", 1)
-
-
-def build_viewer_html_from_file(wiki_json_path: str) -> str:
-    """wiki.json 파일 경로를 받아 인라인 뷰어 HTML을 반환한다."""
-    json_str = Path(wiki_json_path).read_text(encoding="utf-8")
-    return build_viewer_html(json_str)
