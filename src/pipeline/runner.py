@@ -174,6 +174,8 @@ def run_pipeline() -> dict:
                     tags=ai_item.get("tags", []),
                     summary=ai_item.get("summary", ""),
                     version=version,
+                    body=ai_item.get("body", ""),
+                    see_also=ai_item.get("see_also", []),
                 )
                 if is_new:
                     result["new_items"] += 1

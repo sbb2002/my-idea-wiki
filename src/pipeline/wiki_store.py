@@ -73,12 +73,20 @@ def find_item_by_title(wiki: dict, title: str) -> Optional[dict]:
     return None
 
 
-def upsert_item(wiki: dict, title: str, tags: list[str], summary: str, version: dict) -> tuple[dict, bool]:
+def upsert_item(
+    wiki: dict,
+    title: str,
+    tags: list[str],
+    summary: str,
+    version: dict,
+    body: str = "",
+    see_also: list[dict] | None = None,
+) -> tuple[dict, bool]:
     """
     아이템을 추가하거나 업데이트한다.
 
     - 동일 제목 아이템이 없으면 신규 생성
-    - 있으면 summary 갱신 + versions 앞에 추가 (최신순)
+    - 있으면 summary/body/see_also 갱신 + versions 앞에 추가 (최신순)
 
     Returns:
         (item, is_new): 아이템 dict와 신규 여부
@@ -86,6 +94,8 @@ def upsert_item(wiki: dict, title: str, tags: list[str], summary: str, version: 
     existing = find_item_by_title(wiki, title)
     if existing is None:
         item = make_item(title, tags, summary, version)
+        item["body"] = body
+        item["see_also"] = see_also or []
         wiki["items"].append(item)
         return item, True
     else:
@@ -94,6 +104,10 @@ def upsert_item(wiki: dict, title: str, tags: list[str], summary: str, version: 
             if tag not in existing["tags"]:
                 existing["tags"].append(tag)
         existing["summary"] = summary
+        if body:
+            existing["body"] = body
+        if see_also is not None:
+            existing["see_also"] = see_also
         existing["versions"].insert(0, version)  # 최신이 앞
         return existing, False
 

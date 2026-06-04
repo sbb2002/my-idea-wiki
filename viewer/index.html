@@ -401,6 +401,59 @@
     margin-bottom: 16px;
   }
 
+  /* 상세 내용 (body 마크다운) */
+  .wiki-body { margin-bottom: 8px; }
+  .body-h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 20px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .body-h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 14px 0 4px;
+  }
+  .body-p {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    margin: 0 0 10px;
+  }
+  .body-ul {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    padding-left: 20px;
+    margin: 6px 0 10px;
+  }
+  .body-code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  /* 같이 보기 */
+  .see-also-list { list-style: none; padding: 0; margin: 0 0 16px; }
+  .see-also-item {
+    padding: 8px 12px;
+    border-left: 3px solid var(--accent, #4a7fc1);
+    margin-bottom: 8px;
+    background: var(--surface);
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .see-also-name { font-weight: 600; color: var(--text); }
+  .see-also-link { margin-left: 6px; color: var(--accent, #4a7fc1); text-decoration: none; font-size: 12px; }
+  .see-also-desc { color: var(--text-muted); }
+
   /* 타임라인 */
   .timeline { position: relative; padding-left: 0; }
 
@@ -863,7 +916,29 @@ function esc(str) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function fmtDate(iso) {
+function renderMarkdown(md) {
+  // 마크다운 → HTML (##소제목, **bold**, `code`, - 목록, 줄바꿈)
+  // XSS 방지: esc 후 변환
+  let html = String(md||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm, '<h4 class="body-h4">$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3 class="body-h3">$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3 class="body-h3">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code class="body-code">$1</code>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[^]*?<\/li>\n?)+/g, m => `<ul class="body-ul">${m}</ul>`)
+    .split(/\n\n+/)
+    .map(block => {
+      if (/^<[hul]/.test(block.trim())) return block;
+      return `<p class="body-p">${block.replace(/\n/g,'<br>')}</p>`;
+    })
+    .join('\n');
+  return html;
+}
+
+
   if (!iso) return '';
   try { return new Date(iso).toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' }); }
   catch { return iso; }
@@ -969,9 +1044,11 @@ function selectItem(id) {
 
   const tocItems = [
     { id: 'sec-summary', label: '개요' },
+    ...(item.body ? [{ id: 'sec-body', label: '상세 내용' }] : []),
     { id: 'sec-history', label: '버전 히스토리' },
     ...(hasAttachments ? [{ id: 'sec-attachments', label: '이미지 첨부' }] : []),
     ...(comments.length ? [{ id: 'sec-comments', label: '코멘트' }] : []),
+    ...((item.see_also?.length) ? [{ id: 'sec-see-also', label: '같이 보기' }] : []),
     { id: 'sec-related', label: '연관 아이템' },
   ];
 
@@ -1013,6 +1090,21 @@ function selectItem(id) {
       <h2 class="wiki-h2" id="sec-summary">개요</h2>
       <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
     </div>
+
+    ${item.body ? `
+    <h2 class="wiki-h2" id="sec-body">상세 내용</h2>
+    <div class="wiki-body">${renderMarkdown(item.body)}</div>` : ''}
+
+    ${item.see_also?.length ? `
+    <h2 class="wiki-h2" id="sec-see-also">같이 보기</h2>
+    <ul class="see-also-list">
+      ${item.see_also.map(s => `
+      <li class="see-also-item">
+        <span class="see-also-name">${esc(s.name||'')}</span>
+        ${s.url ? `<a href="${esc(s.url)}" target="_blank" class="see-also-link">↗</a>` : ''}
+        ${s.description ? `<span class="see-also-desc"> — ${esc(s.description)}</span>` : ''}
+      </li>`).join('')}
+    </ul>` : ''}
 
     <h2 class="wiki-h2" id="sec-history">버전 히스토리</h2>
     <div class="timeline">${versionsHtml}</div>
