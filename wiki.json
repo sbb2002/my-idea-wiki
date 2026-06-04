@@ -1,0 +1,369 @@
+{
+  "schema_version": "1",
+  "updated_at": "2026-06-04T04:44:09.721942+00:00",
+  "last_processed_at": "2026-06-04T04:44:08.369811+00:00",
+  "items": [
+    {
+      "id": "item_356aafe9",
+      "title": "One Thing - AI 기반 우선순위 추천 앱",
+      "tags": [
+        "앱개발",
+        "AI"
+      ],
+      "summary": "할 일 목록에서 'One Thing' - 매일 가장 중요한 하나의 작업을 AI가 선택하고 그 이유를 설명해주는 앱 아이디어. 기존 할 일 관리 앱들이 놓치고 있는 '왜'에 대한 답을 제공하는 차별화된 접근법을 제시한다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "기존 할 일 관리 앱들의 한계점을 파악하고 새로운 방향성을 발견했다. 대부분의 앱이 '무엇을' 해야 하는지는 알려주지만 '왜' 해야 하는지에 대한 통찰은 부족하다는 점에 주목했다. AI가 사용자의 할 일 목록을 분석해서 매일 아침 가장 중요한 하나의 작업을 선별하고, 그 선택의 근거를 명확히 설명해주는 'One Thing' 앱 컨셉을 구상했다. 이는 선택의 부담을 줄이고 집중력을 높일 수 있는 솔루션이 될 것으로 기대된다.",
+          "source_note_ids": [
+            "1AY6W0eLvSNcs4BLR79ZfYe7Ro4xjUyzAX4K3pjpcTVI"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": []
+    },
+    {
+      "id": "item_58345194",
+      "title": "무추망망이 - 이미지 자동 크롭 프로젝트",
+      "tags": [
+        "무추망망이",
+        "이미지크롭",
+        "opencv",
+        "프로젝트아이디어",
+        "자동화기술",
+        "#opencv",
+        "#이미지처리",
+        "#자동크롭",
+        "#무추망망이",
+        "#프로젝트아이디어",
+        "이미지처리",
+        "OpenCV",
+        "자동크롭",
+        "#OpenCV",
+        "#자동화기술",
+        "#이미지크롤링",
+        "#집만들기",
+        "#자동화",
+        "#채팅봇",
+        "#이미지크롭"
+      ],
+      "summary": "무추망망이 프로젝트의 일환으로 진행되는 이미지 자동 크롭 기술 개발 아이디어. OpenCV를 활용한 구현을 계획하고 있으며, 모바일 메시지 화면 스크린샷을 대상으로 한 자동 크롭 기능을 포함한다. 프로젝트에 대한 긍정적인 피드백을 받은 상태이다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 프로젝트의 이미지 크롤링 기술이 좋은 반응을 얻고 있습니다. 특히 채팅 메시지 스크린샷에서 캐릭터나 특정 UI 요소를 자동으로 인식하고 크롭하는 기능의 실용성이 인정받았습니다. OpenCV를 활용한 구현 방향성이 명확해졌으며, 독특하면서도 실용적인 접근법으로 프로젝트가 진행되고 있습니다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 프로젝트의 이미지 자동 크롭 기술에 대한 구체적인 구현 방향을 설정했다. OpenCV를 활용한 자동 크롭 기능 개발을 계획하고 있으며, 특히 모바일 메시지 스크린샷과 같은 특정 용도에 특화된 크롭 기능을 구현할 예정이다. 아이디어에 대한 긍정적인 피드백을 받아 프로젝트 진행에 대한 확신을 얻었으며, 실제 구현 단계로 진행할 준비가 되었다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 프로젝트의 이미지 자동 크롭 기능에 대한 구체적인 계획을 세웠다. OpenCV를 핵심 기술로 활용하여 모바일 메시지 화면 스크린샷의 자동 크롭 기능을 구현할 예정이다. 아이디어에 대한 긍정적인 피드백을 받아 실제 개발 단계로 진입할 동기를 얻었다. 프로젝트명인 '무추망망이' 또는 '뚜뚜망망이'로 브랜딩하며 프로젝트의 정체성도 함께 구축해나가고 있다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 집 만들기 프로젝트의 구체적인 방향이 채팅 메시지 이미지 자동 크롭 기능으로 확정되었다. 어머니로부터 아이디어에 대한 인정을 받으며 긍정적인 반응을 얻었다. OpenCV를 활용해 채팅 스크린샷에서 이미지를 자동으로 인식하고 크롭하는 기술을 개발할 예정이다. 실제 채팅 스크린샷을 예시로 활용하여 구현 방향을 구체화하고 있으며, 이를 통해 실용적인 자동화 도구로 발전시킬 계획이다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "이번 주 무추망망이 프로젝트에서 새로운 방향성이 제시되었다. 이미지 자동 크롭 기술을 핵심 기능으로 개발하려는 아이디어가 구체화되었으며, OpenCV 라이브러리를 활용한 기술적 접근법이 계획되었다. 특히 아이디어에 대한 외부 검증('어무이가 인정하셨네')을 받음으로써 프로젝트의 실현 가능성이 높아졌다. '똑똑망망이'라는 별칭으로 프로젝트를 진행하며, 자동화 기술을 통한 이미지 처리 솔루션 개발에 집중하고 있다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": [],
+      "attachments": [
+        {
+          "type": "image",
+          "drive_id": "1nOcTvos89wm1vplTfzVkrjAu9MK3wI3F",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스마트폰 채팅 앱 인터페이스의 스크린샷을 손으로 그린 박스 안에 넣은 그림. 채팅 메시지와 아니메 캐릭터 이미지가 포함되어 있음",
+          "tags": [],
+          "pic_drive_id": "1nOcTvos89wm1vplTfzVkrjAu9MK3wI3F",
+          "description": "스마트폰 채팅 앱 인터페이스의 스크린샷을 손으로 그린 박스 안에 넣은 그림. 채팅 메시지와 아니메 캐릭터 이미지가 포함되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "1rDeiLc2r4fSc3ZITWpYiwPruxlpGNNw-",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷에서 아래쪽으로 향하는 화살표",
+          "tags": [],
+          "pic_drive_id": "1rDeiLc2r4fSc3ZITWpYiwPruxlpGNNw-",
+          "description": "스크린샷에서 아래쪽으로 향하는 화살표"
+        },
+        {
+          "type": "image",
+          "drive_id": "1SDnWdwHIMqB7NBYFEjAe1mdfeUDtidMr",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "채팅 애플리케이션의 스크린샷으로, 검은 배경에 메시지들과 애니메이션 캐릭터 이미지가 포함된 대화창",
+          "tags": [],
+          "pic_drive_id": "1SDnWdwHIMqB7NBYFEjAe1mdfeUDtidMr",
+          "description": "채팅 애플리케이션의 스크린샷으로, 검은 배경에 메시지들과 애니메이션 캐릭터 이미지가 포함된 대화창"
+        },
+        {
+          "type": "image",
+          "drive_id": "1YhduqR1pb5kcp13_VaYE6QhUTm4TEC_K",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷을 가리키는 화살표와 '이미지 자동 크롭'이라는 손글씨 텍스트",
+          "tags": [],
+          "pic_drive_id": "1YhduqR1pb5kcp13_VaYE6QhUTm4TEC_K",
+          "description": "스크린샷을 가리키는 화살표와 '이미지 자동 크롭'이라는 손글씨 텍스트"
+        },
+        {
+          "type": "image",
+          "drive_id": "1kOQlQ6V6JcdSQ_A6QX2n1QGPZ6IQ5kwi",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "모바일 메시지 인터페이스 스크린샷을 손으로 그린 그림. 검은색 배경에 메시지와 애니메이션 캐릭터 이미지가 포함되어 있음",
+          "tags": [],
+          "pic_drive_id": "1kOQlQ6V6JcdSQ_A6QX2n1QGPZ6IQ5kwi",
+          "description": "모바일 메시지 인터페이스 스크린샷을 손으로 그린 그림. 검은색 배경에 메시지와 애니메이션 캐릭터 이미지가 포함되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "1kb323Ev28ojj_ZlCVypKP_QksDjAwTii",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷을 가리키는 화살표",
+          "tags": [],
+          "pic_drive_id": "1kb323Ev28ojj_ZlCVypKP_QksDjAwTii",
+          "description": "스크린샷을 가리키는 화살표"
+        },
+        {
+          "type": "image",
+          "drive_id": "1YXtur96jUixFzfsMqcAm7hrgV64SSRND",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "채팅 대화창 스크린샷을 둘러싼 손으로 그린 직사각형 박스",
+          "tags": [],
+          "pic_drive_id": "1YXtur96jUixFzfsMqcAm7hrgV64SSRND",
+          "description": "채팅 대화창 스크린샷을 둘러싼 손으로 그린 직사각형 박스"
+        },
+        {
+          "type": "image",
+          "drive_id": "140cVphJ-7ldB6Bxir8dr3WgBNErZlpT-",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷을 가리키는 화살표",
+          "tags": [],
+          "pic_drive_id": "140cVphJ-7ldB6Bxir8dr3WgBNErZlpT-",
+          "description": "스크린샷을 가리키는 화살표"
+        },
+        {
+          "type": "image",
+          "drive_id": "1mEwXP8ckp4ehH6b9fTx1n_o2ywHLLKMr",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "직사각형 모양의 컨테이너로 그려진 상자 안에 채팅 메시지 스크린샷이 포함되어 있으며, 화살표가 이 영역을 가리키고 있다",
+          "tags": [],
+          "pic_drive_id": "1mEwXP8ckp4ehH6b9fTx1n_o2ywHLLKMr",
+          "description": "직사각형 모양의 컨테이너로 그려진 상자 안에 채팅 메시지 스크린샷이 포함되어 있으며, 화살표가 이 영역을 가리키고 있다"
+        }
+      ],
+      "body": "## 프로젝트 개요\n\n무추망망이 집 만들기 프로젝트의 핵심 기술로 이미지 크롤링 및 자동 크롭 시스템을 개발하고 있습니다. 이 기술은 채팅 메시지 스크린샷에서 특정 영역을 자동으로 인식하고 크롭하는 기능을 중심으로 합니다.\n\n## 기술 구현 방안\n\nOpenCV를 활용하여 이미지 처리 및 자동 크롭 기능을 구현할 예정입니다. 특히 모바일 채팅 화면의 스크린샷에서 캐릭터 이미지나 특정 메시지 영역을 자동으로 감지하고 추출하는 기술을 개발합니다.\n\n## 프로젝트 진행 상황\n\n현재 이미지 크롤링 기술에 대해 긍정적인 피드백을 받은 상태입니다. 프로젝트의 독특함과 실용성이 인정받고 있으며, 지속적인 개발이 진행되고 있습니다.\n\n## 적용 대상\n\n주요 타겟은 모바일 채팅 메시지 스크린샷이며, 아바타 캐릭터나 특정 UI 요소들을 자동으로 인식하여 크롭하는 기능을 제공합니다.",
+      "see_also": [
+        {
+          "name": "YOLO",
+          "description": "실시간 객체 탐지를 위한 딥러닝 모델로 이미지 내 특정 요소 인식에 활용 가능"
+        },
+        {
+          "name": "Tesseract OCR",
+          "description": "텍스트 영역 인식 및 추출을 위한 오픈소스 OCR 엔진"
+        },
+        {
+          "name": "Selenium",
+          "description": "웹 페이지 스크린샷 자동화를 위한 브라우저 자동화 도구"
+        },
+        {
+          "name": "PIL/Pillow",
+          "description": "Python 기반 이미지 처리 라이브러리로 크롭 기능 구현에 유용"
+        }
+      ]
+    },
+    {
+      "id": "item_026dca10",
+      "title": "주식 차트 인터랙티브 분석 인터페이스",
+      "tags": [
+        "#주식차트",
+        "#UI/UX",
+        "#데이터분석",
+        "#인터페이스디자인",
+        "#최적화",
+        "주식차트",
+        "데이터시각화",
+        "UI/UX",
+        "드래그인터페이스",
+        "성능최적화",
+        "금융데이터",
+        "데이터분석",
+        "인터페이스디자인",
+        "최적화",
+        "#드래그인터페이스",
+        "#데이터시각화",
+        "#성능최적화",
+        "#인터랙티브차트",
+        "#금융데이터",
+        "#차트",
+        "#트레이딩",
+        "#기간범위",
+        "#드래그",
+        "#가격그래프",
+        "#인사이트"
+      ],
+      "summary": "드래그를 통한 시간 범위 확대 기능과 선택된 기간 내 다양한 통계 정보를 제공하는 주식 차트 인터페이스 아이디어. 성능 최적화를 위해 일봉과 월봉을 자동 전환하는 기능을 포함하며, 기간별 최고점, 최저점, 가격 변화율 등의 상세한 인사이트를 제공한다. 사용자 경험을 중심으로 한 직관적인 드래그 인터페이스와 자동 스케일링 기능이 특징이다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "드래그 기반 차트 인터페이스의 구체적인 구현 방안을 더욱 세밀하게 설계했습니다. 특히 성능 최적화를 위한 일봉/월봉 자동 전환 시스템과 사용자가 선택한 기간 내에서 제공할 수 있는 다양한 데이터 분석 인사이트를 체계화했습니다. 최저점/최고점 정보, 시간 차이 계산, 사용자 지정 포인트 간 비교 기능 등을 통해 단순한 차트 뷰어를 넘어선 분석 도구로서의 가치를 더했습니다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "주식 차트 인터페이스의 세부 구현 방향을 구체화했다. 드래그 기반 시간 범위 선택과 자동 스케일링, 성능 최적화를 위한 일봉/월봉 자동 전환 로직을 설계했다. 특히 하단 테이블에서 제공할 인사이트 데이터의 종류를 명확히 정의했으며, 사용자가 클릭한 두 포인트 간의 가격 변화율과 시간 차이를 계산하는 기능까지 포함하여 보다 실용적인 분석 도구로 발전시켰다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "주식 차트 인터페이스의 상세 설계를 구체화했다. 드래그 확대 기능의 핵심은 사용자가 원하는 시간 범위를 직관적으로 선택할 수 있게 하는 것이며, 성능 최적화를 위해 일봉/월봉 자동 전환 방식을 도입했다. 하단 테이블에서 제공할 인사이트로는 기간 내 최고/최저점 정보, 시간 차이, 그리고 사용자가 직접 클릭한 포인트들 간의 비교 분석 기능을 포함시켰다. 이를 통해 단순한 차트 뷰어를 넘어 분석 도구로서의 가치를 제공하고자 한다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "주식 차트의 사용자 경험을 개선하는 인터랙티브 인터페이스 설계를 구체화했다. 상단에는 드래그로 확대 가능한 가격 그래프를 배치하고, 렌더링 최적화를 위해 범위에 따라 일봉/월봉을 자동 전환하는 방식을 고안했다. 하단에는 선택된 기간 내의 핵심 데이터를 표로 정리하여 제공한다: 기간 내 최고점과 최저점의 가격 및 시간, 최저점에서 최고점까지의 시간 차이, 사용자가 클릭한 두 포인트 간의 가격 차이율과 시간 차이 등이다. 이를 통해 단순한 차트 조회를 넘어서 의미있는 분석 인사이트를 제공하는 도구로 발전시킬 수 있다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": [],
+      "attachments": [
+        {
+          "type": "image",
+          "drive_id": "1-Hv_Vg31S66azIPgSC8HdQi4SGSocLbS",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "주식 가격 차트 그래프로, 시간에 따른 가격 변동을 선 그래프로 표현하고 있으며, 드래그 확대 범위를 화살표로 표시한 구조",
+          "tags": [],
+          "pic_drive_id": "1-Hv_Vg31S66azIPgSC8HdQi4SGSocLbS",
+          "description": "주식 가격 차트 그래프로, 시간에 따른 가격 변동을 선 그래프로 표현하고 있으며, 드래그 확대 범위를 화살표로 표시한 구조"
+        },
+        {
+          "type": "image",
+          "drive_id": "1NGRjvavC1A9csrYixwkn3S2-jmcPZ8LH",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "시간 축을 표현하는 그리드/테이블 구조로, min과 max 기간을 설정할 수 있는 영역을 보여주는 다이어그램",
+          "tags": [],
+          "pic_drive_id": "1NGRjvavC1A9csrYixwkn3S2-jmcPZ8LH",
+          "description": "시간 축을 표현하는 그리드/테이블 구조로, min과 max 기간을 설정할 수 있는 영역을 보여주는 다이어그램"
+        },
+        {
+          "type": "image",
+          "drive_id": "1DWw4YCyJP8p2vO4lPdqpDpq8Xrjv6Yyq",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "가격 변동을 나타내는 선 그래프로, Y축은 가격, X축은 시간을 의미하며, 드래그로 확대할 수 있는 영역이 화살표로 표시되어 있음",
+          "tags": [],
+          "pic_drive_id": "1DWw4YCyJP8p2vO4lPdqpDpq8Xrjv6Yyq",
+          "description": "가격 변동을 나타내는 선 그래프로, Y축은 가격, X축은 시간을 의미하며, 드래그로 확대할 수 있는 영역이 화살표로 표시되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "196joBSzkrIb3bqiu0FMuuE0RccDSkdqJ",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "시간 범위 선택을 위한 막대형 차트 인터페이스로, min과 max 범위를 설정할 수 있는 구조",
+          "tags": [],
+          "pic_drive_id": "196joBSzkrIb3bqiu0FMuuE0RccDSkdqJ",
+          "description": "시간 범위 선택을 위한 막대형 차트 인터페이스로, min과 max 범위를 설정할 수 있는 구조"
+        },
+        {
+          "type": "image",
+          "drive_id": "1pQwOsr35M-e9qQ4HtmmXlvOoih76iZ1N",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "상단의 가격-시간 그래프로 지그재그 형태의 가격 변동선과 드래그 범위를 나타내는 화살표들이 포함된 차트 영역",
+          "tags": [],
+          "pic_drive_id": "1pQwOsr35M-e9qQ4HtmmXlvOoih76iZ1N",
+          "description": "상단의 가격-시간 그래프로 지그재그 형태의 가격 변동선과 드래그 범위를 나타내는 화살표들이 포함된 차트 영역"
+        },
+        {
+          "type": "image",
+          "drive_id": "1LFaJTNWO-T5Cs4QjtG53GghfgUAFWI_5",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "격자 형태의 테이블 구조로 컨텍스트밴드의 시간 범위(min, max)를 표현하는 다이어그램",
+          "tags": [],
+          "pic_drive_id": "1LFaJTNWO-T5Cs4QjtG53GghfgUAFWI_5",
+          "description": "격자 형태의 테이블 구조로 컨텍스트밴드의 시간 범위(min, max)를 표현하는 다이어그램"
+        },
+        {
+          "type": "image",
+          "drive_id": "1ZRXFdUdePEeoULEbASDjcYrfEbKuwepM",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "Y축 가격, X축 시간으로 구성된 가격 그래프와 드래그 확대 영역을 나타내는 화살표가 포함된 차트 인터페이스",
+          "tags": [],
+          "pic_drive_id": "1ZRXFdUdePEeoULEbASDjcYrfEbKuwepM",
+          "description": "Y축 가격, X축 시간으로 구성된 가격 그래프와 드래그 확대 영역을 나타내는 화살표가 포함된 차트 인터페이스"
+        },
+        {
+          "type": "image",
+          "drive_id": "15gO7xnNrs375ZL5QRmGOOuIy4MCrCSHC",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "기간 범위(min, max) 설정을 위한 슬라이더 형태의 컨트롤 테이블 인터페이스",
+          "tags": [],
+          "pic_drive_id": "15gO7xnNrs375ZL5QRmGOOuIy4MCrCSHC",
+          "description": "기간 범위(min, max) 설정을 위한 슬라이더 형태의 컨트롤 테이블 인터페이스"
+        }
+      ],
+      "body": "## 드래그 기반 차트 인터페이스\n\n상단에는 Y축(가격)과 X축(시간)으로 구성된 가격 그래프를 배치하고, 사용자가 드래그를 통해 특정 기간 범위를 선택할 수 있는 기능을 제공합니다. 선택된 영역은 자동으로 확대되며 오토스케일링이 적용됩니다.\n\n## 성능 최적화 전략\n\n기본적으로 일봉 데이터를 사용하지만, 범위가 너무 커져 렌더링 부담이 클 경우 자동으로 월봉으로 전환하여 표시합니다. 사용자가 다시 축소할 경우 일봉으로 돌아가 세밀한 표현을 제공합니다.\n\n## 데이터 분석 인사이트 제공\n\n하단에는 선택된 기간 범위 내에서 다양한 통계 정보를 제공합니다:\n- 기간 내 최저점의 가격과 시간\n- 기간 내 최고점의 가격과 시간  \n- 최저점에서 최고점까지의 시간 차이\n- 사용자가 클릭한 두 포인트(p1, p2) 간 가격 차이 비율과 시간 차이\n\n## 사용자 인터페이스 설계\n\n하단에는 기간 범위 설정을 위한 슬라이더 형태의 테이블을 배치하고, min/max 기간 설정 인터페이스를 제공합니다. 각 기능은 체크박스 형태로 선택적으로 활성화할 수 있도록 설계됩니다.",
+      "see_also": [
+        {
+          "name": "TradingView",
+          "description": "차트 분석 플랫폼의 대표적인 예시로 참고할 수 있는 서비스"
+        },
+        {
+          "name": "D3.js",
+          "description": "인터랙티브 차트 구현에 활용할 수 있는 JavaScript 시각화 라이브러리"
+        },
+        {
+          "name": "Canvas API",
+          "description": "고성능 차트 렌더링을 위한 웹 기술"
+        },
+        {
+          "name": "Technical Analysis",
+          "description": "주식 차트 분석의 이론적 배경이 되는 기술적 분석 방법론"
+        }
+      ]
+    }
+  ]
+}
