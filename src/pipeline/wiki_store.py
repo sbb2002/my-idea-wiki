@@ -81,7 +81,7 @@ def upsert_item(
     version: dict,
     body: str = "",
     see_also: list[dict] | None = None,
-) -> tuple[dict, bool]:
+) -> tuple[dict, bool, bool]:
     """
     아이템을 추가하거나 업데이트한다.
 
@@ -89,7 +89,10 @@ def upsert_item(
     - 있으면 summary/body/see_also 갱신 + versions 앞에 추가 (최신순)
 
     Returns:
-        (item, is_new): 아이템 dict와 신규 여부
+        (item, is_new, is_overwrite):
+            item        — 아이템 dict
+            is_new      — True이면 신규 생성
+            is_overwrite — True이면 동일 week content를 덮어씀 (#30)
     """
     existing = find_item_by_title(wiki, title)
     if existing is None:
@@ -97,7 +100,7 @@ def upsert_item(
         item["body"] = body
         item["see_also"] = see_also or []
         wiki["items"].append(item)
-        return item, True
+        return item, True, False
     else:
         # 태그는 수동 태그 우선 — 기존 태그에 없는 것만 추가
         for tag in tags:
@@ -113,9 +116,10 @@ def upsert_item(
         if same_week:
             same_week["content"] = version["content"]
             same_week["source_note_ids"] = list(set(same_week.get("source_note_ids", []) + version.get("source_note_ids", [])))
+            return existing, False, True   # is_overwrite=True (#30)
         else:
             existing["versions"].insert(0, version)  # 최신이 앞
-        return existing, False
+            return existing, False, False
 
 
 # ── 유틸 ───────────────────────────────────────────────────────

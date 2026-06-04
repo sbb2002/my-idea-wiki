@@ -214,8 +214,8 @@ def _handle_rerun(chat_id: str | int) -> None:
                 upload_json(wiki_folder_id, "wiki.json", dump_wiki(wiki), existing_file_id=wiki_file_id)
                 log.info("[rerun] last_processed_at 초기화 완료")
 
-            log.info("[rerun] run_pipeline() 호출")
-            result = run_pipeline()
+            log.info("[rerun] run_pipeline(is_rerun=True) 호출")
+            result = run_pipeline(is_rerun=True)  # #30: rerun 여부 전달
             log.info(f"[rerun] 완료: {result}")
             _last_run_result = {
                 **result,

@@ -31,19 +31,24 @@ WIKI_FILENAME = "wiki.json"
 VIEWER_FILENAME = "index.html"
 
 
-def run_pipeline() -> dict:
+def run_pipeline(is_rerun: bool = False) -> dict:
     """
     위키화 파이프라인을 실행하고 결과를 반환한다.
+
+    Args:
+        is_rerun: True이면 /rerun 호출 (전체 재처리). 알람 문구에 재처리 여부 표시. (#30)
 
     Returns:
         {
             "status": "success" | "partial" | "failure",
-            "processed": int,       # 처리 시도한 노트 수
+            "processed": int,        # 처리 시도한 노트 수
             "new_items": int,
             "updated_items": int,
-            "skipped": int,         # 처리 실패한 노트 수
+            "overwrite_count": int,  # 동일 week content 덮어쓴 수 (rerun 시 양수) (#30)
+            "skipped": int,          # 처리 실패한 노트 수
             "api_used": "claude" | "gemini" | None,
-            "errors": list[str],    # 에러 메시지 목록
+            "errors": list[str],     # 에러 메시지 목록
+            "is_rerun": bool,        # rerun 여부 (#30)
         }
     """
     notes_folder_id = os.getenv("DRIVE_NOTES_FOLDER_ID")
@@ -54,12 +59,14 @@ def run_pipeline() -> dict:
         "processed": 0,
         "new_items": 0,
         "updated_items": 0,
+        "overwrite_count": 0,   # 동일 week content 덮어쓴 수 (#30)
         "skipped": 0,
         "api_used": None,
         "errors": [],
         "ocr_processed": 0,
         "ocr_skipped": 0,
         "comments_processed": 0,
+        "is_rerun": is_rerun,   # rerun 여부 (#30)
     }
 
     # ── 1. 기존 wiki.json 로드 ──────────────────────────────────
@@ -169,7 +176,7 @@ def run_pipeline() -> dict:
                     content=ai_item.get("content", ""),
                     source_note_ids=source_ids,
                 )
-                _, is_new = upsert_item(
+                _, is_new, is_overwrite = upsert_item(
                     wiki=wiki,
                     title=ai_item["title"],
                     tags=ai_item.get("tags", []),
@@ -182,6 +189,8 @@ def run_pipeline() -> dict:
                     result["new_items"] += 1
                 else:
                     result["updated_items"] += 1
+                if is_overwrite:
+                    result["overwrite_count"] += 1  # rerun 시 같은 week content 덮어씀 (#30)
 
                 # PDF drawings → 해당 아이템에 첨부로 연결 (#14)
                 item_obj = find_item_by_title(wiki, ai_item["title"])
@@ -253,7 +262,7 @@ def run_pipeline() -> dict:
                     content=ocr_result.get("summary", "이미지 첨부"),
                     source_note_ids=[img["id"]],
                 )
-                item, is_new = upsert_item(
+                item, is_new, is_overwrite = upsert_item(
                     wiki=wiki,
                     title=stem,
                     tags=att["tags"],
@@ -267,6 +276,8 @@ def run_pipeline() -> dict:
                     result["new_items"] += 1
                 else:
                     result["updated_items"] += 1
+                if is_overwrite:
+                    result["overwrite_count"] += 1  # (#30)
 
             result["ocr_processed"] += 1
         except Exception as e:

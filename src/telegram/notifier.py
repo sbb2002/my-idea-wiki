@@ -60,14 +60,24 @@ def _viewer_url() -> str:
     return f"https://drive.google.com/drive/folders/{folder_id}"
 
 
-def notify_success(processed: int, new_items: int, updated_items: int, api_used: str) -> bool:
-    """✅ 성공 알람."""
+def notify_success(
+    processed: int,
+    new_items: int,
+    updated_items: int,
+    api_used: str,
+    overwrite_count: int = 0,
+    is_rerun: bool = False,
+) -> bool:
+    """✅ 성공 알람. (#30: rerun 시 재처리 표시)"""
     viewer = _viewer_url()
     viewer_line = f"\n• 뷰어: {viewer}" if viewer else ""
+    mode_tag = " (전체 재처리)" if is_rerun else ""
+    overwrite_line = f"\n• 재처리: {overwrite_count}개 content 갱신" if is_rerun and overwrite_count > 0 else ""
     text = (
-        f"✅ [{_today()}] 위키화 완료\n"
+        f"✅ [{_today()}] 위키화 완료{mode_tag}\n"
         f"• 처리: {processed}개 노트\n"
-        f"• 신규: {new_items}개 / 업데이트: {updated_items}개\n"
+        f"• 신규: {new_items}개 / 업데이트: {updated_items}개"
+        f"{overwrite_line}\n"
         f"• 사용 API: {api_used}"
         f"{viewer_line}"
     )
@@ -99,14 +109,13 @@ def notify_failure(errors: list[str]) -> bool:
 
 
 def notify_orphans(titles: list[str]) -> bool:
-    """🔍 고아 아이템 감지 알람 — Drive에서 원본 노트가 삭제된 아이템."""
+    """🗑️ 고아 아이템 자동 삭제 알람 — Drive에서 원본 노트가 삭제된 아이템을 wiki.json에서 제거. (#36)"""
     items_str = "\n".join(f"  • {t}" for t in titles[:10])
     suffix = f"\n  … 외 {len(titles) - 10}개" if len(titles) > 10 else ""
     text = (
-        f"🔍 [{_today()}] 고아 아이템 감지\n"
-        f"Drive에서 원본 노트가 삭제된 아이템이 wiki.json에 잔류 중입니다.\n"
-        f"{items_str}{suffix}\n"
-        f"필요 시 wiki.json에서 수동으로 삭제하세요."
+        f"🗑️ [{_today()}] 고아 아이템 자동 삭제\n"
+        f"Drive에서 원본 노트가 삭제된 아이템을 wiki.json에서 제거했습니다.\n"
+        f"{items_str}{suffix}"
     )
     return send_message(text)
 
@@ -132,6 +141,8 @@ def notify_result(result: dict) -> bool:
             new_items=result.get("new_items", 0),
             updated_items=result.get("updated_items", 0),
             api_used=result.get("api_used", "unknown"),
+            overwrite_count=result.get("overwrite_count", 0),  # (#30)
+            is_rerun=result.get("is_rerun", False),             # (#30)
         )
     elif status == "partial":
         succeeded = result.get("new_items", 0) + result.get("updated_items", 0)
