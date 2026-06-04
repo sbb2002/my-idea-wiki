@@ -190,9 +190,11 @@ def run_pipeline() -> dict:
                         note_entry = next((n for n in notes if n["name"] == note_name), None)
                         if note_entry and note_entry.get("_drawings"):
                             for drawing in note_entry["_drawings"]:
+                                # #33: claude_processor가 저장한 filename 사용 (뷰어 attByFilename 매핑 일치)
+                                drawing_filename = drawing.get("filename") or f"{note_name}_drawing"
                                 att = make_attachment(
                                     drive_id=drawing["pic_drive_id"],
-                                    filename=f"{note_name}_drawing",
+                                    filename=drawing_filename,
                                     ocr_text="",
                                     summary=drawing.get("description", ""),
                                     tags=[],
@@ -330,21 +332,30 @@ def run_pipeline() -> dict:
     elif result["processed"] > 0 and skipped == result["processed"]:
         result["status"] = "failure"
 
-    # ── 7. 고아 아이템 감지 ────────────────────────────────────
-    # Drive에 존재하지 않는 source_note_ids만 가진 아이템을 고아로 표시
+    # ── 7. 고아 아이템 감지 및 자동 제거 (#31, #36) ──────────
+    # Drive에 존재하지 않는 source_note_ids만 가진 아이템을 wiki.json에서 직접 삭제
     try:
         live_ids = list_all_note_ids(notes_folder_id)
+        orphan_ids = []
         orphan_titles = []
         for item in wiki["items"]:
             all_ids = []
             for v in item.get("versions", []):
                 all_ids.extend(v.get("source_note_ids", []))
-            # 이미지 첨부 ID도 포함
+            # 이미지 첨부 ID도 포함 (이미지가 source_note_id인 경우 오탐 방지 위해 #31 선행 필수)
             for att in item.get("attachments", []):
                 if att.get("drive_id"):
                     all_ids.append(att["drive_id"])
             if all_ids and not any(nid in live_ids for nid in all_ids):
+                orphan_ids.append(item["id"])
                 orphan_titles.append(item["title"])
+
+        if orphan_ids:
+            before_count = len(wiki["items"])
+            wiki["items"] = [it for it in wiki["items"] if it["id"] not in set(orphan_ids)]
+            after_count = len(wiki["items"])
+            logger.info(f"고아 아이템 {before_count - after_count}개 자동 제거: {orphan_titles}")
+
         result["orphan_items"] = orphan_titles
     except Exception as e:
         result["orphan_items"] = []

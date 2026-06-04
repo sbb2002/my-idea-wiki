@@ -158,7 +158,13 @@ def add_attachment_to_item(wiki: dict, item_id: str, attachment: dict) -> bool:
     if "attachments" not in item:
         item["attachments"] = []
     for att in item["attachments"]:
-        if att.get("drive_id") == attachment["drive_id"]:
+        # drive_id 또는 filename이 동일하면 중복으로 판단 (#34)
+        same_id = att.get("drive_id") == attachment["drive_id"]
+        same_filename = (
+            attachment.get("filename")
+            and att.get("filename") == attachment["filename"]
+        )
+        if same_id or same_filename:
             att.update(attachment)
             return False
     item["attachments"].append(attachment)

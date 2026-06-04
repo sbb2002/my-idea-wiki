@@ -396,6 +396,7 @@ def process_pdf_with_claude(pdf_bytes: bytes, filename: str, pic_folder_id: str 
                         mime_type="image/jpeg",
                     )
                     drawing["pic_drive_id"] = drive_id
+                    drawing["filename"] = pic_filename  # #33: filename 저장 (뷰어 매핑용)
                 except Exception as e:
                     print(f"[WARN] 그림 크롭/업로드 실패 (page {page_no}, drawing {d_idx}): {e}")
 

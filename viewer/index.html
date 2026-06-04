@@ -377,8 +377,8 @@
     float: right;
     clear: right;
     margin: 0 0 16px 24px;
-    min-width: 220px;
-    max-width: 280px;
+    min-width: 200px;
+    max-width: 260px;
     border: 1px solid var(--infobox-border);
     border-collapse: collapse;
     font-size: 13px;
@@ -1453,6 +1453,33 @@ function bbTab(tab) {
   }
 }
 
+// ── TOC 스크롤: 접힌 섹션 자동 펼침 (#29) ──────────────────
+function scrollToSection(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  // 해당 섹션이 h2인 경우 본인은 괜찮고, h2의 다음 형제(wiki-section-body)가 접혔으면 펼침
+  // 또는 target 자체가 section-body 내부에 있을 수 있음
+  // → target 앞의 가장 가까운 wiki-h2를 찾아 펼침
+  let el = target;
+  // target이 wiki-h2 자신이면 그 body를 펼침
+  if (el.classList.contains('wiki-h2')) {
+    const body = el.nextElementSibling;
+    if (body?.classList.contains('wiki-section-body') && body.classList.contains('collapsed')) {
+      el.classList.remove('collapsed');
+      body.classList.remove('collapsed');
+    }
+  } else {
+    // target이 section-body 안에 있으면 부모 section-body 펼침
+    const sectionBody = el.closest('.wiki-section-body');
+    if (sectionBody?.classList.contains('collapsed')) {
+      sectionBody.classList.remove('collapsed');
+      const h2 = sectionBody.previousElementSibling;
+      if (h2?.classList.contains('wiki-h2')) h2.classList.remove('collapsed');
+    }
+  }
+  target.scrollIntoView({ behavior: 'smooth' });
+}
+
 // ── 모바일 TOC 접힘 ─────────────────────────────────────────
 function toggleMobileToc() {
   const list = document.getElementById('toc-mobile-list');
@@ -1479,14 +1506,12 @@ function renderSidebar(items) {
   list.querySelectorAll('.item-entry').forEach(el =>
     el.addEventListener('click', () => {
       selectItem(el.dataset.id);
-      // 모바일에서 아이템 선택 시 드로어 닫기 + 위키 뷰로 전환
+      // 모바일에서 아이템 선택 시 드로어 닫기 + 위키 뷰로 전환 (#37)
       if (window.innerWidth <= 640) {
         closeSidebar();
-        switchView('wiki');
-        // 하단 탭바 업데이트
-        ['list','wiki','graph'].forEach(t =>
-          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
-        );
+        if (currentView !== 'wiki') switchView('wiki');
+        document.getElementById('bb-list')?.classList.remove('active');
+        document.getElementById('bb-graph')?.classList.remove('active');
       }
     })
   );
@@ -1580,7 +1605,7 @@ function selectItem(id) {
   ];
 
   const tocHtml = tocItems.map(t =>
-    `<li class="toc-item" onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'})">${t.label}</li>`
+    `<li class="toc-item" onclick="scrollToSection('${t.id}')">${t.label}</li>`
   ).join('');
 
   // 데스크탑 TOC
@@ -1590,38 +1615,36 @@ function selectItem(id) {
   // 모바일 TOC
   const mobileTocList = document.getElementById('toc-mobile-list');
   mobileTocList.innerHTML = tocItems.map(t =>
-    `<li onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'});toggleMobileToc()">${t.label}</li>`
+    `<li onclick="scrollToSection('${t.id}');toggleMobileToc()">${t.label}</li>`
   ).join('');
   document.getElementById('toc-mobile').classList.add('visible');
 
   document.getElementById('doc-content').innerHTML = `
     <h1 class="doc-title">${esc(item.title)}</h1>
-    <div class="clearfix">
-      <div class="infobox">
-        <div class="infobox-header">아이디어 요약<i class="infobox-toggle-icon">▼</i></div>
-        <div class="infobox-body">
-          <div class="infobox-row">
-            <div class="infobox-label">분류</div>
-            <div class="infobox-val infobox-tags">${(item.tags||[]).map(t=>`<span class="doc-tag">${esc(t)}</span>`).join(' ')}</div>
-          </div>
-          <div class="infobox-row">
-            <div class="infobox-label">버전 수</div>
-            <div class="infobox-val">${item.versions?.length||0}개</div>
-          </div>
-          ${latestWeek ? `<div class="infobox-row">
-            <div class="infobox-label">최신</div>
-            <div class="infobox-val">${fmtWeek(latestWeek)}</div>
-          </div>` : ''}
-          ${relatedItems.length ? `<div class="infobox-row">
-            <div class="infobox-label">연관</div>
-            <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
-          </div>` : ''}
+    <div class="infobox">
+      <div class="infobox-header">아이디어 요약<i class="infobox-toggle-icon">▼</i></div>
+      <div class="infobox-body">
+        <div class="infobox-row">
+          <div class="infobox-label">분류</div>
+          <div class="infobox-val infobox-tags">${(item.tags||[]).map(t=>`<span class="doc-tag">${esc(t)}</span>`).join(' ')}</div>
         </div>
+        <div class="infobox-row">
+          <div class="infobox-label">버전 수</div>
+          <div class="infobox-val">${item.versions?.length||0}개</div>
+        </div>
+        ${latestWeek ? `<div class="infobox-row">
+          <div class="infobox-label">최신</div>
+          <div class="infobox-val">${fmtWeek(latestWeek)}</div>
+        </div>` : ''}
+        ${relatedItems.length ? `<div class="infobox-row">
+          <div class="infobox-label">연관</div>
+          <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
+        </div>` : ''}
       </div>
-
-      <h2 class="wiki-h2" id="sec-summary">개요</h2>
-      <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
     </div>
+
+    <h2 class="wiki-h2" id="sec-summary">개요</h2>
+    <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
 
     ${item.body ? `
     <h2 class="wiki-h2" id="sec-body">상세 내용</h2>
@@ -1683,10 +1706,12 @@ function selectItem(id) {
       sibling = next;
     }
     h2.insertAdjacentElement('afterend', body);
-    h2.addEventListener('click', () => {
+    const toggleSection = () => {
       h2.classList.toggle('collapsed');
       body.classList.toggle('collapsed');
-    });
+    };
+    h2.addEventListener('click', toggleSection);
+    h2.addEventListener('touchend', e => { e.preventDefault(); toggleSection(); });
   });
 
   document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
@@ -1992,10 +2017,9 @@ function renderGraph(items) {
         switchView('wiki');
         selectItem(hit.id);
         document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});
-        // 모바일 하단탭 업데이트
-        ['list','wiki','graph'].forEach(t =>
-          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
-        );
+        // 모바일 하단탭 업데이트 (#37)
+        document.getElementById('bb-list')?.classList.remove('active');
+        document.getElementById('bb-graph')?.classList.remove('active');
       }
       touchDragging = null; touchPanning = null;
       pinchStartDist = null;
@@ -2024,8 +2048,10 @@ const THEMES = [
 function applyTheme(key) {
   document.documentElement.setAttribute('data-theme', key);
   const t = THEMES.find(t => t.key === key) || THEMES[0];
+  // 데스크탑 테마 버튼: 현재 라이트면 "🌙 다크모드", 현재 다크면 "☀️ 라이트모드"
   const btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = t.label;
+  if (btn) btn.textContent = key === 'dark' ? '☀️ 라이트' : '🌙 다크';
+  // 모바일 하단 탭 아이콘: 현재 라이트면 🌙(다크로), 현재 다크면 ☀️(라이트로)
   const bbIcon = document.getElementById('bb-theme-icon');
   if (bbIcon) bbIcon.textContent = key === 'dark' ? '☀️' : '🌙';
   try { localStorage.setItem('wiki-theme', key); } catch(e) {}
@@ -2040,7 +2066,12 @@ function toggleTheme() {
 async function init() {
   try {
     const saved = localStorage.getItem('wiki-theme');
-    if (saved) applyTheme(saved);
+    if (saved) {
+      applyTheme(saved);
+    } else if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      // 저장된 설정 없으면 시스템 다크모드 감지 (#38)
+      applyTheme('dark');
+    }
   } catch(e) {}
 
   const overlay = document.getElementById('load-overlay');

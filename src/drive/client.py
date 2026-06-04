@@ -422,9 +422,12 @@ def list_all_note_ids(folder_id: str) -> set[str]:
     고아 아이템 감지에 사용.
     """
     service = get_drive_service()
+    # 이미지 mimeType도 포함해야 OCR 이미지 아이템의 오탐 방지 (#31)
+    image_mimes = " or ".join(f"mimeType = '{m}'" for m in set(IMAGE_MIME_TYPES.values()))
     query = (
         f"'{folder_id}' in parents and trashed = false and "
-        "(mimeType = 'text/plain' or mimeType = 'application/vnd.google-apps.document' or mimeType = 'application/pdf')"
+        f"(mimeType = 'text/plain' or mimeType = 'application/vnd.google-apps.document' "
+        f"or mimeType = 'application/pdf' or {image_mimes})"
     )
     results = []
     page_token = None
