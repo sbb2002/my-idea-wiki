@@ -305,12 +305,9 @@ def run_pipeline() -> dict:
         return result
 
     # ── 6. HTML 뷰어 생성 후 Drive 저장 ────────────────────────
-    # index.html은 WIKI_DRIVE_ID만 심은 고정 파일.
-    # wiki_file_id가 확정된 이후 최초 1회만 업로드하면 되지만,
-    # 파일이 없거나 Drive ID가 바뀐 경우를 대비해 항상 갱신한다.
     try:
         from src.viewer.builder import build_viewer_html
-        viewer_html = build_viewer_html(wiki_file_id)
+        viewer_html = build_viewer_html(dump_wiki(wiki))
         viewer_file_id = find_file_in_folder(wiki_folder_id, VIEWER_FILENAME)
         upload_json(
             folder_id=wiki_folder_id,

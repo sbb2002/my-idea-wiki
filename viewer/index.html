@@ -903,32 +903,13 @@ let wiki = null;
 let activeId = null;
 
 async function loadWiki() {
-  // 1순위: 인라인 주입 데이터 (레거시 호환)
+  // 1순위: 인라인 주입 데이터
   if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
-
-  // 2순위: Drive에서 wiki.json fetch (WIKI_DRIVE_ID가 심겨 있을 때)
-  if (typeof WIKI_DRIVE_ID !== 'undefined' && WIKI_DRIVE_ID) {
-    const urls = [
-      `https://lh3.googleusercontent.com/d/${WIKI_DRIVE_ID}`,
-      `https://drive.google.com/uc?export=download&id=${WIKI_DRIVE_ID}`,
-    ];
-    for (const url of urls) {
-      try {
-        const resp = await fetch(url);
-        if (resp.ok) {
-          const text = await resp.text();
-          return JSON.parse(text);
-        }
-      } catch(e) {}
-    }
-  }
-
-  // 3순위: 로컬 wiki.json (같은 폴더에 있을 때)
+  // 2순위: 로컬 wiki.json (같은 폴더에 있을 때)
   try {
     const resp = await fetch('./wiki.json');
     if (resp.ok) return await resp.json();
   } catch(e) {}
-
   return null;
 }
 
