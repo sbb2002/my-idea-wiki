@@ -45,18 +45,14 @@ GitHub: https://github.com/sbb2002/my-idea-wiki
 | #36 | 고아 아이템 wiki.json에서 자동 삭제 (알람만 → 직접 제거) | ✅ |
 | #37 | 하단 탭바 재설계 — 위키 탭 제거, 목록/그래프 ON-OFF 토글 | ✅ |
 | #38 | 시스템 다크모드 자동 감지 + 테마 버튼 라벨 반전 수정 | ✅ |
+| #30 | /rerun vs /run 동작 명확화 — overwrite_count 필드 + 알람 재처리 표시 | ✅ |
 
 ### 다음 세션 작업
 
-#### ⚪ 동작 명확화 (낮은 우선순위)
-
-| 이슈 | 내용 |
-|------|------|
-| [#30](https://github.com/sbb2002/my-idea-wiki/issues/30) | rerun 시 week content 덮어쓰기 동작 명확화 |
+현재 HANDOFF.md에 기록된 모든 이슈가 완료됐습니다. 🎉
 
 #### 🔧 후속 작업 (선택)
-- `scripts/dedup_versions.py --dry-run` 으로 현재 wiki.json 중복 버전 확인 후 적용
-- GitHub Issues #28~#38 수동 Close
+- `scripts/dedup_versions.py --dry-run` → 실제 wiki.json 중복 버전 확인 후 적용
 
 ---
 
