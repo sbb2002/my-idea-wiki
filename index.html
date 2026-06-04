@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>아이디어 위키</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Linux+Libertine:ital,wght@0,400;0,600;1,400&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── 공통 레이아웃 변수 ── */
+  :root {
+    --sidebar-w: 260px;
+    --toc-w: 200px;
+    --header-h: 48px;
+    --bottom-bar-h: 56px;
+    --font-serif: 'Linux Libertine', 'Georgia', serif;
+    --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    --font-mono: 'Courier New', monospace;
+  }
+
+  /* ── 테마: 위키피디아 라이트 (기본) ── */
+  :root, [data-theme="wiki"] {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #a2a9b1;
+    --border-light: #e0e3e7;
+    --accent: #3366cc;
+    --text: #202122;
+    --text-muted: #54595d;
+    --text-dim: #72777d;
+    --infobox-header: #cee0f2;
+    --infobox-border: #a2a9b1;
+    --tag-bg: #eaf3fb;
+    --tag-fg: #3366cc;
+    --tl-line: #a2a9b1;
+    --tl-dot: #3366cc;
+    --tl-dot-old: #a2a9b1;
+    --comment-bg: #fafafa;
+    --comment-border: #e0e3e7;
+    --error-bg: #fef6e4;
+    --error-border: #fc3;
+    --graph-bg: #f8f9fa;
+    --graph-node-label: #54595d;
+    --graph-node-label-hover: #202122;
+    --bottom-bar-bg: #ffffff;
+    --bottom-bar-active: #3366cc;
+  }
+
+  /* ── 테마: 다크 모던 ── */
+  [data-theme="dark"] {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --border: #2a2d35;
+    --border-light: #2a2d35;
+    --accent: #5b8dee;
+    --text: #e8eaf0;
+    --text-muted: #7a8099;
+    --text-dim: #4a5068;
+    --infobox-header: #1a2540;
+    --infobox-border: #2a2d35;
+    --tag-bg: #1a2540;
+    --tag-fg: #5b8dee;
+    --tl-line: #2a2d35;
+    --tl-dot: #5b8dee;
+    --tl-dot-old: #2a2d35;
+    --comment-bg: #1e2026;
+    --comment-border: #2a2d35;
+    --error-bg: #2a1a1a;
+    --error-border: #5a2a2a;
+    --graph-bg: #0e0f11;
+    --graph-node-label: #7a8099;
+    --graph-node-label-hover: #e8eaf0;
+    --bottom-bar-bg: #16181c;
+    --bottom-bar-active: #5b8dee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── 헤더 ── */
+  #header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  /* 모바일 햄버거 버튼 */
+  #hamburger {
+    display: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    line-height: 1;
+    font-size: 22px;
+  }
+
+  .header-logo {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .header-logo em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-light);
+    flex-shrink: 0;
+  }
+
+  #search-wrap {
+    flex: 1;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  #search {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 2px 0 0 2px;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    min-width: 0;
+  }
+
+  #search:focus { border-color: var(--accent); }
+
+  .search-btn {
+    border: 1px solid var(--border);
+    border-radius: 0 2px 2px 0;
+    background: var(--bg);
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  #meta-info {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #view-toggle {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .toggle-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .1s;
+    white-space: nowrap;
+  }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* ── 전체 레이아웃 ── */
+  #layout {
+    display: flex;
+    min-height: calc(100vh - var(--header-h));
+  }
+
+  /* ── 왼쪽 사이드바 (아이템 목록) ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border-light);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: var(--header-h);
+    height: calc(100vh - var(--header-h));
+    overflow: hidden;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    z-index: 80;
+  }
+
+  /* 모바일 오버레이 드로어 */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 79;
+    opacity: 0;
+    transition: opacity .25s;
+  }
+
+  #sidebar-title {
+    padding: 10px 14px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #item-count {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  #item-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #item-list::-webkit-scrollbar { width: 4px; }
+  #item-list::-webkit-scrollbar-thumb { background: var(--border-light); }
+
+  .item-entry {
+    padding: 7px 14px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background .1s;
+  }
+
+  .item-entry:hover { background: #f0f0f0; }
+
+  .item-entry.active {
+    background: #eaf3fb;
+    border-left-color: var(--accent);
+  }
+
+  [data-theme="dark"] .item-entry:hover { background: #1e2026; }
+  [data-theme="dark"] .item-entry.active { background: #1a2540; }
+
+  .item-entry .entry-title {
+    font-size: 13.5px;
+    color: var(--accent);
+    line-height: 1.35;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color .1s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .item-entry:hover .entry-title { text-decoration-color: var(--accent); }
+  .item-entry.active .entry-title { text-decoration-color: var(--accent); }
+
+  .item-entry .entry-week {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  /* ── 메인 콘텐츠 ── */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    padding: 24px 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #article-wrap {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* ── 위키 문서 본문 ── */
+  #wiki-doc {
+    flex: 1;
+    min-width: 0;
+    display: none;
+  }
+
+  #wiki-doc.visible { display: block; }
+
+  /* 문서 제목 */
+  .doc-title {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.25;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .doc-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .doc-subtitle .sep { color: var(--border); }
+
+  /* 태그 */
+  .doc-tag {
+    display: inline-block;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border: 1px solid #c8d8f0;
+    border-radius: 2px;
+    padding: 0px 6px;
+    font-size: 11px;
+    text-decoration: none;
+    cursor: default;
+  }
+
+  /* 인포박스 */
+  .infobox {
+    float: right;
+    clear: right;
+    margin: 0 0 16px 24px;
+    min-width: 220px;
+    max-width: 280px;
+    border: 1px solid var(--infobox-border);
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--surface);
+  }
+
+  .infobox-header {
+    background: var(--infobox-header);
+    border-bottom: 1px solid var(--infobox-border);
+    padding: 6px 10px;
+    font-weight: 500;
+    font-size: 13px;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .infobox-body { padding: 8px 10px; }
+
+  .infobox-row {
+    display: flex;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12.5px;
+  }
+
+  .infobox-row:last-child { border-bottom: none; }
+
+  .infobox-label {
+    color: var(--text-muted);
+    min-width: 64px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .infobox-val { color: var(--text); }
+
+  .infobox-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* 섹션 헤딩 */
+  .wiki-h2 {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 3px;
+    margin: 20px 0 10px;
+    color: var(--text);
+  }
+
+  .wiki-h3 {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+    color: var(--text);
+  }
+
+  .summary-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .wiki-body { margin-bottom: 8px; }
+  .body-h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 20px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .body-h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 14px 0 4px;
+  }
+  .body-p {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    margin: 0 0 10px;
+  }
+  .body-ul {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    padding-left: 20px;
+    margin: 6px 0 10px;
+  }
+  .body-code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  /* 같이 보기 */
+  .see-also-list { list-style: none; padding: 0; margin: 0 0 16px; }
+  .see-also-item {
+    padding: 8px 12px;
+    border-left: 3px solid var(--accent, #4a7fc1);
+    margin-bottom: 8px;
+    background: var(--surface);
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .see-also-name { font-weight: 600; color: var(--text); }
+  .see-also-link { margin-left: 6px; color: var(--accent, #4a7fc1); text-decoration: none; font-size: 12px; }
+  .see-also-desc { color: var(--text-muted); }
+
+  /* 타임라인 */
+  .timeline { position: relative; padding-left: 0; }
+
+  .tl-item {
+    display: flex;
+    gap: 0;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .tl-gutter {
+    width: 80px;
+    flex-shrink: 0;
+    padding-right: 16px;
+    padding-top: 3px;
+    text-align: right;
+    position: relative;
+  }
+
+  .tl-gutter::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 10px;
+    bottom: -10px;
+    width: 1px;
+    background: var(--tl-line);
+  }
+
+  .tl-item:last-child .tl-gutter::after { display: none; }
+
+  .tl-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    line-height: 1.3;
+  }
+
+  .tl-connector {
+    width: 24px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 6px;
+    position: relative;
+  }
+
+  .tl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: var(--tl-dot-old);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .tl-item:first-child .tl-dot {
+    background: var(--tl-dot);
+    width: 12px;
+    height: 12px;
+  }
+
+  .tl-connector::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    background: var(--tl-line);
+  }
+
+  .tl-item:last-child .tl-connector::after { display: none; }
+
+  .tl-body {
+    flex: 1;
+    padding: 0 0 18px 12px;
+  }
+
+  .tl-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--infobox-header);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+    border-radius: 2px;
+    padding: 1px 6px;
+    margin-bottom: 5px;
+  }
+
+  .tl-item:first-child .tl-badge {
+    background: #dce9f8;
+    color: var(--accent);
+    border-color: #c8d8f0;
+  }
+
+  .tl-content {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .tl-sources {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* 연관 아이템 */
+  .related-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .related-link {
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+
+  .related-link:hover { color: #2a55aa; }
+
+  .no-content {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* 코멘트 */
+  .comment-item {
+    border-left: 3px solid var(--border-light);
+    padding: 6px 12px;
+    margin-bottom: 10px;
+    background: var(--comment-bg);
+  }
+
+  .comment-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 3px;
+  }
+
+  .comment-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  /* 목차 (TOC) */
+  #toc {
+    width: var(--toc-w);
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    align-self: flex-start;
+    font-size: 12.5px;
+    display: none;
+  }
+
+  #toc.visible { display: block; }
+
+  /* 모바일 TOC — 접힘 가능 */
+  #toc-mobile {
+    display: none;
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    margin-bottom: 14px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #toc-mobile.visible { display: block; }
+
+  #toc-mobile-toggle {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+  }
+
+  #toc-mobile-arrow {
+    transition: transform .2s;
+    font-size: 10px;
+  }
+
+  #toc-mobile-list {
+    display: none;
+    padding: 4px 12px 10px;
+    list-style: none;
+  }
+
+  #toc-mobile-list.open { display: block; }
+
+  #toc-mobile-list li {
+    padding: 3px 0;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .toc-box {
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    padding: 10px 12px;
+  }
+
+  .toc-title {
+    font-weight: 500;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .toc-list { list-style: none; }
+
+  .toc-item {
+    padding: 2px 0;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+
+  .toc-item:hover { color: #2a55aa; }
+
+  /* 빈 상태 */
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 20px;
+    color: var(--text-dim);
+    font-style: italic;
+    font-family: var(--font-serif);
+    font-size: 16px;
+  }
+
+  /* 에러 */
+  #error-banner {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-left: 4px solid var(--error-border);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: none;
+    line-height: 1.6;
+  }
+
+  #error-banner.visible { display: block; }
+
+  /* 그래프 뷰 */
+  #graph-view {
+    display: none;
+    flex: 1;
+    position: relative;
+    background: var(--bg);
+  }
+
+  #graph-view.visible { display: block; }
+
+  #graph-canvas {
+    width: 100%;
+    height: calc(100vh - var(--header-h));
+    display: block;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  #graph-canvas:active { cursor: grabbing; }
+
+  #graph-tooltip {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s;
+    max-width: 180px;
+    line-height: 1.4;
+    z-index: 10;
+    box-shadow: 1px 2px 4px rgba(0,0,0,.12);
+  }
+
+  #graph-tooltip.visible { opacity: 1; }
+
+  #graph-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .gc-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    touch-action: manipulation;
+  }
+
+  .gc-btn:hover { background: var(--bg); color: var(--accent); }
+
+  /* 로딩 */
+  #load-overlay {
+    position: fixed; inset: 0;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 200;
+    transition: opacity .3s;
+  }
+
+  #load-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #load-msg {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+
+  /* 하단 탭바 (모바일 전용) */
+  #bottom-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-bar-h);
+    background: var(--bottom-bar-bg);
+    border-top: 1px solid var(--border-light);
+    z-index: 90;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bb-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 4px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    border-radius: 6px;
+    transition: color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bb-tab .bb-icon { font-size: 20px; line-height: 1; }
+  .bb-tab.active { color: var(--bottom-bar-active); }
+
+  /* clearfix */
+  .clearfix::after { content: ''; display: table; clear: both; }
+
+  /* 이미지 첨부 카드 — 모바일 세로 스택 */
+  .attach-card {
+    border: 1px solid var(--border-light);
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    background: var(--surface);
+    align-items: flex-start;
+  }
+
+  .attach-thumb {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border: 1px solid var(--border-light);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: block;
+  }
+
+  .attach-thumb-placeholder {
+    width: 120px;
+    height: 90px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .attach-meta { flex: 1; min-width: 0; }
+
+  .attach-filename {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .attach-summary {
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .attach-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-style: italic;
+  }
+
+  .attach-ocr {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+  }
+
+  /* ── 반응형 ── */
+
+  /* 중간 (태블릿) */
+  @media (max-width: 900px) {
+    #toc { display: none !important; }
+    .infobox { max-width: 220px; min-width: 180px; }
+    #meta-info { display: none; }
+    .header-divider { display: none; }
+  }
+
+  /* 모바일 */
+  @media (max-width: 640px) {
+    :root {
+      --header-h: 48px;
+      --sidebar-w: 280px;
+    }
+
+    body {
+      padding-bottom: var(--bottom-bar-h);
+    }
+
+    /* 헤더 축소 */
+    #hamburger { display: flex; }
+    #view-toggle { display: none; }
+
+    /* 사이드바를 슬라이드인 드로어로 전환 */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      transform: translateX(-100%);
+      z-index: 80;
+      box-shadow: 2px 0 12px rgba(0,0,0,.18);
+    }
+
+    #sidebar.open {
+      transform: translateX(0);
+    }
+
+    #sidebar-overlay {
+      display: block;
+    }
+
+    #sidebar-overlay.open {
+      opacity: 1;
+    }
+
+    /* 메인 패딩 축소 */
+    #main {
+      padding: 16px 12px;
+    }
+
+    /* 하단 탭바 표시 */
+    #bottom-bar { display: flex; }
+
+    /* 인포박스: float 해제, 전체 너비 */
+    .infobox {
+      float: none;
+      max-width: 100%;
+      min-width: unset;
+      width: 100%;
+      margin: 0 0 16px 0;
+    }
+
+    /* 문서 제목 크기 축소 */
+    .doc-title { font-size: 22px; }
+
+    /* 타임라인 거터 축소 */
+    .tl-gutter { width: 56px; }
+    .tl-date { font-size: 10px; }
+
+    /* 이미지 첨부 카드: 모바일에서 세로 스택 */
+    .attach-card { flex-direction: column; }
+    .attach-thumb, .attach-thumb-placeholder {
+      width: 100%;
+      height: 180px;
+    }
+
+    /* TOC 모바일 버전 표시 */
+    #toc-mobile { display: block; }
+
+    /* 그래프 캔버스 높이 조정 */
+    #graph-canvas {
+      height: calc(100vh - var(--header-h) - var(--bottom-bar-h));
+    }
+
+    /* 그래프 컨트롤 버튼 크기 */
+    .gc-btn { width: 44px; height: 44px; }
+
+    #search-wrap { max-width: unset; }
+    .header-logo { font-size: 17px; }
+  }
+
+  @media (max-width: 380px) {
+    .header-logo { display: none; }
+  }
+</style>
+<script>
+// AUTO-GENERATED: wiki.json 인라인 데이터
+const WIKI_DATA = {
+  "schema_version": "1",
+  "updated_at": "2026-06-04T04:44:09.721942+00:00",
+  "last_processed_at": "2026-06-04T04:44:08.369811+00:00",
+  "items": [
+    {
+      "id": "item_356aafe9",
+      "title": "One Thing - AI 기반 우선순위 추천 앱",
+      "tags": [
+        "앱개발",
+        "AI"
+      ],
+      "summary": "할 일 목록에서 'One Thing' - 매일 가장 중요한 하나의 작업을 AI가 선택하고 그 이유를 설명해주는 앱 아이디어. 기존 할 일 관리 앱들이 놓치고 있는 '왜'에 대한 답을 제공하는 차별화된 접근법을 제시한다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "기존 할 일 관리 앱들의 한계점을 파악하고 새로운 방향성을 발견했다. 대부분의 앱이 '무엇을' 해야 하는지는 알려주지만 '왜' 해야 하는지에 대한 통찰은 부족하다는 점에 주목했다. AI가 사용자의 할 일 목록을 분석해서 매일 아침 가장 중요한 하나의 작업을 선별하고, 그 선택의 근거를 명확히 설명해주는 'One Thing' 앱 컨셉을 구상했다. 이는 선택의 부담을 줄이고 집중력을 높일 수 있는 솔루션이 될 것으로 기대된다.",
+          "source_note_ids": [
+            "1AY6W0eLvSNcs4BLR79ZfYe7Ro4xjUyzAX4K3pjpcTVI"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": []
+    },
+    {
+      "id": "item_58345194",
+      "title": "무추망망이 - 이미지 자동 크롭 프로젝트",
+      "tags": [
+        "무추망망이",
+        "이미지크롭",
+        "opencv",
+        "프로젝트아이디어",
+        "자동화기술",
+        "#opencv",
+        "#이미지처리",
+        "#자동크롭",
+        "#무추망망이",
+        "#프로젝트아이디어",
+        "이미지처리",
+        "OpenCV",
+        "자동크롭",
+        "#OpenCV",
+        "#자동화기술",
+        "#이미지크롤링",
+        "#집만들기",
+        "#자동화",
+        "#채팅봇",
+        "#이미지크롭"
+      ],
+      "summary": "무추망망이 프로젝트의 일환으로 진행되는 이미지 자동 크롭 기술 개발 아이디어. OpenCV를 활용한 구현을 계획하고 있으며, 모바일 메시지 화면 스크린샷을 대상으로 한 자동 크롭 기능을 포함한다. 프로젝트에 대한 긍정적인 피드백을 받은 상태이다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 프로젝트의 이미지 크롤링 기술이 좋은 반응을 얻고 있습니다. 특히 채팅 메시지 스크린샷에서 캐릭터나 특정 UI 요소를 자동으로 인식하고 크롭하는 기능의 실용성이 인정받았습니다. OpenCV를 활용한 구현 방향성이 명확해졌으며, 독특하면서도 실용적인 접근법으로 프로젝트가 진행되고 있습니다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 프로젝트의 이미지 자동 크롭 기술에 대한 구체적인 구현 방향을 설정했다. OpenCV를 활용한 자동 크롭 기능 개발을 계획하고 있으며, 특히 모바일 메시지 스크린샷과 같은 특정 용도에 특화된 크롭 기능을 구현할 예정이다. 아이디어에 대한 긍정적인 피드백을 받아 프로젝트 진행에 대한 확신을 얻었으며, 실제 구현 단계로 진행할 준비가 되었다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 프로젝트의 이미지 자동 크롭 기능에 대한 구체적인 계획을 세웠다. OpenCV를 핵심 기술로 활용하여 모바일 메시지 화면 스크린샷의 자동 크롭 기능을 구현할 예정이다. 아이디어에 대한 긍정적인 피드백을 받아 실제 개발 단계로 진입할 동기를 얻었다. 프로젝트명인 '무추망망이' 또는 '뚜뚜망망이'로 브랜딩하며 프로젝트의 정체성도 함께 구축해나가고 있다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "무추망망이 집 만들기 프로젝트의 구체적인 방향이 채팅 메시지 이미지 자동 크롭 기능으로 확정되었다. 어머니로부터 아이디어에 대한 인정을 받으며 긍정적인 반응을 얻었다. OpenCV를 활용해 채팅 스크린샷에서 이미지를 자동으로 인식하고 크롭하는 기술을 개발할 예정이다. 실제 채팅 스크린샷을 예시로 활용하여 구현 방향을 구체화하고 있으며, 이를 통해 실용적인 자동화 도구로 발전시킬 계획이다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "이번 주 무추망망이 프로젝트에서 새로운 방향성이 제시되었다. 이미지 자동 크롭 기술을 핵심 기능으로 개발하려는 아이디어가 구체화되었으며, OpenCV 라이브러리를 활용한 기술적 접근법이 계획되었다. 특히 아이디어에 대한 외부 검증('어무이가 인정하셨네')을 받음으로써 프로젝트의 실현 가능성이 높아졌다. '똑똑망망이'라는 별칭으로 프로젝트를 진행하며, 자동화 기술을 통한 이미지 처리 솔루션 개발에 집중하고 있다.",
+          "source_note_ids": [
+            "1zn2Zcgk087Ie3YBh4pMF_JjYj-d2N19r"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": [],
+      "attachments": [
+        {
+          "type": "image",
+          "drive_id": "1nOcTvos89wm1vplTfzVkrjAu9MK3wI3F",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스마트폰 채팅 앱 인터페이스의 스크린샷을 손으로 그린 박스 안에 넣은 그림. 채팅 메시지와 아니메 캐릭터 이미지가 포함되어 있음",
+          "tags": [],
+          "pic_drive_id": "1nOcTvos89wm1vplTfzVkrjAu9MK3wI3F",
+          "description": "스마트폰 채팅 앱 인터페이스의 스크린샷을 손으로 그린 박스 안에 넣은 그림. 채팅 메시지와 아니메 캐릭터 이미지가 포함되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "1rDeiLc2r4fSc3ZITWpYiwPruxlpGNNw-",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷에서 아래쪽으로 향하는 화살표",
+          "tags": [],
+          "pic_drive_id": "1rDeiLc2r4fSc3ZITWpYiwPruxlpGNNw-",
+          "description": "스크린샷에서 아래쪽으로 향하는 화살표"
+        },
+        {
+          "type": "image",
+          "drive_id": "1SDnWdwHIMqB7NBYFEjAe1mdfeUDtidMr",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "채팅 애플리케이션의 스크린샷으로, 검은 배경에 메시지들과 애니메이션 캐릭터 이미지가 포함된 대화창",
+          "tags": [],
+          "pic_drive_id": "1SDnWdwHIMqB7NBYFEjAe1mdfeUDtidMr",
+          "description": "채팅 애플리케이션의 스크린샷으로, 검은 배경에 메시지들과 애니메이션 캐릭터 이미지가 포함된 대화창"
+        },
+        {
+          "type": "image",
+          "drive_id": "1YhduqR1pb5kcp13_VaYE6QhUTm4TEC_K",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷을 가리키는 화살표와 '이미지 자동 크롭'이라는 손글씨 텍스트",
+          "tags": [],
+          "pic_drive_id": "1YhduqR1pb5kcp13_VaYE6QhUTm4TEC_K",
+          "description": "스크린샷을 가리키는 화살표와 '이미지 자동 크롭'이라는 손글씨 텍스트"
+        },
+        {
+          "type": "image",
+          "drive_id": "1kOQlQ6V6JcdSQ_A6QX2n1QGPZ6IQ5kwi",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "모바일 메시지 인터페이스 스크린샷을 손으로 그린 그림. 검은색 배경에 메시지와 애니메이션 캐릭터 이미지가 포함되어 있음",
+          "tags": [],
+          "pic_drive_id": "1kOQlQ6V6JcdSQ_A6QX2n1QGPZ6IQ5kwi",
+          "description": "모바일 메시지 인터페이스 스크린샷을 손으로 그린 그림. 검은색 배경에 메시지와 애니메이션 캐릭터 이미지가 포함되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "1kb323Ev28ojj_ZlCVypKP_QksDjAwTii",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷을 가리키는 화살표",
+          "tags": [],
+          "pic_drive_id": "1kb323Ev28ojj_ZlCVypKP_QksDjAwTii",
+          "description": "스크린샷을 가리키는 화살표"
+        },
+        {
+          "type": "image",
+          "drive_id": "1YXtur96jUixFzfsMqcAm7hrgV64SSRND",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "채팅 대화창 스크린샷을 둘러싼 손으로 그린 직사각형 박스",
+          "tags": [],
+          "pic_drive_id": "1YXtur96jUixFzfsMqcAm7hrgV64SSRND",
+          "description": "채팅 대화창 스크린샷을 둘러싼 손으로 그린 직사각형 박스"
+        },
+        {
+          "type": "image",
+          "drive_id": "140cVphJ-7ldB6Bxir8dr3WgBNErZlpT-",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "스크린샷을 가리키는 화살표",
+          "tags": [],
+          "pic_drive_id": "140cVphJ-7ldB6Bxir8dr3WgBNErZlpT-",
+          "description": "스크린샷을 가리키는 화살표"
+        },
+        {
+          "type": "image",
+          "drive_id": "1mEwXP8ckp4ehH6b9fTx1n_o2ywHLLKMr",
+          "filename": "Notes_260602_144020.pdf_drawing",
+          "ocr_text": "",
+          "summary": "직사각형 모양의 컨테이너로 그려진 상자 안에 채팅 메시지 스크린샷이 포함되어 있으며, 화살표가 이 영역을 가리키고 있다",
+          "tags": [],
+          "pic_drive_id": "1mEwXP8ckp4ehH6b9fTx1n_o2ywHLLKMr",
+          "description": "직사각형 모양의 컨테이너로 그려진 상자 안에 채팅 메시지 스크린샷이 포함되어 있으며, 화살표가 이 영역을 가리키고 있다"
+        }
+      ],
+      "body": "## 프로젝트 개요\n\n무추망망이 집 만들기 프로젝트의 핵심 기술로 이미지 크롤링 및 자동 크롭 시스템을 개발하고 있습니다. 이 기술은 채팅 메시지 스크린샷에서 특정 영역을 자동으로 인식하고 크롭하는 기능을 중심으로 합니다.\n\n## 기술 구현 방안\n\nOpenCV를 활용하여 이미지 처리 및 자동 크롭 기능을 구현할 예정입니다. 특히 모바일 채팅 화면의 스크린샷에서 캐릭터 이미지나 특정 메시지 영역을 자동으로 감지하고 추출하는 기술을 개발합니다.\n\n## 프로젝트 진행 상황\n\n현재 이미지 크롤링 기술에 대해 긍정적인 피드백을 받은 상태입니다. 프로젝트의 독특함과 실용성이 인정받고 있으며, 지속적인 개발이 진행되고 있습니다.\n\n## 적용 대상\n\n주요 타겟은 모바일 채팅 메시지 스크린샷이며, 아바타 캐릭터나 특정 UI 요소들을 자동으로 인식하여 크롭하는 기능을 제공합니다.",
+      "see_also": [
+        {
+          "name": "YOLO",
+          "description": "실시간 객체 탐지를 위한 딥러닝 모델로 이미지 내 특정 요소 인식에 활용 가능"
+        },
+        {
+          "name": "Tesseract OCR",
+          "description": "텍스트 영역 인식 및 추출을 위한 오픈소스 OCR 엔진"
+        },
+        {
+          "name": "Selenium",
+          "description": "웹 페이지 스크린샷 자동화를 위한 브라우저 자동화 도구"
+        },
+        {
+          "name": "PIL/Pillow",
+          "description": "Python 기반 이미지 처리 라이브러리로 크롭 기능 구현에 유용"
+        }
+      ]
+    },
+    {
+      "id": "item_026dca10",
+      "title": "주식 차트 인터랙티브 분석 인터페이스",
+      "tags": [
+        "#주식차트",
+        "#UI/UX",
+        "#데이터분석",
+        "#인터페이스디자인",
+        "#최적화",
+        "주식차트",
+        "데이터시각화",
+        "UI/UX",
+        "드래그인터페이스",
+        "성능최적화",
+        "금융데이터",
+        "데이터분석",
+        "인터페이스디자인",
+        "최적화",
+        "#드래그인터페이스",
+        "#데이터시각화",
+        "#성능최적화",
+        "#인터랙티브차트",
+        "#금융데이터",
+        "#차트",
+        "#트레이딩",
+        "#기간범위",
+        "#드래그",
+        "#가격그래프",
+        "#인사이트"
+      ],
+      "summary": "드래그를 통한 시간 범위 확대 기능과 선택된 기간 내 다양한 통계 정보를 제공하는 주식 차트 인터페이스 아이디어. 성능 최적화를 위해 일봉과 월봉을 자동 전환하는 기능을 포함하며, 기간별 최고점, 최저점, 가격 변화율 등의 상세한 인사이트를 제공한다. 사용자 경험을 중심으로 한 직관적인 드래그 인터페이스와 자동 스케일링 기능이 특징이다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "드래그 기반 차트 인터페이스의 구체적인 구현 방안을 더욱 세밀하게 설계했습니다. 특히 성능 최적화를 위한 일봉/월봉 자동 전환 시스템과 사용자가 선택한 기간 내에서 제공할 수 있는 다양한 데이터 분석 인사이트를 체계화했습니다. 최저점/최고점 정보, 시간 차이 계산, 사용자 지정 포인트 간 비교 기능 등을 통해 단순한 차트 뷰어를 넘어선 분석 도구로서의 가치를 더했습니다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "주식 차트 인터페이스의 세부 구현 방향을 구체화했다. 드래그 기반 시간 범위 선택과 자동 스케일링, 성능 최적화를 위한 일봉/월봉 자동 전환 로직을 설계했다. 특히 하단 테이블에서 제공할 인사이트 데이터의 종류를 명확히 정의했으며, 사용자가 클릭한 두 포인트 간의 가격 변화율과 시간 차이를 계산하는 기능까지 포함하여 보다 실용적인 분석 도구로 발전시켰다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "주식 차트 인터페이스의 상세 설계를 구체화했다. 드래그 확대 기능의 핵심은 사용자가 원하는 시간 범위를 직관적으로 선택할 수 있게 하는 것이며, 성능 최적화를 위해 일봉/월봉 자동 전환 방식을 도입했다. 하단 테이블에서 제공할 인사이트로는 기간 내 최고/최저점 정보, 시간 차이, 그리고 사용자가 직접 클릭한 포인트들 간의 비교 분석 기능을 포함시켰다. 이를 통해 단순한 차트 뷰어를 넘어 분석 도구로서의 가치를 제공하고자 한다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        },
+        {
+          "week": "2026-06-01",
+          "content": "주식 차트의 사용자 경험을 개선하는 인터랙티브 인터페이스 설계를 구체화했다. 상단에는 드래그로 확대 가능한 가격 그래프를 배치하고, 렌더링 최적화를 위해 범위에 따라 일봉/월봉을 자동 전환하는 방식을 고안했다. 하단에는 선택된 기간 내의 핵심 데이터를 표로 정리하여 제공한다: 기간 내 최고점과 최저점의 가격 및 시간, 최저점에서 최고점까지의 시간 차이, 사용자가 클릭한 두 포인트 간의 가격 차이율과 시간 차이 등이다. 이를 통해 단순한 차트 조회를 넘어서 의미있는 분석 인사이트를 제공하는 도구로 발전시킬 수 있다.",
+          "source_note_ids": [
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": [],
+      "attachments": [
+        {
+          "type": "image",
+          "drive_id": "1-Hv_Vg31S66azIPgSC8HdQi4SGSocLbS",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "주식 가격 차트 그래프로, 시간에 따른 가격 변동을 선 그래프로 표현하고 있으며, 드래그 확대 범위를 화살표로 표시한 구조",
+          "tags": [],
+          "pic_drive_id": "1-Hv_Vg31S66azIPgSC8HdQi4SGSocLbS",
+          "description": "주식 가격 차트 그래프로, 시간에 따른 가격 변동을 선 그래프로 표현하고 있으며, 드래그 확대 범위를 화살표로 표시한 구조"
+        },
+        {
+          "type": "image",
+          "drive_id": "1NGRjvavC1A9csrYixwkn3S2-jmcPZ8LH",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "시간 축을 표현하는 그리드/테이블 구조로, min과 max 기간을 설정할 수 있는 영역을 보여주는 다이어그램",
+          "tags": [],
+          "pic_drive_id": "1NGRjvavC1A9csrYixwkn3S2-jmcPZ8LH",
+          "description": "시간 축을 표현하는 그리드/테이블 구조로, min과 max 기간을 설정할 수 있는 영역을 보여주는 다이어그램"
+        },
+        {
+          "type": "image",
+          "drive_id": "1DWw4YCyJP8p2vO4lPdqpDpq8Xrjv6Yyq",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "가격 변동을 나타내는 선 그래프로, Y축은 가격, X축은 시간을 의미하며, 드래그로 확대할 수 있는 영역이 화살표로 표시되어 있음",
+          "tags": [],
+          "pic_drive_id": "1DWw4YCyJP8p2vO4lPdqpDpq8Xrjv6Yyq",
+          "description": "가격 변동을 나타내는 선 그래프로, Y축은 가격, X축은 시간을 의미하며, 드래그로 확대할 수 있는 영역이 화살표로 표시되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "196joBSzkrIb3bqiu0FMuuE0RccDSkdqJ",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "시간 범위 선택을 위한 막대형 차트 인터페이스로, min과 max 범위를 설정할 수 있는 구조",
+          "tags": [],
+          "pic_drive_id": "196joBSzkrIb3bqiu0FMuuE0RccDSkdqJ",
+          "description": "시간 범위 선택을 위한 막대형 차트 인터페이스로, min과 max 범위를 설정할 수 있는 구조"
+        },
+        {
+          "type": "image",
+          "drive_id": "1pQwOsr35M-e9qQ4HtmmXlvOoih76iZ1N",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "상단의 가격-시간 그래프로 지그재그 형태의 가격 변동선과 드래그 범위를 나타내는 화살표들이 포함된 차트 영역",
+          "tags": [],
+          "pic_drive_id": "1pQwOsr35M-e9qQ4HtmmXlvOoih76iZ1N",
+          "description": "상단의 가격-시간 그래프로 지그재그 형태의 가격 변동선과 드래그 범위를 나타내는 화살표들이 포함된 차트 영역"
+        },
+        {
+          "type": "image",
+          "drive_id": "1LFaJTNWO-T5Cs4QjtG53GghfgUAFWI_5",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "격자 형태의 테이블 구조로 컨텍스트밴드의 시간 범위(min, max)를 표현하는 다이어그램",
+          "tags": [],
+          "pic_drive_id": "1LFaJTNWO-T5Cs4QjtG53GghfgUAFWI_5",
+          "description": "격자 형태의 테이블 구조로 컨텍스트밴드의 시간 범위(min, max)를 표현하는 다이어그램"
+        },
+        {
+          "type": "image",
+          "drive_id": "1ZRXFdUdePEeoULEbASDjcYrfEbKuwepM",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "Y축 가격, X축 시간으로 구성된 가격 그래프와 드래그 확대 영역을 나타내는 화살표가 포함된 차트 인터페이스",
+          "tags": [],
+          "pic_drive_id": "1ZRXFdUdePEeoULEbASDjcYrfEbKuwepM",
+          "description": "Y축 가격, X축 시간으로 구성된 가격 그래프와 드래그 확대 영역을 나타내는 화살표가 포함된 차트 인터페이스"
+        },
+        {
+          "type": "image",
+          "drive_id": "15gO7xnNrs375ZL5QRmGOOuIy4MCrCSHC",
+          "filename": "Notes_260603_012446.pdf_drawing",
+          "ocr_text": "",
+          "summary": "기간 범위(min, max) 설정을 위한 슬라이더 형태의 컨트롤 테이블 인터페이스",
+          "tags": [],
+          "pic_drive_id": "15gO7xnNrs375ZL5QRmGOOuIy4MCrCSHC",
+          "description": "기간 범위(min, max) 설정을 위한 슬라이더 형태의 컨트롤 테이블 인터페이스"
+        }
+      ],
+      "body": "## 드래그 기반 차트 인터페이스\n\n상단에는 Y축(가격)과 X축(시간)으로 구성된 가격 그래프를 배치하고, 사용자가 드래그를 통해 특정 기간 범위를 선택할 수 있는 기능을 제공합니다. 선택된 영역은 자동으로 확대되며 오토스케일링이 적용됩니다.\n\n## 성능 최적화 전략\n\n기본적으로 일봉 데이터를 사용하지만, 범위가 너무 커져 렌더링 부담이 클 경우 자동으로 월봉으로 전환하여 표시합니다. 사용자가 다시 축소할 경우 일봉으로 돌아가 세밀한 표현을 제공합니다.\n\n## 데이터 분석 인사이트 제공\n\n하단에는 선택된 기간 범위 내에서 다양한 통계 정보를 제공합니다:\n- 기간 내 최저점의 가격과 시간\n- 기간 내 최고점의 가격과 시간  \n- 최저점에서 최고점까지의 시간 차이\n- 사용자가 클릭한 두 포인트(p1, p2) 간 가격 차이 비율과 시간 차이\n\n## 사용자 인터페이스 설계\n\n하단에는 기간 범위 설정을 위한 슬라이더 형태의 테이블을 배치하고, min/max 기간 설정 인터페이스를 제공합니다. 각 기능은 체크박스 형태로 선택적으로 활성화할 수 있도록 설계됩니다.",
+      "see_also": [
+        {
+          "name": "TradingView",
+          "description": "차트 분석 플랫폼의 대표적인 예시로 참고할 수 있는 서비스"
+        },
+        {
+          "name": "D3.js",
+          "description": "인터랙티브 차트 구현에 활용할 수 있는 JavaScript 시각화 라이브러리"
+        },
+        {
+          "name": "Canvas API",
+          "description": "고성능 차트 렌더링을 위한 웹 기술"
+        },
+        {
+          "name": "Technical Analysis",
+          "description": "주식 차트 분석의 이론적 배경이 되는 기술적 분석 방법론"
+        }
+      ]
+    }
+  ]
+};
+</script>
+</head>
+<body>
+
+<div id="load-overlay">
+  <div class="spinner"></div>
+  <div id="load-msg">위키 데이터를 불러오는 중…</div>
+</div>
+
+<!-- 사이드바 오버레이 -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div id="header">
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="메뉴">☰</button>
+  <a class="header-logo" href="#" onclick="return false">💡 <em>아이디어</em> 위키</a>
+  <div class="header-divider"></div>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="아이템 검색…" autocomplete="off">
+    <button class="search-btn">검색</button>
+  </div>
+  <div id="view-toggle">
+    <button class="toggle-btn active" id="btn-wiki" onclick="switchView('wiki')">위키</button>
+    <button class="toggle-btn" id="btn-graph" onclick="switchView('graph')">그래프</button>
+  </div>
+  <button id="theme-toggle" onclick="toggleTheme()" title="테마 변경" style="
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: background .1s, color .1s;
+    flex-shrink: 0;
+  ">🌙 다크</button>
+  <div id="meta-info">—</div>
+</div>
+
+<div id="layout">
+  <!-- 왼쪽 사이드바 -->
+  <div id="sidebar">
+    <div id="sidebar-title">
+      아이템 <span id="item-count">0</span>
+    </div>
+    <div id="item-list"></div>
+  </div>
+
+  <!-- 그래프 뷰 -->
+  <div id="graph-view">
+    <canvas id="graph-canvas"></canvas>
+    <div id="graph-tooltip"></div>
+    <div id="graph-controls">
+      <button class="gc-btn" id="gc-zoom-in" title="확대">+</button>
+      <button class="gc-btn" id="gc-zoom-out" title="축소">−</button>
+      <button class="gc-btn" id="gc-reset" title="초기화">⌂</button>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div id="main">
+    <div id="article-wrap">
+      <!-- 위키 문서 -->
+      <div id="wiki-doc">
+        <div id="error-banner"></div>
+        <!-- 모바일 TOC (접힘 가능) -->
+        <div id="toc-mobile">
+          <button id="toc-mobile-toggle" onclick="toggleMobileToc()">
+            <span>목차</span>
+            <span id="toc-mobile-arrow">▼</span>
+          </button>
+          <ul id="toc-mobile-list"></ul>
+        </div>
+        <div id="doc-content"></div>
+      </div>
+
+      <!-- 빈 상태 -->
+      <div id="empty-state">
+        <div>← 왼쪽에서 아이템을 선택하세요</div>
+      </div>
+
+      <!-- 목차 (데스크탑) -->
+      <div id="toc">
+        <div class="toc-box">
+          <div class="toc-title">목차</div>
+          <ul class="toc-list" id="toc-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 하단 탭바 (모바일 전용) -->
+<div id="bottom-bar">
+  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')">
+    <span class="bb-icon">☰</span>
+    <span>목록</span>
+  </button>
+  <button class="bb-tab" id="bb-wiki" onclick="bbTab('wiki')">
+    <span class="bb-icon">📄</span>
+    <span>위키</span>
+  </button>
+  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')">
+    <span class="bb-icon">🕸️</span>
+    <span>그래프</span>
+  </button>
+  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()">
+    <span class="bb-icon" id="bb-theme-icon">🌙</span>
+    <span>테마</span>
+  </button>
+</div>
+
+<script>
+const SAMPLE_WIKI = {
+  "schema_version": "1",
+  "updated_at": "2026-05-26T09:00:00+00:00",
+  "last_processed_at": "2026-05-26T09:00:00+00:00",
+  "items": [
+    {
+      "id": "item_demo01",
+      "title": "AI 기반 루틴 코치 앱",
+      "tags": ["앱", "AI", "헬스"],
+      "summary": "사용자의 일일 루틴을 분석해 AI가 맞춤형 피드백과 개선 제안을 제공하는 모바일 앱. 수면, 운동, 식사 패턴을 종합적으로 파악해 최적의 루틴을 설계해준다.",
+      "versions": [
+        { "week": "2026-05-25", "content": "수면 트래킹과 운동 데이터를 연동해 상관관계를 분석하는 기능 추가 구상. 수면 질이 좋을수록 다음날 운동 퍼포먼스가 높다는 패턴을 자동으로 감지하고 시각화.", "source_note_ids": [] },
+        { "week": "2026-05-18", "content": "기본 아이디어 정리. 사용자가 매일 간단한 체크인만 하면 AI가 패턴을 학습해 점진적으로 더 나은 루틴을 제안.", "source_note_ids": [] }
+      ],
+      "related": ["item_demo02"],
+      "comments": [{ "date": "2026-05-27", "text": "수면 트래킹은 워치 연동으로 자동화하는 게 더 좋을 것 같다.", "attachments": [] }]
+    },
+    {
+      "id": "item_demo02",
+      "title": "구독 관리 서비스",
+      "tags": ["앱", "핀테크"],
+      "summary": "사용자가 가입한 모든 구독 서비스를 한눈에 보여주고, 사용하지 않는 구독을 탐지해 해지를 도와주는 서비스.",
+      "versions": [
+        { "week": "2026-05-25", "content": "은행 API 연동으로 구독 결제 내역을 자동 감지하는 방식 검토.", "source_note_ids": [] }
+      ],
+      "related": ["item_demo01"],
+      "comments": []
+    }
+  ]
+};
+
+let wiki = null;
+let activeId = null;
+let tocItems = [];
+
+async function loadWiki() {
+  if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
+  try {
+    const resp = await fetch('./wiki.json');
+    if (resp.ok) return await resp.json();
+  } catch(e) {}
+  return null;
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderMarkdown(md) {
+  let html = String(md||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm, '<h4 class="body-h4">$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3 class="body-h3">$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3 class="body-h3">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code class="body-code">$1</code>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[^]*?<\/li>\n?)+/g, m => `<ul class="body-ul">${m}</ul>`)
+    .split(/\n\n+/)
+    .map(block => {
+      if (/^<[hul]/.test(block.trim())) return block;
+      return `<p class="body-p">${block.replace(/\n/g,'<br>')}</p>`;
+    })
+    .join('\n');
+  return html;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' }); }
+  catch { return iso; }
+}
+
+function fmtWeek(w) {
+  if (!w) return '';
+  try { return new Date(w).toLocaleDateString('ko-KR', { year:'numeric', month:'short', day:'numeric' }); }
+  catch { return w; }
+}
+
+// ── 사이드바 드로어 (모바일) ────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.contains('open');
+  if (isOpen) closeSidebar();
+  else openSidebar();
+}
+
+function openSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.add('open');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── 하단 탭바 ───────────────────────────────────────────────
+function bbTab(tab) {
+  ['list','wiki','graph'].forEach(t => {
+    document.getElementById('bb-'+t)?.classList.toggle('active', t === tab);
+  });
+
+  if (tab === 'list') {
+    openSidebar();
+    // 목록 탭은 다른 뷰 전환 없이 드로어만 열기
+    document.getElementById('bb-list').classList.add('active');
+  } else if (tab === 'wiki') {
+    closeSidebar();
+    switchView('wiki');
+  } else if (tab === 'graph') {
+    closeSidebar();
+    switchView('graph');
+  }
+}
+
+// ── 모바일 TOC 접힘 ─────────────────────────────────────────
+function toggleMobileToc() {
+  const list = document.getElementById('toc-mobile-list');
+  const arrow = document.getElementById('toc-mobile-arrow');
+  const isOpen = list.classList.contains('open');
+  list.classList.toggle('open', !isOpen);
+  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function renderSidebar(items) {
+  const list = document.getElementById('item-list');
+  document.getElementById('item-count').textContent = items.length;
+  if (!items.length) {
+    list.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--text-dim);font-style:italic">결과 없음</div>';
+    return;
+  }
+  list.innerHTML = items.map(item => {
+    const week = item.versions?.[0]?.week || '';
+    return `<div class="item-entry${item.id === activeId ? ' active' : ''}" data-id="${esc(item.id)}">
+      <div class="entry-title">${esc(item.title)}</div>
+      ${week ? `<div class="entry-week">${fmtWeek(week)}</div>` : ''}
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.item-entry').forEach(el =>
+    el.addEventListener('click', () => {
+      selectItem(el.dataset.id);
+      // 모바일에서 아이템 선택 시 드로어 닫기 + 위키 뷰로 전환
+      if (window.innerWidth <= 640) {
+        closeSidebar();
+        switchView('wiki');
+        // 하단 탭바 업데이트
+        ['list','wiki','graph'].forEach(t =>
+          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
+        );
+      }
+    })
+  );
+}
+
+function buildAttachHtml(item) {
+  if (!item.attachments?.length) return '';
+  return `
+    <h2 class="wiki-h2" id="sec-attachments">이미지 첨부</h2>
+    ${item.attachments.map(att => {
+      const picUrl = att.pic_drive_id
+        ? `https://lh3.googleusercontent.com/d/${att.pic_drive_id}`
+        : null;
+      const thumbHtml = picUrl
+        ? `<img class="attach-thumb" src="${picUrl}"
+              alt="${esc(att.description || att.summary || '')}"
+              onclick="window.open('https://drive.google.com/file/d/${att.pic_drive_id}/view','_blank')"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+           /><div class="attach-thumb-placeholder" style="display:none">🖼️</div>`
+        : `<div class="attach-thumb-placeholder">🖼️</div>`;
+      return `
+      <div class="attach-card">
+        ${thumbHtml}
+        <div class="attach-meta">
+          <div class="attach-filename">${esc(att.filename||'')}</div>
+          <div class="attach-summary">${esc(att.summary||'')}</div>
+          ${att.description ? `<div class="attach-desc">${esc(att.description)}</div>` : ''}
+          ${att.ocr_text ? `<div class="attach-ocr">${esc(att.ocr_text)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function selectItem(id) {
+  activeId = id;
+  document.querySelectorAll('.item-entry').forEach(el =>
+    el.classList.toggle('active', el.dataset.id === id)
+  );
+
+  const item = wiki.items.find(i => i.id === id);
+  if (!item) return;
+
+  document.getElementById('empty-state').style.display = 'none';
+  const doc = document.getElementById('wiki-doc');
+  doc.classList.add('visible');
+
+  const latestWeek = item.versions?.[0]?.week;
+  const tagsHtml = (item.tags||[]).map(t => `<span class="doc-tag">${esc(t)}</span>`).join(' ');
+  const relatedItems = (item.related||[]).map(rid => wiki.items.find(i=>i.id===rid)).filter(Boolean);
+
+  const versionsHtml = !item.versions?.length
+    ? '<p class="no-content">버전 기록 없음</p>'
+    : item.versions.map((v, i) => `
+        <div class="tl-item">
+          <div class="tl-gutter"><div class="tl-date">${v.week||''}</div></div>
+          <div class="tl-connector"><div class="tl-dot"></div></div>
+          <div class="tl-body">
+            <div class="tl-badge">${i===0 ? '최신' : fmtWeek(v.week)}</div>
+            <div class="tl-content">${esc(v.content||'')}</div>
+            ${v.source_note_ids?.length ? `<div class="tl-sources">노트 ${v.source_note_ids.length}개 기반</div>` : ''}
+          </div>
+        </div>`).join('');
+
+  const relatedHtml = !relatedItems.length
+    ? '<p class="no-content">연관 아이템 없음</p>'
+    : `<div class="related-list">${relatedItems.map(r =>
+        `<span class="related-link" data-id="${r.id}">${esc(r.title)}</span>`
+      ).join('<span style="color:var(--border);margin:0 2px"> · </span>')}</div>`;
+
+  const comments = (item.comments||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const commentsHtml = !comments.length ? '' : `
+    <h2 class="wiki-h2" id="sec-comments">코멘트</h2>
+    ${comments.map(c => `
+      <div class="comment-item">
+        <div class="comment-date">${esc(c.date)}</div>
+        <div class="comment-text">${esc(c.text||'')}</div>
+      </div>`).join('')}`;
+
+  const attachmentsHtml = buildAttachHtml(item);
+  const hasAttachments = !!item.attachments?.length;
+
+  // TOC 구성
+  tocItems = [
+    { id: 'sec-summary', label: '개요' },
+    ...(item.body ? [{ id: 'sec-body', label: '상세 내용' }] : []),
+    { id: 'sec-history', label: '버전 히스토리' },
+    ...(hasAttachments ? [{ id: 'sec-attachments', label: '이미지 첨부' }] : []),
+    ...(comments.length ? [{ id: 'sec-comments', label: '코멘트' }] : []),
+    ...((item.see_also?.length) ? [{ id: 'sec-see-also', label: '같이 보기' }] : []),
+    { id: 'sec-related', label: '연관 아이템' },
+  ];
+
+  const tocHtml = tocItems.map(t =>
+    `<li class="toc-item" onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'})">${t.label}</li>`
+  ).join('');
+
+  // 데스크탑 TOC
+  document.getElementById('toc-list').innerHTML = tocHtml;
+  document.getElementById('toc').classList.add('visible');
+
+  // 모바일 TOC
+  const mobileTocList = document.getElementById('toc-mobile-list');
+  mobileTocList.innerHTML = tocItems.map(t =>
+    `<li onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'});toggleMobileToc()">${t.label}</li>`
+  ).join('');
+  document.getElementById('toc-mobile').classList.add('visible');
+
+  document.getElementById('doc-content').innerHTML = `
+    <h1 class="doc-title">${esc(item.title)}</h1>
+    <div class="doc-subtitle">
+      ${latestWeek ? `<span>마지막 수정: ${fmtWeek(latestWeek)}</span><span class="sep">|</span>` : ''}
+      <span>버전 ${item.versions?.length||0}개</span>
+      ${tagsHtml ? `<span class="sep">|</span>${tagsHtml}` : ''}
+    </div>
+    <div class="clearfix">
+      <div class="infobox">
+        <div class="infobox-header">아이디어 요약</div>
+        <div class="infobox-body">
+          <div class="infobox-row">
+            <div class="infobox-label">분류</div>
+            <div class="infobox-val infobox-tags">${(item.tags||[]).map(t=>`<span class="doc-tag">${esc(t)}</span>`).join(' ')}</div>
+          </div>
+          <div class="infobox-row">
+            <div class="infobox-label">버전 수</div>
+            <div class="infobox-val">${item.versions?.length||0}개</div>
+          </div>
+          ${latestWeek ? `<div class="infobox-row">
+            <div class="infobox-label">최신</div>
+            <div class="infobox-val">${fmtWeek(latestWeek)}</div>
+          </div>` : ''}
+          ${relatedItems.length ? `<div class="infobox-row">
+            <div class="infobox-label">연관</div>
+            <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <h2 class="wiki-h2" id="sec-summary">개요</h2>
+      <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
+    </div>
+
+    ${item.body ? `
+    <h2 class="wiki-h2" id="sec-body">상세 내용</h2>
+    <div class="wiki-body">${renderMarkdown(item.body)}</div>` : ''}
+
+    ${item.see_also?.length ? `
+    <h2 class="wiki-h2" id="sec-see-also">같이 보기</h2>
+    <ul class="see-also-list">
+      ${item.see_also.map(s => `
+      <li class="see-also-item">
+        <span class="see-also-name">${esc(s.name||'')}</span>
+        ${s.url ? `<a href="${esc(s.url)}" target="_blank" class="see-also-link">↗</a>` : ''}
+        ${s.description ? `<span class="see-also-desc"> — ${esc(s.description)}</span>` : ''}
+      </li>`).join('')}
+    </ul>` : ''}
+
+    <h2 class="wiki-h2" id="sec-history">버전 히스토리</h2>
+    <div class="timeline">${versionsHtml}</div>
+
+    ${attachmentsHtml}
+    ${commentsHtml}
+
+    <h2 class="wiki-h2" id="sec-related">연관 아이템</h2>
+    ${relatedHtml}
+  `;
+
+  doc.querySelectorAll('.related-link').forEach(el =>
+    el.addEventListener('click', () => {
+      selectItem(el.dataset.id);
+      document.querySelector(`.item-entry[data-id="${el.dataset.id}"]`)?.scrollIntoView({ block:'nearest' });
+    })
+  );
+
+  document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function filterItems(q) {
+  if (!wiki) return;
+  const query = q.toLowerCase().trim();
+  if (!query) { renderSidebar(wiki.items); return; }
+  renderSidebar(wiki.items.filter(item =>
+    item.title.toLowerCase().includes(query) ||
+    (item.tags||[]).some(t => t.toLowerCase().includes(query)) ||
+    (item.summary||'').toLowerCase().includes(query)
+  ));
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.innerHTML = msg;
+  el.classList.add('visible');
+}
+
+let currentView = 'wiki';
+let graphState = null;
+
+function switchView(view) {
+  currentView = view;
+  const graphPanel = document.getElementById('graph-view');
+  const mainPanel = document.getElementById('main');
+  const btnWiki = document.getElementById('btn-wiki');
+  const btnGraph = document.getElementById('btn-graph');
+
+  if (view === 'graph') {
+    mainPanel.style.display = 'none';
+    graphPanel.classList.add('visible');
+    btnGraph?.classList.add('active');
+    btnWiki?.classList.remove('active');
+    if (wiki) renderGraph(wiki.items||[]);
+  } else {
+    mainPanel.style.display = '';
+    graphPanel.classList.remove('visible');
+    btnWiki?.classList.add('active');
+    btnGraph?.classList.remove('active');
+  }
+}
+
+// ── 그래프 렌더링 (터치 지원 포함) ──────────────────────────
+const TAG_COLORS = ['#3366cc','#cc3333','#339933','#cc6600','#663399','#006666','#993366','#336699'];
+
+function renderGraph(items) {
+  const canvas = document.getElementById('graph-canvas');
+  const tooltip = document.getElementById('graph-tooltip');
+  const parent = document.getElementById('graph-view');
+  const ctx = canvas.getContext('2d');
+
+  const dpr = window.devicePixelRatio||1;
+  const W = parent.clientWidth;
+  const H = parent.clientHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  ctx.scale(dpr, dpr);
+
+  const allTags = [...new Set(items.flatMap(i=>i.tags||[]))];
+  const tagColor = {};
+  allTags.forEach((t,i) => { tagColor[t] = TAG_COLORS[i%TAG_COLORS.length]; });
+
+  const nodeMap = {};
+  items.forEach(item => { nodeMap[item.id] = item; });
+
+  const nodes = items.map((item, i) => {
+    const angle = 2*Math.PI*i/items.length;
+    const r = Math.min(W,H)*0.3;
+    return {
+      id: item.id, title: item.title, tags: item.tags||[],
+      color: tagColor[(item.tags||[])[0]]||'#3366cc',
+      x: W/2+r*Math.cos(angle)+(Math.random()-.5)*30,
+      y: H/2+r*Math.sin(angle)+(Math.random()-.5)*30,
+      vx:0, vy:0, radius:10
+    };
+  });
+
+  const edges = [], seen = new Set();
+  items.forEach(item => {
+    (item.related||[]).forEach(rid => {
+      const key = [item.id,rid].sort().join('--');
+      if (seen.has(key)||!nodeMap[rid]) return;
+      seen.add(key);
+      const explicit = (item.explicit_related||[]).includes(rid);
+      edges.push({ from:item.id, to:rid, explicit });
+    });
+  });
+
+  const nodeIdx = {};
+  nodes.forEach((n,i) => { nodeIdx[n.id]=i; });
+
+  let transform = {x:0,y:0,scale:1};
+  let dragging=null, panning=null, hoveredNode=null;
+  let simRunning=true, frameCnt=0, animFrame=null;
+
+  function tick() {
+    const repulse=4000, linkDist=130, linkStr=0.04, alpha=0.08, centerStr=0.012;
+    for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++) {
+      const a=nodes[i],b=nodes[j];
+      let dx=b.x-a.x, dy=b.y-a.y;
+      const d2=dx*dx+dy*dy+.01, f=repulse/d2, d=Math.sqrt(d2);
+      a.vx-=f*dx/d; a.vy-=f*dy/d; b.vx+=f*dx/d; b.vy+=f*dy/d;
+    }
+    edges.forEach(e => {
+      const a=nodes[nodeIdx[e.from]], b=nodes[nodeIdx[e.to]];
+      if(!a||!b) return;
+      let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+      const f=(d-linkDist)*linkStr;
+      a.vx+=f*dx/d; a.vy+=f*dy/d; b.vx-=f*dx/d; b.vy-=f*dy/d;
+    });
+    nodes.forEach(n => { n.vx+=(W/2-n.x)*centerStr; n.vy+=(H/2-n.y)*centerStr; });
+    nodes.forEach(n => {
+      if(dragging&&dragging.node===n) return;
+      n.vx*=(1-alpha); n.vy*=(1-alpha);
+      n.x+=n.vx; n.y+=n.vy;
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    ctx.translate(transform.x,transform.y);
+    ctx.scale(transform.scale,transform.scale);
+
+    edges.forEach(e => {
+      const a=nodes[nodeIdx[e.from]], b=nodes[nodeIdx[e.to]];
+      if(!a||!b) return;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle = e.explicit ? 'rgba(51,102,204,0.6)' : 'rgba(162,169,177,0.5)';
+      ctx.lineWidth = e.explicit ? 2.5 : 1.5;
+      ctx.stroke();
+    });
+
+    nodes.forEach(n => {
+      const isHov = hoveredNode===n;
+      const r = isHov ? n.radius+3 : n.radius;
+      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,2*Math.PI);
+      ctx.fillStyle = isHov ? n.color : n.color+'cc';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = `${isHov?12:11}px "Noto Sans KR", sans-serif`;
+      ctx.fillStyle = isHov
+        ? getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label-hover').trim()
+        : getComputedStyle(document.documentElement).getPropertyValue('--graph-node-label').trim();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      let label = n.title;
+      const maxW = 85;
+      if(ctx.measureText(label).width>maxW) {
+        while(label.length>2&&ctx.measureText(label+'…').width>maxW) label=label.slice(0,-1);
+        label+='…';
+      }
+      ctx.fillText(label, n.x, n.y+r+4);
+    });
+    ctx.restore();
+  }
+
+  function loop() {
+    if(simRunning){tick();frameCnt++;if(frameCnt>300)simRunning=false;}
+    draw();
+    animFrame=requestAnimationFrame(loop);
+  }
+
+  if(graphState?.animFrame) cancelAnimationFrame(graphState.animFrame);
+  graphState = {animFrame:null};
+
+  function canvasPos(clientX, clientY) {
+    const rect=canvas.getBoundingClientRect();
+    return {
+      x:(clientX-rect.left-transform.x)/transform.scale,
+      y:(clientY-rect.top-transform.y)/transform.scale
+    };
+  }
+
+  function hitNode(cx,cy) {
+    for(let i=nodes.length-1;i>=0;i--) {
+      const n=nodes[i], dx=cx-n.x, dy=cy-n.y;
+      if(dx*dx+dy*dy<=(n.radius+8)**2) return n;
+    }
+    return null;
+  }
+
+  // ── 마우스 이벤트 ──
+  canvas.onmousedown = e => {
+    const {x,y}=canvasPos(e.clientX, e.clientY), hit=hitNode(x,y);
+    if(hit) { dragging={node:hit,ox:x-hit.x,oy:y-hit.y}; simRunning=true; frameCnt=0; }
+    else panning={sx:e.clientX,sy:e.clientY,tx:transform.x,ty:transform.y};
+  };
+
+  canvas.onmousemove = e => {
+    if(dragging){const{x,y}=canvasPos(e.clientX,e.clientY);dragging.node.x=x-dragging.ox;dragging.node.y=y-dragging.oy;return;}
+    if(panning){transform.x=panning.tx+(e.clientX-panning.sx);transform.y=panning.ty+(e.clientY-panning.sy);return;}
+    const{x,y}=canvasPos(e.clientX,e.clientY),hit=hitNode(x,y),prev=hoveredNode;
+    hoveredNode=hit;
+    if(hit!==prev){simRunning=true;frameCnt=0;}
+    if(hit){
+      const rect=canvas.getBoundingClientRect();
+      tooltip.style.left=(e.clientX-rect.left+14)+'px';
+      tooltip.style.top=(e.clientY-rect.top-10)+'px';
+      tooltip.innerHTML=`<b>${esc(hit.title)}</b>${hit.tags.length?'<br><span style="color:#3366cc;font-size:10px">'+hit.tags.map(t=>'#'+esc(t)).join(' ')+'</span>':''}`;
+      tooltip.classList.add('visible');
+      canvas.style.cursor='pointer';
+    } else { tooltip.classList.remove('visible'); canvas.style.cursor='grab'; }
+  };
+
+  canvas.onmouseup = () => { dragging=null; panning=null; };
+
+  canvas.onclick = e => {
+    const{x,y}=canvasPos(e.clientX,e.clientY),hit=hitNode(x,y);
+    if(hit){switchView('wiki');selectItem(hit.id);document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});}
+  };
+
+  canvas.onwheel = e => {
+    e.preventDefault();
+    const rect=canvas.getBoundingClientRect(), mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const delta=e.deltaY>0?.85:1.18, ns=Math.max(.2,Math.min(4,transform.scale*delta));
+    transform.x=mx-(mx-transform.x)*(ns/transform.scale);
+    transform.y=my-(my-transform.y)*(ns/transform.scale);
+    transform.scale=ns;
+  };
+
+  // ── 터치 이벤트 (핀치줌 + 드래그) ──
+  let lastTouches = null;
+  let touchDragging = null;
+  let touchPanning = null;
+  let pinchStartDist = null;
+  let pinchStartScale = null;
+  let pinchStartCenter = null;
+  let pinchStartTx = null, pinchStartTy = null;
+  let tapTimeout = null;
+  let tapCandidate = null;
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    simRunning = true; frameCnt = 0;
+
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      const {x,y} = canvasPos(t.clientX, t.clientY);
+      const hit = hitNode(x, y);
+
+      tapCandidate = hit;
+      if (tapTimeout) clearTimeout(tapTimeout);
+      tapTimeout = setTimeout(() => { tapCandidate = null; }, 300);
+
+      if (hit) {
+        touchDragging = { node: hit, ox: x - hit.x, oy: y - hit.y };
+      } else {
+        touchPanning = { sx: t.clientX, sy: t.clientY, tx: transform.x, ty: transform.y };
+      }
+    } else if (e.touches.length === 2) {
+      touchDragging = null; touchPanning = null;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const cx = (t1.clientX + t2.clientX) / 2;
+      const cy = (t1.clientY + t2.clientY) / 2;
+      const rect = canvas.getBoundingClientRect();
+      pinchStartCenter = { x: cx - rect.left, y: cy - rect.top };
+      pinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      pinchStartScale = transform.scale;
+      pinchStartTx = transform.x;
+      pinchStartTy = transform.y;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      if (touchDragging) {
+        const {x,y} = canvasPos(t.clientX, t.clientY);
+        touchDragging.node.x = x - touchDragging.ox;
+        touchDragging.node.y = y - touchDragging.oy;
+      } else if (touchPanning) {
+        transform.x = touchPanning.tx + (t.clientX - touchPanning.sx);
+        transform.y = touchPanning.ty + (t.clientY - touchPanning.sy);
+      }
+    } else if (e.touches.length === 2 && pinchStartDist !== null) {
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const ratio = dist / pinchStartDist;
+      const ns = Math.max(.2, Math.min(4, pinchStartScale * ratio));
+      const cx = pinchStartCenter.x;
+      const cy = pinchStartCenter.y;
+      transform.scale = ns;
+      transform.x = cx - (cx - pinchStartTx) * (ns / pinchStartScale);
+      transform.y = cy - (cy - pinchStartTy) * (ns / pinchStartScale);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (e.touches.length === 0) {
+      // 탭으로 노드 클릭
+      if (tapCandidate && touchDragging?.node === tapCandidate) {
+        const hit = tapCandidate;
+        switchView('wiki');
+        selectItem(hit.id);
+        document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});
+        // 모바일 하단탭 업데이트
+        ['list','wiki','graph'].forEach(t =>
+          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
+        );
+      }
+      touchDragging = null; touchPanning = null;
+      pinchStartDist = null;
+    } else if (e.touches.length === 1) {
+      // 핀치 종료 후 한 손가락만 남은 경우
+      const t = e.touches[0];
+      touchPanning = { sx: t.clientX, sy: t.clientY, tx: transform.x, ty: transform.y };
+      pinchStartDist = null;
+    }
+  }, { passive: false });
+
+  document.getElementById('gc-zoom-in').onclick=()=>{transform.scale=Math.min(4,transform.scale*1.25);simRunning=true;frameCnt=0;};
+  document.getElementById('gc-zoom-out').onclick=()=>{transform.scale=Math.max(.2,transform.scale*.8);simRunning=true;frameCnt=0;};
+  document.getElementById('gc-reset').onclick=()=>{transform={x:0,y:0,scale:1};simRunning=true;frameCnt=0;};
+
+  animFrame=requestAnimationFrame(loop);
+  graphState.animFrame=animFrame;
+}
+
+// ── 테마 전환 ────────────────────────────────────────────────
+const THEMES = [
+  { key: 'wiki', label: '🌙 다크', next: 'dark' },
+  { key: 'dark', label: '☀️ 라이트', next: 'wiki' },
+];
+
+function applyTheme(key) {
+  document.documentElement.setAttribute('data-theme', key);
+  const t = THEMES.find(t => t.key === key) || THEMES[0];
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = t.label;
+  const bbIcon = document.getElementById('bb-theme-icon');
+  if (bbIcon) bbIcon.textContent = key === 'dark' ? '☀️' : '🌙';
+  try { localStorage.setItem('wiki-theme', key); } catch(e) {}
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'wiki';
+  const t = THEMES.find(t => t.key === current) || THEMES[0];
+  applyTheme(t.next);
+}
+
+async function init() {
+  try {
+    const saved = localStorage.getItem('wiki-theme');
+    if (saved) applyTheme(saved);
+  } catch(e) {}
+
+  const overlay = document.getElementById('load-overlay');
+  let data = await loadWiki();
+  let usingSample = false;
+
+  if (!data) {
+    usingSample = true;
+    data = SAMPLE_WIKI;
+    showError('⚠️ <b>wiki.json을 찾을 수 없습니다.</b> 샘플 데이터로 표시 중입니다.');
+  }
+
+  wiki = data;
+
+  const count = wiki.items?.length||0;
+  const updatedAt = fmtDate(wiki.updated_at);
+  document.getElementById('meta-info').textContent =
+    `아이템 ${count}개${updatedAt?' · '+updatedAt:''}${usingSample?' (샘플)':''}`;
+
+  renderSidebar(wiki.items||[]);
+  document.getElementById('search').addEventListener('input', e => filterItems(e.target.value));
+
+  if (wiki.items?.length>0) selectItem(wiki.items[0].id);
+
+  overlay.classList.add('hidden');
+  setTimeout(()=>overlay.style.display='none', 350);
+}
+
+init();
+</script>
+</body>
+</html>
