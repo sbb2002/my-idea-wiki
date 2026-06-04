@@ -35,41 +35,28 @@ GitHub: https://github.com/sbb2002/my-idea-wiki
 | #25 | 마크다운 표 렌더링 | ✅ |
 | #26 | 첨부 이미지를 상세 내용 본문에 인라인 표시 | ✅ (파이프 버그 추가 수정됨) |
 | #27 | 섹션 헤딩 클릭으로 접기/펼치기 (PC+모바일) | ✅ |
+| #28 | clearfix 제거 — 인포박스 DOM 분리, 섹션 래핑 정상화 | ✅ |
+| #29 | TOC 클릭 시 접힌 섹션 자동 펼침 (scrollToSection 추가) | ✅ |
+| #31 | list_all_note_ids에 이미지 mimeType 추가 (고아 오탐 방지) | ✅ |
+| #32 | 모바일 wiki-h2 섹션 접기 touchend 이벤트 추가 | ✅ |
+| #33 | drawing.filename 저장 + runner.py 연동 (이미지 인라인 렌더링) | ✅ |
+| #34 | add_attachment_to_item filename 기반 중복 체크 추가 | ✅ |
+| #35 | scripts/dedup_versions.py 일회성 마이그레이션 스크립트 | ✅ |
+| #36 | 고아 아이템 wiki.json에서 자동 삭제 (알람만 → 직접 제거) | ✅ |
+| #37 | 하단 탭바 재설계 — 위키 탭 제거, 목록/그래프 ON-OFF 토글 | ✅ |
+| #38 | 시스템 다크모드 자동 감지 + 테마 버튼 라벨 반전 수정 | ✅ |
 
-### 다음 세션 작업 — 버그 수정 (우선순위 순)
-
-> ⚠️ #13~#20은 GitHub에서 닫히지 않은 상태이나 실제로는 완료됨. 무시할 것.
-
-#### 🔴 즉시 수정 (심각 / 레이아웃 붕괴)
-
-| 순서 | 이슈 | 내용 | Blocked by |
-|------|------|------|-----------|
-| 1 | [#28](https://github.com/sbb2002/my-idea-wiki/issues/28) | 섹션 접기 — clearfix 내부 wiki-h2 래핑 오작동 (인포박스 DOM 분리) | 없음 |
-| 2 | [#32](https://github.com/sbb2002/my-idea-wiki/issues/32) | 모바일 wiki-h2 섹션 접기 클릭 미동작 (touch-action 누락) | #28 선행 권장 |
-| 3 | [#29](https://github.com/sbb2002/my-idea-wiki/issues/29) | TOC 클릭 시 접힌 섹션 자동 펼침 없음 | #28 선행 권장 |
-
-#### 🟡 데이터/파이프라인 버그
-
-| 순서 | 이슈 | 내용 | Blocked by |
-|------|------|------|-----------|
-| 4 | [#35](https://github.com/sbb2002/my-idea-wiki/issues/35) | 기존 중복 week 버전 데이터 정리 (일회성 마이그레이션) | 없음 |
-| 5 | [#31](https://github.com/sbb2002/my-idea-wiki/issues/31) | 고아 감지 오탐 — list_all_note_ids에 이미지 mimeType 누락 | 없음 |
-| 6 | [#36](https://github.com/sbb2002/my-idea-wiki/issues/36) | 고아 아이템 자동 제거 (알람만 발송 → wiki.json에서 직접 삭제) | #31 선행 필수 |
-| 7 | [#33](https://github.com/sbb2002/my-idea-wiki/issues/33) | 상세 내용 이미지 인라인 미렌더링 — drawing filename 불일치 | 없음 |
-| 8 | [#34](https://github.com/sbb2002/my-idea-wiki/issues/34) | rerun 시 PDF drawing 이미지 중복 첨부 | #33 선행 권장 |
-
-#### 🟢 UX 개선 (모바일)
-
-| 순서 | 이슈 | 내용 | Blocked by |
-|------|------|------|-----------|
-| 9 | [#37](https://github.com/sbb2002/my-idea-wiki/issues/37) | 하단 탭바 재설계 — 위키 탭 제거 + 목록/그래프 ON-OFF 토글 | 없음 |
-| 10 | [#38](https://github.com/sbb2002/my-idea-wiki/issues/38) | 다크모드 미감지 + 테마 버튼 라벨 반전 수정 | 없음 |
+### 다음 세션 작업
 
 #### ⚪ 동작 명확화 (낮은 우선순위)
 
-| 순서 | 이슈 | 내용 |
-|------|------|------|
-| 11 | [#30](https://github.com/sbb2002/my-idea-wiki/issues/30) | rerun 시 week content 덮어쓰기 동작 명확화 |
+| 이슈 | 내용 |
+|------|------|
+| [#30](https://github.com/sbb2002/my-idea-wiki/issues/30) | rerun 시 week content 덮어쓰기 동작 명확화 |
+
+#### 🔧 후속 작업 (선택)
+- `scripts/dedup_versions.py --dry-run` 으로 현재 wiki.json 중복 버전 확인 후 적용
+- GitHub Issues #28~#38 수동 Close
 
 ---
 
