@@ -1,0 +1,133 @@
+  /* ── 반응형 ── */
+
+  /* 중간 (태블릿) */
+  @media (max-width: 900px) {
+    #toc { display: none !important; }
+    .infobox { max-width: 220px; min-width: 180px; }
+    #meta-info { display: none; }
+    .header-divider { display: none; }
+  }
+
+  /* 모바일 */
+  @media (max-width: 640px) {
+    :root {
+      --header-h: 48px;
+      --sidebar-w: 280px;
+    }
+
+    body {
+      padding-bottom: var(--bottom-bar-h);
+    }
+
+    /* 헤더 축소 */
+    #hamburger { display: flex; }
+    #view-toggle { display: none; }
+
+    /* 사이드바를 슬라이드인 드로어로 전환 */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      transform: translateX(-100%);
+      z-index: 80;
+      box-shadow: 2px 0 12px rgba(0,0,0,.18);
+    }
+
+    #sidebar.open {
+      transform: translateX(0);
+    }
+
+    #sidebar-overlay {
+      display: block;
+    }
+
+    #sidebar-overlay.open {
+      opacity: 1;
+    }
+
+    /* 메인 패딩 축소 */
+    #main {
+      padding: 16px 12px;
+    }
+
+    /* 하단 탭바 표시 */
+    #bottom-bar { display: flex; }
+
+    /* 인포박스: float 해제, 전체 너비 */
+    .infobox {
+      float: none;
+      max-width: 100%;
+      min-width: unset;
+      width: 100%;
+      margin: 0 0 16px 0;
+    }
+
+    /* 모바일 인포박스 토글 */
+    .infobox-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .infobox-toggle-icon { font-style: normal; transition: transform 0.2s; }
+    .infobox.collapsed .infobox-toggle-icon { transform: rotate(-90deg); }
+    .infobox-body {
+      overflow: hidden;
+      max-height: 600px;
+      transition: max-height 0.25s ease, padding 0.25s ease;
+    }
+    .infobox.collapsed .infobox-body {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    /* 문서 제목 크기 축소 */
+    .doc-title { font-size: 22px; }
+
+    /* 타임라인 거터 축소 */
+    .tl-gutter { width: 56px; }
+    .tl-date { font-size: 10px; }
+
+    .prd-mobile-btn {
+      padding: 6px 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--accent);
+      border-radius: 7px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .prd-mobile-btn:active { opacity: .7; }
+
+    /* 이미지 첨부 카드: 모바일에서 세로 스택 */
+    .attach-card { flex-direction: column; }
+    .attach-thumb, .attach-thumb-placeholder {
+      width: 100%;
+      height: 180px;
+    }
+
+    /* TOC 모바일 버전 표시 */
+    #toc-mobile { display: block; }
+
+    /* 그래프 캔버스 높이 조정 */
+    #graph-canvas {
+      height: calc(100vh - var(--header-h) - var(--bottom-bar-h));
+    }
+
+    /* 그래프 컨트롤 버튼 크기 */
+    .gc-btn { width: 44px; height: 44px; }
+
+    #search-wrap { max-width: unset; }
+    .header-logo { font-size: 17px; }
+  }
+
+  @media (max-width: 380px) {
+    .header-logo { display: none; }
+  }

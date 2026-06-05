@@ -1,0 +1,506 @@
+  /* ── 위키 문서 본문 ── */
+  #wiki-doc {
+    flex: 1;
+    min-width: 0;
+    display: none;
+  }
+
+  #wiki-doc.visible { display: block; }
+
+  /* 문서 제목 */
+  .doc-title {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.25;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .doc-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .doc-subtitle .sep { color: var(--border); }
+
+  /* 태그 */
+  .doc-tag {
+    display: inline-block;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    border: 1px solid #c8d8f0;
+    border-radius: 2px;
+    padding: 0px 6px;
+    font-size: 11px;
+    text-decoration: none;
+    cursor: default;
+  }
+
+  /* 인포박스 */
+  .infobox {
+    float: right;
+    clear: right;
+    margin: 0 0 16px 24px;
+    min-width: 200px;
+    max-width: 260px;
+    border: 1px solid var(--infobox-border);
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--surface);
+  }
+
+  .infobox-header {
+    background: var(--infobox-header);
+    border-bottom: 1px solid var(--infobox-border);
+    padding: 6px 10px;
+    font-weight: 500;
+    font-size: 13px;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .infobox-body { padding: 8px 10px; }
+
+  .infobox-row {
+    display: flex;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12.5px;
+  }
+
+  .infobox-row:last-child { border-bottom: none; }
+
+  .infobox-label {
+    color: var(--text-muted);
+    min-width: 64px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .infobox-val { color: var(--text); }
+
+  .infobox-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* 섹션 헤딩 */
+  .wiki-h2 {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 3px;
+    margin: 20px 0 10px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .wiki-h2::after {
+    content: '▼';
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .wiki-h2.collapsed::after {
+    transform: rotate(-90deg);
+  }
+
+  .wiki-section-body {
+    overflow: hidden;
+    max-height: 9999px;
+    transition: max-height 0.3s ease;
+  }
+
+  .wiki-section-body.collapsed {
+    max-height: 0;
+  }
+
+  .wiki-h3 {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+    color: var(--text);
+  }
+
+  .summary-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .wiki-body { margin-bottom: 8px; }
+  .body-h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 20px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .body-h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 14px 0 4px;
+  }
+  .body-p {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    margin: 0 0 10px;
+  }
+  .body-ul {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    padding-left: 20px;
+    margin: 6px 0 10px;
+  }
+  .body-code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .body-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13.5px;
+    margin: 10px 0 14px;
+    overflow-x: auto;
+    display: block;
+  }
+  .body-table th, .body-table td {
+    border: 1px solid var(--border-light);
+    padding: 6px 10px;
+    text-align: left;
+    color: var(--text);
+  }
+  .body-table th {
+    background: var(--infobox-header);
+    font-weight: 600;
+  }
+  .body-table tr:nth-child(even) td {
+    background: var(--surface);
+  }
+
+  .body-inline-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 8px 0;
+    display: block;
+    border: 1px solid var(--border-light);
+  }
+
+  /* 같이 보기 */
+  .see-also-list { list-style: none; padding: 0; margin: 0 0 16px; }
+  .see-also-item {
+    padding: 8px 12px;
+    border-left: 3px solid var(--accent, #4a7fc1);
+    margin-bottom: 8px;
+    background: var(--surface);
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .see-also-name { font-weight: 600; color: var(--text); }
+  .see-also-link { margin-left: 6px; color: var(--accent, #4a7fc1); text-decoration: none; font-size: 12px; }
+  .see-also-desc { color: var(--text-muted); }
+
+  /* 타임라인 */
+  .timeline { position: relative; padding-left: 0; }
+
+  .tl-item {
+    display: flex;
+    gap: 0;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .tl-gutter {
+    width: 80px;
+    flex-shrink: 0;
+    padding-right: 16px;
+    padding-top: 3px;
+    text-align: right;
+    position: relative;
+  }
+
+  .tl-gutter::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 10px;
+    bottom: -10px;
+    width: 1px;
+    background: var(--tl-line);
+  }
+
+  .tl-item:last-child .tl-gutter::after { display: none; }
+
+  .tl-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    line-height: 1.3;
+  }
+
+  .tl-connector {
+    width: 24px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 6px;
+    position: relative;
+  }
+
+  .tl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: var(--tl-dot-old);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .tl-item:first-child .tl-dot {
+    background: var(--tl-dot);
+    width: 12px;
+    height: 12px;
+  }
+
+  .tl-connector::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    background: var(--tl-line);
+  }
+
+  .tl-item:last-child .tl-connector::after { display: none; }
+
+  .tl-body {
+    flex: 1;
+    padding: 0 0 18px 12px;
+  }
+
+  .tl-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--infobox-header);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+    border-radius: 2px;
+    padding: 1px 6px;
+    margin-bottom: 5px;
+  }
+
+  .tl-item:first-child .tl-badge {
+    background: #dce9f8;
+    color: var(--accent);
+    border-color: #c8d8f0;
+  }
+
+  .tl-content {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .tl-sources {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* 연관 아이템 */
+  .related-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .related-link {
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+
+  .related-link:hover { color: #2a55aa; }
+
+  .no-content {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* 코멘트 */
+  .comment-item {
+    border-left: 3px solid var(--border-light);
+    padding: 6px 12px;
+    margin-bottom: 10px;
+    background: var(--comment-bg);
+  }
+
+  .comment-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    margin-bottom: 3px;
+  }
+
+  .comment-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  /* 목차 (TOC) */
+  #toc {
+    width: var(--toc-w);
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    align-self: flex-start;
+    font-size: 12.5px;
+    display: none;
+  }
+
+  #toc.visible { display: block; }
+
+  /* 모바일 TOC — 접힘 가능 */
+  #toc-mobile {
+    display: none;
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    margin-bottom: 14px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #toc-mobile.visible { display: block; }
+
+  #toc-mobile-toggle {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+  }
+
+  #toc-mobile-arrow {
+    transition: transform .2s;
+    font-size: 10px;
+  }
+
+  #toc-mobile-list {
+    display: none;
+    padding: 4px 12px 10px;
+    list-style: none;
+  }
+
+  #toc-mobile-list.open { display: block; }
+
+  #toc-mobile-list li {
+    padding: 3px 0;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .toc-box {
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+    padding: 10px 12px;
+  }
+
+  .toc-title {
+    font-weight: 500;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .toc-list { list-style: none; }
+
+  .toc-item {
+    padding: 2px 0;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+
+  .toc-item:hover { color: #2a55aa; }
+
+  /* 빈 상태 */
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 20px;
+    color: var(--text-dim);
+    font-style: italic;
+    font-family: var(--font-serif);
+    font-size: 16px;
+  }
+
+  /* 에러 */
+  #error-banner {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-left: 4px solid var(--error-border);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: none;
+    line-height: 1.6;
+  }
+
+  #error-banner.visible { display: block; }
+

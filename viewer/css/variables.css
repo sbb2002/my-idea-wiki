@@ -1,0 +1,78 @@
+  /* ── 공통 레이아웃 변수 ── */
+  :root {
+    --sidebar-w: 260px;
+    --toc-w: 200px;
+    --header-h: 48px;
+    --bottom-bar-h: 56px;
+    --font-serif: 'Linux Libertine', 'Georgia', serif;
+    --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    --font-mono: 'Courier New', monospace;
+  }
+
+  /* ── 테마: 위키피디아 라이트 (기본) ── */
+  :root, [data-theme="wiki"] {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #a2a9b1;
+    --border-light: #e0e3e7;
+    --accent: #3366cc;
+    --text: #202122;
+    --text-muted: #54595d;
+    --text-dim: #72777d;
+    --infobox-header: #cee0f2;
+    --infobox-border: #a2a9b1;
+    --tag-bg: #eaf3fb;
+    --tag-fg: #3366cc;
+    --tl-line: #a2a9b1;
+    --tl-dot: #3366cc;
+    --tl-dot-old: #a2a9b1;
+    --comment-bg: #fafafa;
+    --comment-border: #e0e3e7;
+    --error-bg: #fef6e4;
+    --error-border: #fc3;
+    --graph-bg: #f8f9fa;
+    --graph-node-label: #54595d;
+    --graph-node-label-hover: #202122;
+    --bottom-bar-bg: #ffffff;
+    --bottom-bar-active: #3366cc;
+  }
+
+  /* ── 테마: 다크 모던 ── */
+  [data-theme="dark"] {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --border: #2a2d35;
+    --border-light: #2a2d35;
+    --accent: #5b8dee;
+    --text: #e8eaf0;
+    --text-muted: #7a8099;
+    --text-dim: #4a5068;
+    --infobox-header: #1a2540;
+    --infobox-border: #2a2d35;
+    --tag-bg: #1a2540;
+    --tag-fg: #5b8dee;
+    --tl-line: #2a2d35;
+    --tl-dot: #5b8dee;
+    --tl-dot-old: #2a2d35;
+    --comment-bg: #1e2026;
+    --comment-border: #2a2d35;
+    --error-bg: #2a1a1a;
+    --error-border: #5a2a2a;
+    --graph-bg: #0e0f11;
+    --graph-node-label: #7a8099;
+    --graph-node-label-hover: #e8eaf0;
+    --bottom-bar-bg: #16181c;
+    --bottom-bar-active: #5b8dee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+

@@ -26,5 +26,7 @@ venv/
 .coverage
 htmlcov/
 
-# Viewer: 빌드 산출물 (source: viewer/_template.html + style.css + app.js)
+# Viewer: 빌드 산출물 (source: css/*.css + js/*.js + _template.html)
 viewer/index.html
+viewer/style.css
+viewer/app.js
