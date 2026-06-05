@@ -429,6 +429,8 @@
     color: var(--text);
     cursor: pointer;
     user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -894,6 +896,87 @@
 
   .gc-btn:hover { background: var(--bg); color: var(--accent); }
 
+  /* 그래프 범례 */
+  #graph-legend {
+    position: absolute;
+    bottom: 20px;
+    right: 70px;          /* gc-controls(36px) + gap */
+    min-width: 130px;
+    max-width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    box-shadow: 1px 2px 6px rgba(0,0,0,.13);
+    font-size: 12px;
+    color: var(--text);
+    user-select: none;
+    z-index: 20;
+    cursor: default;
+  }
+
+  #graph-legend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px 5px;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .03em;
+    color: var(--text-muted);
+    cursor: grab;
+    border-bottom: 1px solid var(--border-light);
+    border-radius: 7px 7px 0 0;
+  }
+
+  #graph-legend-header:active { cursor: grabbing; }
+
+  #graph-legend-toggle {
+    font-size: 10px;
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  #graph-legend-body {
+    padding: 7px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  #graph-legend-body.hidden { display: none; }
+
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,.5);
+    display: inline-block;
+  }
+
+  .legend-line {
+    height: 2px;
+    width: 22px;
+    flex-shrink: 0;
+    border-radius: 1px;
+    display: inline-block;
+  }
+
+  #graph-legend.collapsed #graph-legend-body { display: none; }
+
   /* 로딩 */
   #load-overlay {
     position: fixed; inset: 0;
@@ -1207,6 +1290,24 @@
       <button class="gc-btn" id="gc-zoom-in" title="확대">+</button>
       <button class="gc-btn" id="gc-zoom-out" title="축소">−</button>
       <button class="gc-btn" id="gc-reset" title="초기화">⌂</button>
+    </div>
+    <!-- 범례 — renderGraph()에서 태그 색상 주입 후 표시 -->
+    <div id="graph-legend">
+      <div id="graph-legend-header">
+        <span>범례</span>
+        <button id="graph-legend-toggle" title="접기/펼치기">−</button>
+      </div>
+      <div id="graph-legend-body">
+        <div class="legend-row">
+          <span class="legend-line" style="background:rgba(51,102,204,0.7)"></span>
+          <span>명시적 연결</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-line" style="background:rgba(162,169,177,0.6)"></span>
+          <span>유사도 연결</span>
+        </div>
+        <div id="legend-tag-rows"></div>
+      </div>
     </div>
   </div>
 
@@ -1682,18 +1783,22 @@ function selectItem(id) {
     })
   );
 
-  // 모바일에서 인포박스 기본 접힘 + 헤더 클릭 토글
+  // 인포박스 헤더 클릭/터치 토글 (모바일/데스크탑 공통, 기본 펼침 #수정제안)
   const infobox = doc.querySelector('.infobox');
   if (infobox) {
-    const isMobile = window.innerWidth <= 640;
-    if (isMobile) {
-      infobox.classList.add('collapsed');
-    }
-    infobox.querySelector('.infobox-header')?.addEventListener('click', () => {
-      if (window.innerWidth <= 640) {
+    const header = infobox.querySelector('.infobox-header');
+    if (header) {
+      let _infoLastTouch = 0;
+      header.addEventListener('touchend', e => {
+        e.preventDefault();
+        _infoLastTouch = Date.now();
         infobox.classList.toggle('collapsed');
-      }
-    });
+      });
+      header.addEventListener('click', () => {
+        if (Date.now() - _infoLastTouch < 350) return;
+        infobox.classList.toggle('collapsed');
+      });
+    }
   }
 
   // wiki-h2 섹션 래핑 및 접기/펼치기
@@ -1710,12 +1815,26 @@ function selectItem(id) {
       sibling = next;
     }
     h2.insertAdjacentElement('afterend', body);
+    // 이미지 첨부 섹션은 기본 접힘 (#수정제안)
+    if (h2.id === 'sec-attachments') {
+      h2.classList.add('collapsed');
+      body.classList.add('collapsed');
+    }
+    let _lastTouch = 0;
     const toggleSection = () => {
       h2.classList.toggle('collapsed');
       body.classList.toggle('collapsed');
     };
-    h2.addEventListener('click', toggleSection);
-    h2.addEventListener('touchend', e => { e.preventDefault(); toggleSection(); });
+    h2.addEventListener('touchend', e => {
+      e.preventDefault();
+      _lastTouch = Date.now();
+      toggleSection();
+    });
+    h2.addEventListener('click', () => {
+      // touchend 후 300ms 이내 발화되는 합성 click 이벤트 무시
+      if (Date.now() - _lastTouch < 350) return;
+      toggleSection();
+    });
   });
 
   document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
@@ -2039,8 +2158,86 @@ function renderGraph(items) {
   document.getElementById('gc-zoom-out').onclick=()=>{transform.scale=Math.max(.2,transform.scale*.8);simRunning=true;frameCnt=0;};
   document.getElementById('gc-reset').onclick=()=>{transform={x:0,y:0,scale:1};simRunning=true;frameCnt=0;};
 
+  // ── 그래프 범례 초기화 ──────────────────────────────────────
+  _initGraphLegend(allTags, tagColor);
+
   animFrame=requestAnimationFrame(loop);
   graphState.animFrame=animFrame;
+}
+
+function _initGraphLegend(allTags, tagColor) {
+  // 태그 색상 행 주입
+  const tagRows = document.getElementById('legend-tag-rows');
+  if (tagRows) {
+    tagRows.innerHTML = allTags.length
+      ? allTags.map(t =>
+          `<div class="legend-row">
+            <span class="legend-dot" style="background:${tagColor[t]||'#3366cc'}"></span>
+            <span>${esc(t)}</span>
+          </div>`
+        ).join('')
+      : `<div class="legend-row" style="color:var(--text-muted);font-size:11px">태그 없음</div>`;
+  }
+
+  // 토글 버튼
+  const legend = document.getElementById('graph-legend');
+  const toggleBtn = document.getElementById('graph-legend-toggle');
+  const body = document.getElementById('graph-legend-body');
+  if (!legend || !toggleBtn || !body) return;
+
+  toggleBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const collapsed = legend.classList.toggle('collapsed');
+    toggleBtn.textContent = collapsed ? '+' : '−';
+  });
+
+  // 드래그 이동
+  const header = document.getElementById('graph-legend-header');
+  if (!header) return;
+  let dragging = false, ox = 0, oy = 0;
+  // position 초기값: CSS bottom/right 기반 → absolute 좌표로 전환
+  const initLegendPos = () => {
+    const parent = legend.offsetParent || legend.parentElement;
+    if (!parent) return;
+    const pr = parent.getBoundingClientRect();
+    const lr = legend.getBoundingClientRect();
+    // bottom/right → top/left 로 변환 (드래그 전 초기화)
+    legend.style.bottom = '';
+    legend.style.right  = '';
+    legend.style.top  = (lr.top  - pr.top)  + 'px';
+    legend.style.left = (lr.left - pr.left) + 'px';
+  };
+
+  const onMove = e => {
+    if (!dragging) return;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    legend.style.left = (cx - ox) + 'px';
+    legend.style.top  = (cy - oy) + 'px';
+  };
+  const onUp = () => { dragging = false; };
+
+  header.addEventListener('mousedown', e => {
+    if (e.target === toggleBtn) return;
+    initLegendPos();
+    dragging = true;
+    ox = e.clientX - legend.getBoundingClientRect().left;
+    oy = e.clientY - legend.getBoundingClientRect().top;
+    e.preventDefault();
+  });
+  header.addEventListener('touchstart', e => {
+    if (e.target === toggleBtn) return;
+    initLegendPos();
+    dragging = true;
+    ox = e.touches[0].clientX - legend.getBoundingClientRect().left;
+    oy = e.touches[0].clientY - legend.getBoundingClientRect().top;
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup',   onUp);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend',  onUp);
 }
 
 // ── 테마 전환 ────────────────────────────────────────────────
