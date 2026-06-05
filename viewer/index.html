@@ -977,6 +977,77 @@
 
   #graph-legend.collapsed #graph-legend-body { display: none; }
 
+  /* PRD 다운로드 버튼 (uiverse faxriddin20 스타일 기반) */
+  #prd-download-btn {
+    display: none;              /* 아이템 선택 시 표시 */
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 13px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .18s, color .18s, box-shadow .18s, transform .12s;
+    box-shadow: 0 2px 8px rgba(51,102,204,.10);
+    position: relative;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    margin-left: auto;
+  }
+
+  #prd-download-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity .18s;
+    border-radius: inherit;
+  }
+
+  #prd-download-btn:hover::before { opacity: .08; }
+  #prd-download-btn:active { transform: scale(.97); }
+
+  #prd-download-btn.visible { display: flex; }
+  #prd-download-btn.no-prd {
+    border-color: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  #prd-download-btn .prd-icon {
+    font-size: 15px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  #prd-download-btn .prd-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: .25;
+    transform: scale(0);
+    animation: prd-ripple .5s linear;
+    pointer-events: none;
+  }
+
+  @keyframes prd-ripple {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* 데스크탑 TOC 박스에 PRD 버튼 배치용 */
+  .toc-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   /* 로딩 */
   #load-overlay {
     position: fixed; inset: 0;
@@ -1208,6 +1279,21 @@
     .tl-gutter { width: 56px; }
     .tl-date { font-size: 10px; }
 
+    .prd-mobile-btn {
+      padding: 6px 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--accent);
+      border-radius: 7px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .prd-mobile-btn:active { opacity: .7; }
+
     /* 이미지 첨부 카드: 모바일에서 세로 스택 */
     .attach-card { flex-direction: column; }
     .attach-thumb, .attach-thumb-placeholder {
@@ -1319,10 +1405,15 @@
         <div id="error-banner"></div>
         <!-- 모바일 TOC (접힘 가능) -->
         <div id="toc-mobile">
-          <button id="toc-mobile-toggle" onclick="toggleMobileToc()">
-            <span>목차</span>
-            <span id="toc-mobile-arrow">▼</span>
-          </button>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button id="toc-mobile-toggle" onclick="toggleMobileToc()" style="flex:1">
+              <span>목차</span>
+              <span id="toc-mobile-arrow">▼</span>
+            </button>
+            <button id="prd-download-btn-mobile" class="prd-mobile-btn" title="PRD 다운로드" onclick="downloadPrd()">
+              📋 PRD
+            </button>
+          </div>
           <ul id="toc-mobile-list"></ul>
         </div>
         <div id="doc-content"></div>
@@ -1338,6 +1429,10 @@
         <div class="toc-box">
           <div class="toc-title">목차</div>
           <ul class="toc-list" id="toc-list"></ul>
+          <button id="prd-download-btn" title="PRD 다운로드" onclick="downloadPrd()">
+            <span class="prd-icon">📋</span>
+            <span>PRD 다운로드</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1837,7 +1932,59 @@ function selectItem(id) {
     });
   });
 
+  // PRD 다운로드 버튼 상태 업데이트
+  _updatePrdBtn(item);
+
   document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── PRD 다운로드 ────────────────────────────────────────────
+let _currentPrdItem = null;
+
+function _updatePrdBtn(item) {
+  _currentPrdItem = item;
+  const hasPrd = !!item?.prd;
+
+  // 데스크탑 버튼
+  const btn = document.getElementById('prd-download-btn');
+  if (btn) {
+    btn.classList.add('visible');
+    btn.classList.toggle('no-prd', !hasPrd);
+    btn.title = hasPrd ? 'PRD 다운로드 (.md)' : 'PRD가 아직 생성되지 않았습니다 (다음 파이프라인 실행 시 생성)';
+  }
+
+  // 모바일 버튼
+  const mBtn = document.getElementById('prd-download-btn-mobile');
+  if (mBtn) {
+    mBtn.style.opacity = hasPrd ? '1' : '0.4';
+    mBtn.title = btn?.title || '';
+  }
+}
+
+function downloadPrd() {
+  if (!_currentPrdItem?.prd) return;
+
+  // 리플 애니메이션
+  const btn = document.getElementById('prd-download-btn');
+  if (btn) {
+    const ripple = document.createElement('span');
+    ripple.className = 'prd-ripple';
+    ripple.style.cssText = 'width:60px;height:60px;left:calc(50% - 30px);top:calc(50% - 30px)';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  }
+
+  const title = (_currentPrdItem.title || 'prd')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, '_');
+  const filename = `PRD_${title}.md`;
+  const blob = new Blob([_currentPrdItem.prd], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function filterItems(q) {

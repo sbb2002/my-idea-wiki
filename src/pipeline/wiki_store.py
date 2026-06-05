@@ -28,6 +28,7 @@ def make_item(title: str, tags: list[str], summary: str, first_version: dict) ->
         "versions": [first_version],
         "related": [],            # 연관 아이템 ID 목록
         "comments": [],
+        "prd": None,               # LLM 친화적 PRD (Markdown, 파이프라인 생성)
     }
 
 

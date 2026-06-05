@@ -27,7 +27,7 @@ from src.pipeline.wiki_store import (
     make_attachment, add_attachment_to_item, add_comment_to_item,
     find_item_by_title,
 )
-from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude
+from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude, generate_prd
 from src.pipeline.gemini_processor import wikify_with_gemini
 
 WIKI_FILENAME = "wiki.json"
@@ -70,6 +70,8 @@ def run_pipeline(is_rerun: bool = False) -> dict:
         "ocr_skipped": 0,
         "comments_processed": 0,
         "is_rerun": is_rerun,   # rerun 여부 (#30)
+        "prd_generated": 0,     # PRD 생성 성공 수
+        "prd_failed": 0,        # PRD 생성 실패 수
     }
 
     # ── 1. 기존 wiki.json 로드 ──────────────────────────────────
@@ -345,6 +347,30 @@ def run_pipeline(is_rerun: bool = False) -> dict:
         result["status"] = "partial"
     elif result["processed"] > 0 and skipped == result["processed"]:
         result["status"] = "failure"
+
+    # ── 6-B. PRD 생성 ────────────────────────────────────────
+    # 이번 실행에서 신규/업데이트된 아이템에 대해 PRD를 (재)생성한다.
+    # related 아이템의 title+summary만 참조 (토큰 절약)
+    processed_titles = {ai_item.get("title") for ai_item in (ai_items or [])}
+    for item in wiki["items"]:
+        if item.get("title") not in processed_titles:
+            continue  # 이번 실행에서 처리되지 않은 아이템은 스킵
+        try:
+            # 연관 아이템 title+summary 수집
+            related_ids = item.get("related", [])
+            related_items_ctx = [
+                {"title": r["title"], "summary": r.get("summary", "")}
+                for r in wiki["items"]
+                if r["id"] in related_ids and r.get("title")
+            ]
+            prd_md = generate_prd(item, related_items_ctx)
+            item["prd"] = prd_md
+            result["prd_generated"] += 1
+            logger.info(f"PRD 생성 완료: {item['title']}")
+        except Exception as e:
+            result["prd_failed"] += 1
+            result["errors"].append(f"PRD 생성 실패 ({item.get('title', '?')}): {e}")
+            logger.warning(f"PRD 생성 실패 ({item.get('title', '?')}): {e}")
 
     # ── 7. 고아 아이템 감지 및 자동 제거 (#31, #36) ──────────
     # Drive에 존재하지 않는 source_note_ids만 가진 아이템을 wiki.json에서 직접 삭제
