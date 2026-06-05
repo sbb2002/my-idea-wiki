@@ -2158,8 +2158,24 @@ function renderGraph(items) {
   document.getElementById('gc-zoom-out').onclick=()=>{transform.scale=Math.max(.2,transform.scale*.8);simRunning=true;frameCnt=0;};
   document.getElementById('gc-reset').onclick=()=>{transform={x:0,y:0,scale:1};simRunning=true;frameCnt=0;};
 
-  // ── 그래프 범례 초기화 ──────────────────────────────────────
-  _initGraphLegend(allTags, tagColor);
+  // ── 그래프 범례 초기화 (최초 1회만 실행 — 리스너 중복 방지) ──
+  if (!renderGraph._legendInited) {
+    renderGraph._legendInited = true;
+    _initGraphLegend(allTags, tagColor);
+  } else {
+    // 태그 색상만 재주입 (새 아이템 추가 대응)
+    const tagRows = document.getElementById('legend-tag-rows');
+    if (tagRows) {
+      tagRows.innerHTML = allTags.length
+        ? allTags.map(t =>
+            `<div class="legend-row">
+              <span class="legend-dot" style="background:${tagColor[t]||'#3366cc'}"></span>
+              <span>${esc(t)}</span>
+            </div>`
+          ).join('')
+        : `<div class="legend-row" style="color:var(--text-muted);font-size:11px">태그 없음</div>`;
+    }
+  }
 
   animFrame=requestAnimationFrame(loop);
   graphState.animFrame=animFrame;
