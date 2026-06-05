@@ -23,7 +23,7 @@ from src.drive.client import (
     read_note, list_all_note_ids,
 )
 from src.pipeline.wiki_store import (
-    load_wiki, dump_wiki, upsert_item, make_version, current_week_str,
+    load_wiki, dump_wiki, upsert_item, make_version, current_week_str, note_modified_date,
     make_attachment, add_attachment_to_item, add_comment_to_item,
     find_item_by_title, archive_prd,
 )
@@ -133,7 +133,7 @@ def run_pipeline(is_rerun: bool = False) -> dict:
 
     if not notes:
         # 노트가 없어도 OCR / 코멘트 처리는 계속 진행
-        week = current_week_str()
+        run_date = current_week_str()
         skipped = 0
     else:
         result["processed"] = len(notes)
@@ -165,16 +165,23 @@ def run_pipeline(is_rerun: bool = False) -> dict:
             return result
 
         # ── 4. wiki.json 업데이트 ───────────────────────────────────
-        week = current_week_str()
+        run_date = current_week_str()   # 파이프라인 실행 날짜 (다중 노트 합산 시 폴백)
         skipped = 0
 
         for ai_item in ai_items:
             try:
                 # source_note_ids: 이름으로 매핑
                 source_names = ai_item.get("source_note_names", [])
-                source_ids = [
-                    n["id"] for n in notes if n["name"] in source_names
-                ]
+                source_notes = [n for n in notes if n["name"] in source_names]
+                source_ids = [n["id"] for n in source_notes]
+
+                # 버전 날짜 결정:
+                #   - 단일 노트 → 해당 노트의 modifiedTime (실제 작성 날짜)
+                #   - 여러 노트 합산 or modifiedTime 없음 → 파이프라인 실행 날짜
+                if len(source_notes) == 1:
+                    week = note_modified_date(source_notes[0])
+                else:
+                    week = run_date
 
                 version = make_version(
                     week=week,
@@ -263,7 +270,7 @@ def run_pipeline(is_rerun: bool = False) -> dict:
                 # 독립 아이템으로 신규 생성
                 stem = os.path.splitext(img["name"])[0]
                 version = make_version(
-                    week=week,
+                    week=note_modified_date(img),
                     content=ocr_result.get("summary", "이미지 첨부"),
                     source_note_ids=[img["id"]],
                 )

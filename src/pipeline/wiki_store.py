@@ -227,10 +227,24 @@ def add_comment_to_item(wiki: dict, item_id: str, date: str, text: str, attachme
 
 
 def current_week_str() -> str:
-    """이번 주 월요일 날짜를 'YYYY-MM-DD' 형식으로 반환."""
-    today = datetime.now(timezone.utc).date()
-    monday = today - __import__("datetime").timedelta(days=today.weekday())
-    return monday.isoformat()
+    """오늘 날짜를 'YYYY-MM-DD' 형식으로 반환 (파이프라인 실행 날짜 기준)."""
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def note_modified_date(note: dict) -> str:
+    """
+    노트 dict에서 버전 날짜 문자열을 반환한다.
+
+    - 노트에 modifiedTime(Drive API ISO 문자열)이 있으면 그 날짜(YYYY-MM-DD) 사용
+    - 없으면 오늘 날짜(파이프라인 실행 날짜) 폴백
+    """
+    raw = note.get("modifiedTime") or note.get("modified_time") or ""
+    if raw:
+        try:
+            return datetime.fromisoformat(raw.replace("Z", "+00:00")).date().isoformat()
+        except ValueError:
+            pass
+    return current_week_str()
 
 
 def _now_iso() -> str:
