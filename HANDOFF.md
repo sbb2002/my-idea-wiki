@@ -128,6 +128,7 @@ viewer/
 - **parseTables 후 HTML 이스케이프** — `<table>` 태그가 `&lt;`로 깨짐. 반드시 이스케이프 먼저
 - **clearfix div 안에 wiki-h2 혼재** — 섹션 래핑 JS DOM 분리 → 레이아웃 붕괴
 - **`_lastTouch` 350ms 가드 방식** — `#main`(overflow-y:auto) 내 touchend passive 처리로 e.preventDefault() 무시 → click 즉시 발화 → toggle 2회 실행으로 원상복구. click 단일 리스너로 대체
+- **`#sidebar-overlay` pointer-events 누락** — 모바일에서 overlay가 display:block+inset:0으로 화면 전체를 덮고 있었고, 닫혀도 opacity:0일 뿐 pointer-events 미설정으로 모든 터치를 흡수. → 닫힌 상태 pointer-events:none 추가
 - **main.py에서 keepalive 관리** — handle_update가 thread.start() 후 즉시 반환하므로 파이프라인 완료 전에 stop됨
 - **`_initGraphLegend` 매 renderGraph 호출** — document 이벤트 리스너 누적 → 드래그 오작동
 
