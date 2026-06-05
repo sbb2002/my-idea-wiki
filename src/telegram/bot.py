@@ -19,6 +19,10 @@ from typing import Optional
 
 import httpx
 
+import atexit
+import signal
+import sys
+
 from src.telegram.notifier import send_message, _bot_url, _chat_id, _viewer_url
 
 log = logging.getLogger("idea-wiki.bot")
@@ -35,6 +39,24 @@ def _mark_started() -> None:
     """서버가 처음 시작되면 이미 warm 상태임을 기록."""
     global _cold_start_warned
     _cold_start_warned = True
+
+
+def _keepalive_start() -> None:
+    """파이프라인 스레드에서 main.py의 start_keepalive()를 호출한다."""
+    try:
+        from src.main import start_keepalive
+        start_keepalive()
+    except Exception as e:
+        log.warning(f"[keepalive] start 실패: {e}")
+
+
+def _keepalive_stop() -> None:
+    """파이프라인 스레드에서 main.py의 stop_keepalive()를 호출한다."""
+    try:
+        from src.main import stop_keepalive
+        stop_keepalive()
+    except Exception as e:
+        log.warning(f"[keepalive] stop 실패: {e}")
 
 
 def _reply(chat_id: str | int, text: str) -> None:
@@ -64,6 +86,7 @@ def _handle_run(chat_id: str | int) -> None:
     def _run_in_thread():
         global _pipeline_running, _last_run_result
         _pipeline_running = True
+        _keepalive_start()   # 파이프라인 시작 시 keep-alive ON
         try:
             log.info("[run] run_pipeline() 호출")
             from src.pipeline.runner import run_pipeline
@@ -87,6 +110,7 @@ def _handle_run(chat_id: str | int) -> None:
                 "run_at": datetime.now(timezone.utc).isoformat(),
             }
         finally:
+            _keepalive_stop()    # 파이프라인 완료 시 keep-alive OFF
             _pipeline_running = False
             log.info("[run] 스레드 종료")
 
@@ -200,6 +224,7 @@ def _handle_rerun(chat_id: str | int) -> None:
     def _run_in_thread():
         global _pipeline_running, _last_run_result
         _pipeline_running = True
+        _keepalive_start()   # 파이프라인 시작 시 keep-alive ON
         try:
             from src.pipeline.runner import run_pipeline
             from src.drive.client import find_file_in_folder, upload_json, read_note
@@ -235,11 +260,48 @@ def _handle_rerun(chat_id: str | int) -> None:
                 "run_at": datetime.now(timezone.utc).isoformat(),
             }
         finally:
+            _keepalive_stop()    # 파이프라인 완료 시 keep-alive OFF
             _pipeline_running = False
             log.info("[rerun] 스레드 종료")
 
     thread = threading.Thread(target=_run_in_thread, daemon=False)
     thread.start()
+
+
+# ── 프로세스 종료 알람 ──────────────────────────────────────────
+
+def _notify_shutdown(reason: str) -> None:
+    """파이프라인 실행 중 프로세스가 예기치 않게 종료될 때 텔레그램 알람."""
+    if not _pipeline_running:
+        return  # 파이프라인이 안 돌고 있으면 알람 불필요 (정상 슬립 등)
+    try:
+        from datetime import datetime, timezone
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        send_message(
+            f"⚠️ [{ts}] 파이프라인 중단 감지\n"
+            f"• 원인: {reason}\n"
+            f"• 파이프라인이 완료되지 않았을 수 있습니다.\n"
+            f"• /status 로 상태를 확인하고 필요 시 /run 또는 /rerun 으로 재실행하세요."
+        )
+    except Exception as e:
+        log.warning(f"[shutdown] 알람 전송 실패: {e}")
+
+
+def _handle_sigterm(signum, frame) -> None:
+    """Render 배포 교체 시 SIGTERM 수신 → 알람 후 종료."""
+    log.warning("[shutdown] SIGTERM 수신 — 프로세스 종료 예정")
+    _notify_shutdown("SIGTERM (Render 배포 교체 또는 수동 재시작)")
+    sys.exit(0)
+
+
+def _atexit_handler() -> None:
+    """atexit: 정상/비정상 종료 시 파이프라인 실행 중이면 알람."""
+    _notify_shutdown("프로세스 종료 (서버 슬립 또는 예외)")
+
+
+# 핸들러 등록
+signal.signal(signal.SIGTERM, _handle_sigterm)
+atexit.register(_atexit_handler)
 
 
 # ── Webhook 진입점 ───────────────────────────────────────────────

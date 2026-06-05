@@ -96,13 +96,11 @@ async def telegram_webhook(request: Request):
     log.info(f"[webhook] update 수신: {list(update.keys())}")
 
     async def _run():
-        start_keepalive()
         try:
             await asyncio.to_thread(handle_update, update)
         except Exception as e:
             log.error(f"[webhook] handle_update 오류: {e}", exc_info=True)
         finally:
-            stop_keepalive()
             log.info("[webhook] 처리 완료")
 
     asyncio.create_task(_run())
