@@ -215,14 +215,8 @@ function selectItem(id) {
   if (infobox) {
     const header = infobox.querySelector('.infobox-header');
     if (header) {
-      let _infoLastTouch = 0;
-      header.addEventListener('touchend', e => {
-        e.preventDefault();
-        _infoLastTouch = Date.now();
-        infobox.classList.toggle('collapsed');
-      });
+      // touch-action: manipulation 설정으로 300ms 딜레이 없음 → click 단일 리스너로 충분
       header.addEventListener('click', () => {
-        if (Date.now() - _infoLastTouch < 350) return;
         infobox.classList.toggle('collapsed');
       });
     }
@@ -247,20 +241,10 @@ function selectItem(id) {
       h2.classList.add('collapsed');
       body.classList.add('collapsed');
     }
-    let _lastTouch = 0;
-    const toggleSection = () => {
+    // touch-action: manipulation 설정으로 300ms 딜레이 없음 → click 단일 리스너로 충분
+    h2.addEventListener('click', () => {
       h2.classList.toggle('collapsed');
       body.classList.toggle('collapsed');
-    };
-    h2.addEventListener('touchend', e => {
-      e.preventDefault();
-      _lastTouch = Date.now();
-      toggleSection();
-    });
-    h2.addEventListener('click', () => {
-      // touchend 후 300ms 이내 발화되는 합성 click 이벤트 무시
-      if (Date.now() - _lastTouch < 350) return;
-      toggleSection();
     });
   });
 
