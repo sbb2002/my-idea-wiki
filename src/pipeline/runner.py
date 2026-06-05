@@ -10,9 +10,12 @@
      (GITHUB_TOKEN 설정 시, Drive에는 wiki.json 백업만 저장)
   6. 처리 결과 집계 반환
 """
+import logging
 import os
 import traceback
 from datetime import datetime, timezone
+
+logger = logging.getLogger("idea-wiki.runner")
 
 from src.drive.client import (
     read_notes_from_folder, upload_json, find_file_in_folder,
