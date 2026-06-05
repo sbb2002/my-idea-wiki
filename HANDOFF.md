@@ -25,7 +25,8 @@ GitHub: https://github.com/sbb2002/my-idea-wiki
 | #30 | /rerun vs /run 동작 명확화 (overwrite_count + 알람 표시) | ✅ |
 | keepalive 버그 | stop_keepalive()가 파이프라인 완료 전 호출되던 타이밍 버그 수정 | ✅ |
 | 중단 알람 | SIGTERM/atexit 시 파이프라인 실행 중이면 텔레그램 알람 | ✅ |
-| 모바일 접기 버그 | touchend+click 이중 발화 → _lastTouch 350ms 가드로 수정 | ✅ |
+| 모바일 접기 버그 v1 | touchend+click 이중 발화 → _lastTouch 350ms 가드로 수정 | ✅ |
+| 모바일 접기 버그 v2 | `#main` overflow 스크롤 컨테이너에서 passive 처리로 e.preventDefault() 무시 → touchend+click 이중 구조 전체 제거, click 단일 리스너로 교체 | ✅ |
 | 섹션 기본 상태 | 이미지 첨부 기본 접힘 / 인포박스 기본 펼침 | ✅ |
 | 그래프 범례 | 우측 하단 드래그 가능 범례 (태그 색상 + 엣지 종류) | ✅ |
 | PRD 기능 | 파이프라인에서 LLM 친화적 PRD 생성 + 뷰어 다운로드 버튼 | ✅ |
@@ -126,6 +127,7 @@ viewer/
 - **Render Web Service 프록시** — 750시간 경합 문제로 기각
 - **parseTables 후 HTML 이스케이프** — `<table>` 태그가 `&lt;`로 깨짐. 반드시 이스케이프 먼저
 - **clearfix div 안에 wiki-h2 혼재** — 섹션 래핑 JS DOM 분리 → 레이아웃 붕괴
+- **`_lastTouch` 350ms 가드 방식** — `#main`(overflow-y:auto) 내 touchend passive 처리로 e.preventDefault() 무시 → click 즉시 발화 → toggle 2회 실행으로 원상복구. click 단일 리스너로 대체
 - **main.py에서 keepalive 관리** — handle_update가 thread.start() 후 즉시 반환하므로 파이프라인 완료 전에 stop됨
 - **`_initGraphLegend` 매 renderGraph 호출** — document 이벤트 리스너 누적 → 드래그 오작동
 
