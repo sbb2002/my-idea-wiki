@@ -11,6 +11,30 @@ from typing import Optional
 
 # ── 데이터 구조 ────────────────────────────────────────────────
 
+def normalize_tags(tags: list[str], max_count: int = 10) -> list[str]:
+    """
+    태그 목록을 정규화한다.
+    - '#' 없는 태그에 '#' 추가
+    - 대소문자 무시 중복 제거 (먼저 나온 것 유지)
+    - 최대 max_count개로 제한
+    """
+    seen: set[str] = set()
+    result: list[str] = []
+    for tag in tags:
+        tag = tag.strip()
+        if not tag:
+            continue
+        if not tag.startswith("#"):
+            tag = "#" + tag
+        key = tag.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(tag)
+        if len(result) >= max_count:
+            break
+    return result
+
+
 def make_version(week: str, content: str, source_note_ids: list[str]) -> dict:
     return {
         "week": week,           # "YYYY-MM-DD" (해당 주 월요일)
@@ -23,7 +47,7 @@ def make_item(title: str, tags: list[str], summary: str, first_version: dict) ->
     return {
         "id": f"item_{uuid.uuid4().hex[:8]}",
         "title": title,
-        "tags": tags,
+        "tags": normalize_tags(tags),
         "summary": summary,       # 가장 최신 요약 (매 업데이트마다 덮어씀)
         "versions": [first_version],
         "related": [],            # 연관 아이템 ID 목록
@@ -104,10 +128,9 @@ def upsert_item(
         wiki["items"].append(item)
         return item, True, False
     else:
-        # 태그는 수동 태그 우선 — 기존 태그에 없는 것만 추가
-        for tag in tags:
-            if tag not in existing["tags"]:
-                existing["tags"].append(tag)
+        # 태그는 수동 태그 우선 — 기존 태그에 없는 것만 추가 후 정규화
+        merged = existing["tags"] + [t for t in tags if t not in existing["tags"]]
+        existing["tags"] = normalize_tags(merged)
         existing["summary"] = summary
         if body:
             existing["body"] = body

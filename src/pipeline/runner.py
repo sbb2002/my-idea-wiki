@@ -25,7 +25,7 @@ from src.drive.client import (
 from src.pipeline.wiki_store import (
     load_wiki, dump_wiki, upsert_item, make_version, current_week_str, note_modified_date,
     make_attachment, add_attachment_to_item, add_comment_to_item,
-    find_item_by_title, archive_prd,
+    find_item_by_title, archive_prd, normalize_tags,
 )
 from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude, generate_prd
 from src.pipeline.gemini_processor import wikify_with_gemini
@@ -191,7 +191,7 @@ def run_pipeline(is_rerun: bool = False) -> dict:
                 _, is_new, is_overwrite = upsert_item(
                     wiki=wiki,
                     title=ai_item["title"],
-                    tags=ai_item.get("tags", []),
+                    tags=normalize_tags(ai_item.get("tags", [])),
                     summary=ai_item.get("summary", ""),
                     version=version,
                     body=ai_item.get("body", ""),
