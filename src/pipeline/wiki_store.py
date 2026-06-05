@@ -29,6 +29,7 @@ def make_item(title: str, tags: list[str], summary: str, first_version: dict) ->
         "related": [],            # 연관 아이템 ID 목록
         "comments": [],
         "prd": None,               # LLM 친화적 PRD (Markdown, 파이프라인 생성)
+        "prd_history": [],         # 이전 PRD 버전 목록 [{date, content}]
     }
 
 
@@ -173,6 +174,32 @@ def add_attachment_to_item(wiki: dict, item_id: str, attachment: dict) -> bool:
             att.update(attachment)
             return False
     item["attachments"].append(attachment)
+    return True
+
+
+def archive_prd(item: dict, archived_at: str) -> bool:
+    """
+    현재 PRD를 prd_history로 이동한다. rerun 시 기존 PRD 보존용.
+
+    Args:
+        item: wiki 아이템 dict (직접 수정)
+        archived_at: 보관 날짜 문자열 (YYYY-MM-DD)
+
+    Returns:
+        True if archived, False if prd was None (nothing to archive)
+    """
+    current_prd = item.get("prd")
+    if not current_prd:
+        return False
+
+    if "prd_history" not in item:
+        item["prd_history"] = []
+
+    item["prd_history"].insert(0, {   # 최신이 앞
+        "date": archived_at,
+        "content": current_prd,
+    })
+    item["prd"] = None
     return True
 
 

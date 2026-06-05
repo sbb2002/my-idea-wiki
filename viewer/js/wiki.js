@@ -103,9 +103,13 @@ function selectItem(id) {
   const hasAttachments = !!item.attachments?.length;
 
   // TOC 구성
+  const hasPrd     = !!item.prd;
+  const hasPrdHist = !!(item.prd_history?.length);
+
   tocItems = [
     { id: 'sec-summary', label: '개요' },
     ...(item.body ? [{ id: 'sec-body', label: '상세 내용' }] : []),
+    ...(hasPrd ? [{ id: 'sec-prd', label: 'PRD' }] : []),
     { id: 'sec-history', label: '버전 히스토리' },
     ...(hasAttachments ? [{ id: 'sec-attachments', label: '이미지 첨부' }] : []),
     ...(comments.length ? [{ id: 'sec-comments', label: '코멘트' }] : []),
@@ -169,6 +173,25 @@ function selectItem(id) {
         ${s.description ? `<span class="see-also-desc"> — ${esc(s.description)}</span>` : ''}
       </li>`).join('')}
     </ul>` : ''}
+
+    ${hasPrd ? `
+    <h2 class="wiki-h2" id="sec-prd">PRD</h2>
+    <div class="prd-section">
+      <div class="prd-meta">
+        <span class="prd-badge">LLM 구현 문서</span>
+        ${hasPrdHist ? `<span class="prd-hist-count">이전 버전 ${item.prd_history.length}개 ↓</span>` : ''}
+      </div>
+      <div class="prd-body">${renderMarkdown(item.prd, [])}</div>
+      ${hasPrdHist ? `
+      <div class="prd-history">
+        <div class="prd-history-title">이전 PRD 버전</div>
+        ${item.prd_history.map((h, i) => `
+        <div class="prd-hist-item">
+          <div class="prd-hist-date">${esc(h.date)} · v${item.prd_history.length - i}</div>
+          <div class="prd-hist-body">${renderMarkdown(h.content, [])}</div>
+        </div>`).join('')}
+      </div>` : ''}
+    </div>` : ''}
 
     <h2 class="wiki-h2" id="sec-history">버전 히스토리</h2>
     <div class="timeline">${versionsHtml}</div>
