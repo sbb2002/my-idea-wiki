@@ -40,10 +40,12 @@
 
     #sidebar-overlay {
       display: block;
+      pointer-events: none;
     }
 
     #sidebar-overlay.open {
       opacity: 1;
+      pointer-events: auto;
     }
 
     /* 메인 패딩 축소 */
