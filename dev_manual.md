@@ -205,13 +205,15 @@ my-idea-wiki/
 │   │   ├── bot.py           # Webhook 핸들러 및 명령어 처리 (/help 포함)
 │   │   └── notifier.py      # 알람 전송 (GitHub Pages URL 우선, Drive 폴더 폴백)
 │   ├── viewer/
-│   │   └── builder.py       # wiki.json을 index.html에 인라인 주입
+│   │   └── builder.py       # _template.html + style.css + app.js 조합 → 단일 HTML 빌드
 │   └── utils/
 │       └── time_utils.py    # 주차 계산 등 공통 유틸
-├── viewer/
-│   └── index.html           # HTML 뷰어 템플릿 (위키 + 그래프 뷰, 모바일 반응형)
-│                            # — gh-pages push 시 WIKI_DATA 인라인 주입 후 배포
-│                            # — pic_drive_id 있으면 Drive 이미지 인라인 표시
+├── viewer/                  # 뷰어 소스 (개발용 분리 구조)
+│   ├── _template.html       # HTML 뼈대 ({{CSS}}, {{JS}} 플레이스홀더 포함)
+│   ├── style.css            # 전체 CSS
+│   └── app.js               # 전체 JS
+│   ✱ viewer/index.html 은 빌드 산출물(.gitignore) — 직접 편집 금지
+│     gh-pages push 시 builder.py가 조합+WIKI_DATA 주입 후 배포
 └── scripts/
     ├── get_oauth_token.py   # OAuth Refresh Token 최초 발급
     ├── setup_drive.py       # Drive 폴더 구조 생성 (wikis/, wikis/pic/)
@@ -240,6 +242,10 @@ my-idea-wiki/
 8. 이미지 파일 OCR 처리 (Claude Vision)
 9. 코멘트 파일 처리
 10. gh-pages 브랜치에 wiki.json + index.html(WIKI_DATA 인라인 주입) push
+
+> **뷰어 수정 시**: `viewer/index.html` 직접 편집 금지.
+> `viewer/style.css`, `viewer/app.js`, `viewer/_template.html` 을 수정하세요.
+> `index.html`은 builder.py가 빌드 시 자동 생성합니다.
     (GITHUB_TOKEN 설정 시. 실패해도 치명적이지 않음)
 11. Drive에 wiki.json 백업 저장
 12. 텔레그램으로 결과 알람 전송 (GitHub Pages URL 포함)
@@ -264,7 +270,7 @@ get_drive_service() 호출 시:
 ### 뷰어 배포 흐름 (`builder.py` + `gh_pages.py`)
 ```
 build_viewer_html(wiki_json_str) 호출 시:
-1. viewer/index.html 템플릿 읽기
+1. viewer/_template.html + style.css + app.js 읽어 단일 HTML 조합
 2. wiki.json 데이터를 WIKI_DATA 전역변수로 <head> 직전에 주입
 3. WIKI_DATA 인라인 포함 단일 HTML 반환
 

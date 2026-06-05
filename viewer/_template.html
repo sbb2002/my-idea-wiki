@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>아이디어 위키</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Linux+Libertine:ital,wght@0,400;0,600;1,400&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<style>
+{{CSS}}
+</style>
+</head>
+<body>
+
+<div id="load-overlay">
+  <div class="spinner"></div>
+  <div id="load-msg">위키 데이터를 불러오는 중…</div>
+</div>
+
+<!-- 사이드바 오버레이 -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div id="header">
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="메뉴">☰</button>
+  <a class="header-logo" href="#" onclick="return false">💡 <em>아이디어</em> 위키</a>
+  <div class="header-divider"></div>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="아이템 검색…" autocomplete="off">
+    <button class="search-btn">검색</button>
+  </div>
+  <div id="view-toggle">
+    <button class="toggle-btn active" id="btn-wiki" onclick="switchView('wiki')">위키</button>
+    <button class="toggle-btn" id="btn-graph" onclick="switchView('graph')">그래프</button>
+  </div>
+  <button id="theme-toggle" onclick="toggleTheme()" title="테마 변경" style="
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: background .1s, color .1s;
+    flex-shrink: 0;
+  ">🌙 다크</button>
+  <div id="meta-info">—</div>
+</div>
+
+<div id="layout">
+  <!-- 왼쪽 사이드바 -->
+  <div id="sidebar">
+    <div id="sidebar-title">
+      아이템 <span id="item-count">0</span>
+    </div>
+    <div id="item-list"></div>
+  </div>
+
+  <!-- 그래프 뷰 -->
+  <div id="graph-view">
+    <canvas id="graph-canvas"></canvas>
+    <div id="graph-tooltip"></div>
+    <div id="graph-controls">
+      <button class="gc-btn" id="gc-zoom-in" title="확대">+</button>
+      <button class="gc-btn" id="gc-zoom-out" title="축소">−</button>
+      <button class="gc-btn" id="gc-reset" title="초기화">⌂</button>
+    </div>
+    <!-- 범례 — renderGraph()에서 태그 색상 주입 후 표시 -->
+    <div id="graph-legend">
+      <div id="graph-legend-header">
+        <span>범례</span>
+        <button id="graph-legend-toggle" title="접기/펼치기">−</button>
+      </div>
+      <div id="graph-legend-body">
+        <div class="legend-row">
+          <span class="legend-line" style="background:rgba(51,102,204,0.7)"></span>
+          <span>명시적 연결</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-line" style="background:rgba(162,169,177,0.6)"></span>
+          <span>유사도 연결</span>
+        </div>
+        <div id="legend-tag-rows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div id="main">
+    <div id="article-wrap">
+      <!-- 위키 문서 -->
+      <div id="wiki-doc">
+        <div id="error-banner"></div>
+        <!-- 모바일 TOC (접힘 가능) -->
+        <div id="toc-mobile">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button id="toc-mobile-toggle" onclick="toggleMobileToc()" style="flex:1">
+              <span>목차</span>
+              <span id="toc-mobile-arrow">▼</span>
+            </button>
+            <button id="prd-download-btn-mobile" class="prd-mobile-btn" title="PRD 다운로드" onclick="downloadPrd()">
+              📋 PRD
+            </button>
+          </div>
+          <ul id="toc-mobile-list"></ul>
+        </div>
+        <div id="doc-content"></div>
+      </div>
+
+      <!-- 빈 상태 -->
+      <div id="empty-state">
+        <div>← 왼쪽에서 아이템을 선택하세요</div>
+      </div>
+
+      <!-- 목차 (데스크탑) -->
+      <div id="toc">
+        <div class="toc-box">
+          <div class="toc-title">목차</div>
+          <ul class="toc-list" id="toc-list"></ul>
+          <button id="prd-download-btn" title="PRD 다운로드" onclick="downloadPrd()">
+            <span class="prd-icon">📋</span>
+            <span>PRD 다운로드</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 하단 탭바 (모바일 전용) — #37: 위키 탭 제거, 목록/그래프 ON-OFF 토글 -->
+<div id="bottom-bar">
+  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')" title="목록 열기/닫기">
+    <span class="bb-icon">☰</span>
+    <span>목록</span>
+  </button>
+  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')" title="그래프 보기">
+    <span class="bb-icon">🕸️</span>
+    <span>그래프</span>
+  </button>
+  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()" title="테마 변경">
+    <span class="bb-icon" id="bb-theme-icon">🌙</span>
+    <span>테마</span>
+  </button>
+</div>
+
+<script>
+{{JS}}
+</script>
+</body>
+</html>
