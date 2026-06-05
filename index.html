@@ -377,8 +377,8 @@
     float: right;
     clear: right;
     margin: 0 0 16px 24px;
-    min-width: 220px;
-    max-width: 280px;
+    min-width: 200px;
+    max-width: 260px;
     border: 1px solid var(--infobox-border);
     border-collapse: collapse;
     font-size: 13px;
@@ -1155,8 +1155,8 @@
 // AUTO-GENERATED: wiki.json 인라인 데이터
 const WIKI_DATA = {
   "schema_version": "1",
-  "updated_at": "2026-06-04T05:48:25.726649+00:00",
-  "last_processed_at": "2026-06-04T05:48:24.538979+00:00",
+  "updated_at": "2026-06-05T02:06:39.522310+00:00",
+  "last_processed_at": "2026-06-05T02:06:37.523070+00:00",
   "items": [
     {
       "id": "item_356aafe9",
@@ -1408,15 +1408,20 @@ const WIKI_DATA = {
         "#인사이트",
         "#UI설계",
         "#기간분석",
-        "#가격분석"
+        "#가격분석",
+        "#주식분석",
+        "#웹애플리케이션",
+        "#CSV",
+        "#인터렉티브"
       ],
-      "summary": "드래그를 통한 시간 범위 확대 기능과 선택된 기간 내 다양한 통계 정보를 제공하는 주식 차트 인터페이스 아이디어. 성능 최적화를 위해 일봉과 월봉을 자동 전환하는 기능을 포함하며, 기간별 최고점, 최저점, 가격 변화율 등의 상세한 인사이트를 제공한다. 사용자 경험을 중심으로 한 직관적인 드래그 인터페이스와 자동 스케일링 기능이 특징이다.",
+      "summary": "CSV 파일을 업로드하여 인터렉티브한 주식 차트를 생성하고, 특정 구간을 선택하여 수익률 등의 상세 정보를 표로 확인할 수 있는 웹 애플리케이션 아이디어. 사용자가 페이지 제목을 설정할 수 있고, 선형/캔들 차트 전환, 축 고정, 로그변환 등의 고급 기능을 제공한다. 작업 내용을 JSON 형태로 저장하고 불러오는 기능도 포함되어 있다. 두 점(P1, P2)을 클릭하여 구간별 상세 분석이 가능한 것이 핵심 기능이다.",
       "versions": [
         {
           "week": "2026-06-01",
-          "content": "주식 차트 인터페이스의 상세한 UI 설계가 진행되었다. 드래그를 통한 기간 확대 기능의 구체적인 구현 방안과 성능 최적화를 위한 일봉/월봉 자동 전환 시스템을 설계했다. 특히 하단 분석 표에서 제공할 인사이트 항목들을 체크박스 형태로 정리하여 사용자가 필요한 데이터를 선택적으로 확인할 수 있는 구조를 구상했다. 전체적으로 사용자 중심의 직관적인 인터페이스와 성능 효율성을 동시에 고려한 설계가 완성되었다.",
+          "content": "주식 차트 분석 웹 애플리케이션의 상세 기획을 완성했다. 기존의 드래그 기반 시간 범위 선택에서 한 단계 발전하여, 두 점 클릭으로 정확한 구간을 선택하고 해당 구간의 수익률, 수익률 속도 등을 자동 계산하여 표로 제공하는 기능을 설계했다. 특히 사용자가 작업 내용을 JSON으로 저장하고 불러올 수 있는 기능을 추가하여 분석 세션을 보존할 수 있게 했다. CSV 업로드, 선형/캔들 차트 전환, 로그변환 등의 고급 기능도 포함하여 전문적인 주식 분석 도구로서의 완성도를 높였다.",
           "source_note_ids": [
-            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5"
+            "1ITOw6qK4bi-dyvOrA1DuYQ21psU4uzz5",
+            "1y2bLbzdCpsMGvk8AFFwSUVPJW59jmEtb"
           ]
         },
         {
@@ -1533,25 +1538,88 @@ const WIKI_DATA = {
           "tags": [],
           "pic_drive_id": "1D7zrHMfkCqfLRezAyGGd8Hhw-GMniIqE",
           "description": "가격-시간 그래프와 드래그 확대 인터페이스. 상단에는 지그재그 형태의 가격 변동 라인이 그려져 있고, 양방향 화살표로 드래그 확대 영역을 표시. 하단에는 기간 설정을 위한 min-max 인터페이스 스케치"
+        },
+        {
+          "type": "image",
+          "drive_id": "1R-VQNBE3mslWl60sjnJdOpuV_L_GadCM",
+          "filename": "Notes_260605_105907_p1_d1.jpg",
+          "ocr_text": "",
+          "summary": "주식 가격 추이를 보여주는 선 그래프. 노란색 선으로 가격 변동을 표시하고, P1과 P2 지점이 파란색으로 표시되어 있음",
+          "tags": [],
+          "pic_drive_id": "1R-VQNBE3mslWl60sjnJdOpuV_L_GadCM",
+          "description": "주식 가격 추이를 보여주는 선 그래프. 노란색 선으로 가격 변동을 표시하고, P1과 P2 지점이 파란색으로 표시되어 있음"
+        },
+        {
+          "type": "image",
+          "drive_id": "16CrU2bChki8K-ZHLz60bgArPydxbde50",
+          "filename": "Notes_260605_105907_p1_d2.jpg",
+          "ocr_text": "",
+          "summary": "데이터 표시용 테이블 구조. 좌측에 P1, P2 항목이 있고 우측에 '표'라는 제목이 있는 표 형태",
+          "tags": [],
+          "pic_drive_id": "16CrU2bChki8K-ZHLz60bgArPydxbde50",
+          "description": "데이터 표시용 테이블 구조. 좌측에 P1, P2 항목이 있고 우측에 '표'라는 제목이 있는 표 형태"
         }
       ],
-      "body": "## UI 구성 및 차트 인터페이스\n\n상단에는 가격-시간 그래프가 위치하며, 드래그를 통해 기간 범위를 확대할 수 있는 인터페이스를 제공한다. 드래그 영역은 양방향 화살표로 표시되어 사용자가 직관적으로 조작할 수 있다. 시간 기간 설정을 위한 min/max 값 인터페이스가 하단에 배치되어 전체적인 사용자 경험을 향상시킨다.\n\n![차트 인터페이스 스케치](attachment:drawing_1.jpg)\n\n## 성능 최적화 전략\n\n렌더링 부담을 줄이기 위한 자동 데이터 전환 시스템을 구현한다. 기본적으로 일봉 데이터를 사용하되, 범위가 너무 커져 렌더링에 부담이 될 경우 자동으로 월봉으로 표시한다. 다시 축소할 경우에는 일봉으로 돌아가 세밀한 표현을 제공한다. 이를 통해 성능과 정확성의 균형을 맞춘다.\n\n## 데이터 분석 및 인사이트 제공\n\n하단 표를 통해 선택된 기간 범위 내의 다양한 인사이트를 제공한다. 주요 분석 데이터로는 기간 내 최저점의 가격과 시간, 기간 내 최고점의 가격과 시간, 최저점에서 최고점까지의 시간 차이가 포함된다. 또한 사용자가 클릭한 포인트 간의 가격 차이 비율과 시간 차이를 여러 개 제공하여 상세한 분석을 지원한다.",
+      "body": "## 주요 기능\n\n### 차트 시각화\n- CSV 파일을 업로드하여 주식 데이터 시각화\n- 선형 그래프(close price)와 캔들 그래프(OHLC) 간 전환 가능\n- 인터랙티브 플롯으로 확대, 축소, 구간 이동 지원\n- Y축 로그변환 기능\n- 축 고정 기능으로 정밀한 분석 가능\n\n![주식 차트 UI 구성](attachment:Notes_260605_105907_p1_d1.jpg)\n\n### 구간 분석\n- 차트 고정 상태에서 두 점(P1, P2) 클릭으로 구간 선택\n- 선택된 구간의 상세 데이터를 표 형태로 제공:\n  - 시작/끝 시간\n  - 기간 길이\n  - 시작점/끝점 가격\n  - 수익률 = (끝점 가격 - 시작점 가격) / 시작점 가격\n  - 수익률 속도 = 수익률 / 기간 길이\n\n![구간 분석 표](attachment:Notes_260605_105907_p1_d2.jpg)\n\n## 사용자 경험\n\n### 개인화 기능\n- 페이지별 제목 설정 가능 (제목 상자)\n- JSON 형태로 작업 상태 저장/불러오기\n- Export/Load JSON 버튼 제공\n- Load CSV 버튼으로 데이터 업로드\n\n### 직관적 인터페이스\n- 드래그 기반 시간 범위 조작\n- 클릭 기반 구간 선택\n- 실시간 데이터 계산 및 표시",
       "see_also": [
         {
           "name": "TradingView",
-          "description": "전문적인 차트 분석 도구의 표준 인터페이스"
+          "description": "전문적인 주식 차트 플랫폼의 UX 참고 자료"
         },
         {
           "name": "D3.js",
-          "description": "데이터 시각화를 위한 JavaScript 라이브러리"
+          "description": "인터랙티브 데이터 시각화를 위한 JavaScript 라이브러리"
         },
         {
-          "name": "Canvas API",
-          "description": "고성능 차트 렌더링을 위한 웹 기술"
+          "name": "Plotly",
+          "description": "인터랙티브 차트 생성을 위한 시각화 도구"
         },
         {
-          "name": "Technical Analysis",
-          "description": "주식 차트 분석의 기본 이론과 방법론"
+          "name": "Chart.js",
+          "description": "웹 기반 차트 라이브러리 옵션"
+        }
+      ]
+    },
+    {
+      "id": "item_8bf740ab",
+      "title": "기타 연주 스킬 개발",
+      "tags": [
+        "#기타레슨",
+        "#메이저스케일",
+        "#Eb메이저",
+        "#프렛간격",
+        "#음이름",
+        "#오선지악보"
+      ],
+      "summary": "6번줄 메이저 스케일의 음이름과 Eb 메이저 스케일의 3번품 포지션 연습을 통한 기타 연주 실력 향상 과정. 도에서 각 음까지의 프렛 간격을 암기하여 계산 없이 바로 연주할 수 있도록 하는 것이 목표이며, 최종적으로는 오선지 악보를 보고 연주할 수 있는 수준까지 발전시키는 것을 목표로 한다.",
+      "versions": [
+        {
+          "week": "2026-06-01",
+          "content": "Eb 메이저 스케일의 3번품 포지션을 중심으로 한 기타 레슨을 받았다. 6번줄의 각 품별 음이름을 정리하고, 특히 11프렛을 도(Eb)로 하는 3번품 포지션에서의 음 배치를 학습했다. 도에서 다른 음까지의 프렛 간격을 암기하여(도-레:2, 도-미:4, 도-솔:7, 도-라:9, 도-도:12) 계산 없이 즉시 연주할 수 있는 수준을 목표로 하고 있다. 최종 목표는 오선지 악보를 보고 바로 연주하는 것이다.",
+          "source_note_ids": [
+            "1Yg_BlShCBr4mLO2r3NlLsCIkhT438EnC"
+          ]
+        }
+      ],
+      "related": [],
+      "comments": [],
+      "body": "## 메이저 스케일 연습\n\n### 6번줄 메이저 스케일 음이름\n- 1번품: 솔라\n- 2번품: 라시도\n- 3번품: 시도레\n- 4번품: 레미\n- 5번품: 미파솔\n\n### Eb 메이저 스케일 (3번품 포지션)\n- 11프렛 6번줄 = Eb = 도로 고정\n- 도 자리에서 3번품 적용: 시**도**레\n- 기준점에서 가장 낮은 프렛쪽 품 위치를 즉시 파악할 수 있어야 함\n\n## 프렛 간격 암기\n\n### 도 기준 각 음까지의 간격\n- 도~레 간격: 2프렛\n- 도~미 간격: 4프렛\n- 도~솔 간격: 7프렛\n- 도~라 간격: 9프렛\n- 도~도 간격: 12프렛 (옥타브)\n\n### 연습 방법\n- 손에 익을 때까지 반복 연습\n- 머리로 계산하지 않고 자동으로 나올 때까지 훈련\n- 계산이 필요 없는 수준까지 도달하는 것이 목표",
+      "see_also": [
+        {
+          "name": "Circle of Fifths",
+          "description": "다양한 조성의 메이저 스케일 이해를 위한 음악 이론"
+        },
+        {
+          "name": "CAGED 시스템",
+          "description": "기타 지판 전체를 활용한 스케일 연습 방법"
+        },
+        {
+          "name": "Sight-reading",
+          "description": "오선보 읽기 실력 향상을 위한 연습법"
+        },
+        {
+          "name": "Scale Practice Apps",
+          "description": "메이저 스케일 연습을 위한 모바일 앱들"
         }
       ]
     }
@@ -1650,21 +1718,17 @@ const WIKI_DATA = {
   </div>
 </div>
 
-<!-- 하단 탭바 (모바일 전용) -->
+<!-- 하단 탭바 (모바일 전용) — #37: 위키 탭 제거, 목록/그래프 ON-OFF 토글 -->
 <div id="bottom-bar">
-  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')">
+  <button class="bb-tab active" id="bb-list" onclick="bbTab('list')" title="목록 열기/닫기">
     <span class="bb-icon">☰</span>
     <span>목록</span>
   </button>
-  <button class="bb-tab" id="bb-wiki" onclick="bbTab('wiki')">
-    <span class="bb-icon">📄</span>
-    <span>위키</span>
-  </button>
-  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')">
+  <button class="bb-tab" id="bb-graph" onclick="bbTab('graph')" title="그래프 보기">
     <span class="bb-icon">🕸️</span>
     <span>그래프</span>
   </button>
-  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()">
+  <button class="bb-tab" id="bb-theme" onclick="toggleTheme()" title="테마 변경">
     <span class="bb-icon" id="bb-theme-icon">🌙</span>
     <span>테마</span>
   </button>
@@ -1841,23 +1905,58 @@ function closeSidebar() {
   document.body.style.overflow = '';
 }
 
-// ── 하단 탭바 ───────────────────────────────────────────────
+// ── 하단 탭바 — #37: 목록/그래프 ON-OFF 토글 ──────────────
 function bbTab(tab) {
-  ['list','wiki','graph'].forEach(t => {
-    document.getElementById('bb-'+t)?.classList.toggle('active', t === tab);
-  });
-
   if (tab === 'list') {
-    openSidebar();
-    // 목록 탭은 다른 뷰 전환 없이 드로어만 열기
-    document.getElementById('bb-list').classList.add('active');
-  } else if (tab === 'wiki') {
-    closeSidebar();
-    switchView('wiki');
+    const sidebar = document.getElementById('sidebar');
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      closeSidebar();
+      document.getElementById('bb-list').classList.remove('active');
+    } else {
+      openSidebar();
+      document.getElementById('bb-list').classList.add('active');
+      document.getElementById('bb-graph').classList.remove('active');
+    }
   } else if (tab === 'graph') {
-    closeSidebar();
-    switchView('graph');
+    const isGraph = currentView === 'graph';
+    if (isGraph) {
+      switchView('wiki');
+      document.getElementById('bb-graph').classList.remove('active');
+    } else {
+      closeSidebar();
+      document.getElementById('bb-list').classList.remove('active');
+      switchView('graph');
+      document.getElementById('bb-graph').classList.add('active');
+    }
   }
+}
+
+// ── TOC 스크롤: 접힌 섹션 자동 펼침 (#29) ──────────────────
+function scrollToSection(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  // 해당 섹션이 h2인 경우 본인은 괜찮고, h2의 다음 형제(wiki-section-body)가 접혔으면 펼침
+  // 또는 target 자체가 section-body 내부에 있을 수 있음
+  // → target 앞의 가장 가까운 wiki-h2를 찾아 펼침
+  let el = target;
+  // target이 wiki-h2 자신이면 그 body를 펼침
+  if (el.classList.contains('wiki-h2')) {
+    const body = el.nextElementSibling;
+    if (body?.classList.contains('wiki-section-body') && body.classList.contains('collapsed')) {
+      el.classList.remove('collapsed');
+      body.classList.remove('collapsed');
+    }
+  } else {
+    // target이 section-body 안에 있으면 부모 section-body 펼침
+    const sectionBody = el.closest('.wiki-section-body');
+    if (sectionBody?.classList.contains('collapsed')) {
+      sectionBody.classList.remove('collapsed');
+      const h2 = sectionBody.previousElementSibling;
+      if (h2?.classList.contains('wiki-h2')) h2.classList.remove('collapsed');
+    }
+  }
+  target.scrollIntoView({ behavior: 'smooth' });
 }
 
 // ── 모바일 TOC 접힘 ─────────────────────────────────────────
@@ -1886,14 +1985,12 @@ function renderSidebar(items) {
   list.querySelectorAll('.item-entry').forEach(el =>
     el.addEventListener('click', () => {
       selectItem(el.dataset.id);
-      // 모바일에서 아이템 선택 시 드로어 닫기 + 위키 뷰로 전환
+      // 모바일에서 아이템 선택 시 드로어 닫기 + 위키 뷰로 전환 (#37)
       if (window.innerWidth <= 640) {
         closeSidebar();
-        switchView('wiki');
-        // 하단 탭바 업데이트
-        ['list','wiki','graph'].forEach(t =>
-          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
-        );
+        if (currentView !== 'wiki') switchView('wiki');
+        document.getElementById('bb-list')?.classList.remove('active');
+        document.getElementById('bb-graph')?.classList.remove('active');
       }
     })
   );
@@ -1987,7 +2084,7 @@ function selectItem(id) {
   ];
 
   const tocHtml = tocItems.map(t =>
-    `<li class="toc-item" onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'})">${t.label}</li>`
+    `<li class="toc-item" onclick="scrollToSection('${t.id}')">${t.label}</li>`
   ).join('');
 
   // 데스크탑 TOC
@@ -1997,38 +2094,36 @@ function selectItem(id) {
   // 모바일 TOC
   const mobileTocList = document.getElementById('toc-mobile-list');
   mobileTocList.innerHTML = tocItems.map(t =>
-    `<li onclick="document.getElementById('${t.id}')?.scrollIntoView({behavior:'smooth'});toggleMobileToc()">${t.label}</li>`
+    `<li onclick="scrollToSection('${t.id}');toggleMobileToc()">${t.label}</li>`
   ).join('');
   document.getElementById('toc-mobile').classList.add('visible');
 
   document.getElementById('doc-content').innerHTML = `
     <h1 class="doc-title">${esc(item.title)}</h1>
-    <div class="clearfix">
-      <div class="infobox">
-        <div class="infobox-header">아이디어 요약<i class="infobox-toggle-icon">▼</i></div>
-        <div class="infobox-body">
-          <div class="infobox-row">
-            <div class="infobox-label">분류</div>
-            <div class="infobox-val infobox-tags">${(item.tags||[]).map(t=>`<span class="doc-tag">${esc(t)}</span>`).join(' ')}</div>
-          </div>
-          <div class="infobox-row">
-            <div class="infobox-label">버전 수</div>
-            <div class="infobox-val">${item.versions?.length||0}개</div>
-          </div>
-          ${latestWeek ? `<div class="infobox-row">
-            <div class="infobox-label">최신</div>
-            <div class="infobox-val">${fmtWeek(latestWeek)}</div>
-          </div>` : ''}
-          ${relatedItems.length ? `<div class="infobox-row">
-            <div class="infobox-label">연관</div>
-            <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
-          </div>` : ''}
+    <div class="infobox">
+      <div class="infobox-header">아이디어 요약<i class="infobox-toggle-icon">▼</i></div>
+      <div class="infobox-body">
+        <div class="infobox-row">
+          <div class="infobox-label">분류</div>
+          <div class="infobox-val infobox-tags">${(item.tags||[]).map(t=>`<span class="doc-tag">${esc(t)}</span>`).join(' ')}</div>
         </div>
+        <div class="infobox-row">
+          <div class="infobox-label">버전 수</div>
+          <div class="infobox-val">${item.versions?.length||0}개</div>
+        </div>
+        ${latestWeek ? `<div class="infobox-row">
+          <div class="infobox-label">최신</div>
+          <div class="infobox-val">${fmtWeek(latestWeek)}</div>
+        </div>` : ''}
+        ${relatedItems.length ? `<div class="infobox-row">
+          <div class="infobox-label">연관</div>
+          <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
+        </div>` : ''}
       </div>
-
-      <h2 class="wiki-h2" id="sec-summary">개요</h2>
-      <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
     </div>
+
+    <h2 class="wiki-h2" id="sec-summary">개요</h2>
+    <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
 
     ${item.body ? `
     <h2 class="wiki-h2" id="sec-body">상세 내용</h2>
@@ -2090,10 +2185,12 @@ function selectItem(id) {
       sibling = next;
     }
     h2.insertAdjacentElement('afterend', body);
-    h2.addEventListener('click', () => {
+    const toggleSection = () => {
       h2.classList.toggle('collapsed');
       body.classList.toggle('collapsed');
-    });
+    };
+    h2.addEventListener('click', toggleSection);
+    h2.addEventListener('touchend', e => { e.preventDefault(); toggleSection(); });
   });
 
   document.getElementById('main').scrollTo({ top: 0, behavior: 'smooth' });
@@ -2399,10 +2496,9 @@ function renderGraph(items) {
         switchView('wiki');
         selectItem(hit.id);
         document.querySelector(`.item-entry[data-id="${hit.id}"]`)?.scrollIntoView({block:'nearest'});
-        // 모바일 하단탭 업데이트
-        ['list','wiki','graph'].forEach(t =>
-          document.getElementById('bb-'+t)?.classList.toggle('active', t === 'wiki')
-        );
+        // 모바일 하단탭 업데이트 (#37)
+        document.getElementById('bb-list')?.classList.remove('active');
+        document.getElementById('bb-graph')?.classList.remove('active');
       }
       touchDragging = null; touchPanning = null;
       pinchStartDist = null;
@@ -2431,8 +2527,10 @@ const THEMES = [
 function applyTheme(key) {
   document.documentElement.setAttribute('data-theme', key);
   const t = THEMES.find(t => t.key === key) || THEMES[0];
+  // 데스크탑 테마 버튼: 현재 라이트면 "🌙 다크모드", 현재 다크면 "☀️ 라이트모드"
   const btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = t.label;
+  if (btn) btn.textContent = key === 'dark' ? '☀️ 라이트' : '🌙 다크';
+  // 모바일 하단 탭 아이콘: 현재 라이트면 🌙(다크로), 현재 다크면 ☀️(라이트로)
   const bbIcon = document.getElementById('bb-theme-icon');
   if (bbIcon) bbIcon.textContent = key === 'dark' ? '☀️' : '🌙';
   try { localStorage.setItem('wiki-theme', key); } catch(e) {}
@@ -2447,7 +2545,12 @@ function toggleTheme() {
 async function init() {
   try {
     const saved = localStorage.getItem('wiki-theme');
-    if (saved) applyTheme(saved);
+    if (saved) {
+      applyTheme(saved);
+    } else if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      // 저장된 설정 없으면 시스템 다크모드 감지 (#38)
+      applyTheme('dark');
+    }
   } catch(e) {}
 
   const overlay = document.getElementById('load-overlay');
