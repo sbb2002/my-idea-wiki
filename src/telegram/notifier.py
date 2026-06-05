@@ -67,18 +67,27 @@ def notify_success(
     api_used: str,
     overwrite_count: int = 0,
     is_rerun: bool = False,
+    body_tokens: dict | None = None,
 ) -> bool:
     """✅ 성공 알람. (#30: rerun 시 재처리 표시)"""
     viewer = _viewer_url()
     viewer_line = f"\n• 뷰어: {viewer}" if viewer else ""
     mode_tag = " (전체 재처리)" if is_rerun else ""
     overwrite_line = f"\n• 재처리: {overwrite_count}개 content 갱신" if is_rerun and overwrite_count > 0 else ""
+
+    tokens_line = ""
+    if body_tokens:
+        total = sum(body_tokens.values())
+        detail = " / ".join(f"{t:,}" for t in body_tokens.values())
+        tokens_line = f"\n• body 토큰: {total:,} ({detail})"
+
     text = (
         f"✅ [{_today()}] 위키화 완료{mode_tag}\n"
         f"• 처리: {processed}개 노트\n"
         f"• 신규: {new_items}개 / 업데이트: {updated_items}개"
         f"{overwrite_line}\n"
         f"• 사용 API: {api_used}"
+        f"{tokens_line}"
         f"{viewer_line}"
     )
     return send_message(text)
@@ -143,6 +152,7 @@ def notify_result(result: dict) -> bool:
             api_used=result.get("api_used", "unknown"),
             overwrite_count=result.get("overwrite_count", 0),  # (#30)
             is_rerun=result.get("is_rerun", False),             # (#30)
+            body_tokens=result.get("body_tokens"),
         )
     elif status == "partial":
         succeeded = result.get("new_items", 0) + result.get("updated_items", 0)

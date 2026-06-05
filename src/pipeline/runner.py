@@ -27,7 +27,7 @@ from src.pipeline.wiki_store import (
     make_attachment, add_attachment_to_item, add_comment_to_item,
     find_item_by_title, archive_prd, normalize_tags,
 )
-from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude, generate_prd
+from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude, generate_prd, generate_body_with_claude
 from src.pipeline.gemini_processor import wikify_with_gemini
 
 WIKI_FILENAME = "wiki.json"
@@ -188,13 +188,17 @@ def run_pipeline(is_rerun: bool = False) -> dict:
                     content=ai_item.get("content", ""),
                     source_note_ids=source_ids,
                 )
-                _, is_new, is_overwrite = upsert_item(
+                new_summary = ai_item.get("summary", "")
+                item_before = find_item_by_title(wiki, ai_item["title"])
+                prev_summary = item_before.get("summary", "") if item_before else None
+
+                item_obj_result, is_new, is_overwrite = upsert_item(
                     wiki=wiki,
                     title=ai_item["title"],
                     tags=normalize_tags(ai_item.get("tags", [])),
-                    summary=ai_item.get("summary", ""),
+                    summary=new_summary,
                     version=version,
-                    body=ai_item.get("body", ""),
+                    body="",  # body는 2차 호출에서 별도 생성
                     see_also=ai_item.get("see_also", []),
                 )
                 if is_new:
@@ -203,6 +207,25 @@ def run_pipeline(is_rerun: bool = False) -> dict:
                     result["updated_items"] += 1
                 if is_overwrite:
                     result["overwrite_count"] += 1  # rerun 시 같은 week content 덮어씀 (#30)
+
+                # ── body 2차 호출: 신규 or summary 변경 시에만 생성 ──
+                summary_changed = is_new or (prev_summary != new_summary)
+                if summary_changed:
+                    try:
+                        item_for_body = find_item_by_title(wiki, ai_item["title"])
+                        body_md, body_tokens = generate_body_with_claude(
+                            title=ai_item["title"],
+                            summary=new_summary,
+                            versions=item_for_body.get("versions", []),
+                            attachments=item_for_body.get("attachments", []),
+                        )
+                        item_for_body["body"] = body_md
+                        # 최신 버전에 토큰 기록
+                        if item_for_body.get("versions"):
+                            item_for_body["versions"][0]["tokens"] = body_tokens
+                        result.setdefault("body_tokens", {})[ai_item["title"]] = body_tokens
+                    except Exception as body_err:
+                        result["errors"].append(f"body 생성 실패 ({ai_item.get('title','?')}): {body_err}")
 
                 # PDF drawings → 해당 아이템에 첨부로 연결 (#14)
                 item_obj = find_item_by_title(wiki, ai_item["title"])

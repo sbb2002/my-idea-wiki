@@ -35,11 +35,12 @@ def normalize_tags(tags: list[str], max_count: int = 10) -> list[str]:
     return result
 
 
-def make_version(week: str, content: str, source_note_ids: list[str]) -> dict:
+def make_version(week: str, content: str, source_note_ids: list[str], tokens: int = 0) -> dict:
     return {
-        "week": week,           # "YYYY-MM-DD" (해당 주 월요일)
+        "week": week,           # "YYYY-MM-DD" (파이프라인 실행일 또는 노트 수정일)
         "content": content,     # LLM이 작성한 이번 주 업데이트 요약
         "source_note_ids": source_note_ids,  # 이 버전을 구성한 원본 노트 Drive ID 목록
+        "tokens": tokens,       # body 생성에 사용된 토큰 수 (body 미생성 시 0)
     }
 
 

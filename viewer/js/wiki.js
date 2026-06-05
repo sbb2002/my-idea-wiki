@@ -81,6 +81,7 @@ function selectItem(id) {
             <div class="tl-badge">${i===0 ? '최신' : fmtWeek(v.week)}</div>
             <div class="tl-content">${esc(v.content||'')}</div>
             ${v.source_note_ids?.length ? `<div class="tl-sources">노트 ${v.source_note_ids.length}개 기반</div>` : ''}
+            ${v.tokens ? `<div class="tl-tokens">🔢 ${v.tokens.toLocaleString()} tokens</div>` : ''}
           </div>
         </div>`).join('');
 
@@ -152,6 +153,10 @@ function selectItem(id) {
         ${relatedItems.length ? `<div class="infobox-row">
           <div class="infobox-label">연관</div>
           <div class="infobox-val">${relatedItems.map(r=>`<span class="related-link" data-id="${r.id}" style="font-size:12px">${esc(r.title)}</span>`).join(', ')}</div>
+        </div>` : ''}
+        ${item.versions?.[0]?.tokens ? `<div class="infobox-row">
+          <div class="infobox-label">토큰</div>
+          <div class="infobox-val" style="font-size:12px;color:var(--text-dim)">🔢 ${item.versions[0].tokens.toLocaleString()} tokens</div>
         </div>` : ''}
       </div>
     </div>
