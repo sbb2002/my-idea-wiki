@@ -50,7 +50,7 @@ class TestUpsertItem:
 
     def test_new_item_is_created(self):
         wiki = empty_wiki()
-        _, is_new = upsert_item(wiki, "새 아이디어", ["AI"], "요약", self._make_version())
+        _, is_new, _ = upsert_item(wiki, "새 아이디어", ["AI"], "요약", self._make_version())
         assert is_new is True
         assert len(wiki["items"]) == 1
         assert wiki["items"][0]["title"] == "새 아이디어"
@@ -58,7 +58,7 @@ class TestUpsertItem:
     def test_duplicate_title_updates_existing(self):
         wiki = empty_wiki()
         upsert_item(wiki, "기존 아이디어", ["AI"], "초기 요약", self._make_version())
-        _, is_new = upsert_item(wiki, "기존 아이디어", ["AI"], "업데이트 요약", self._make_version())
+        _, is_new, _ = upsert_item(wiki, "기존 아이디어", ["AI"], "업데이트 요약", self._make_version())
         assert is_new is False
         assert len(wiki["items"]) == 1  # 새 아이템이 생기지 않아야 함
 
@@ -79,7 +79,7 @@ class TestUpsertItem:
     def test_title_match_is_case_insensitive(self):
         wiki = empty_wiki()
         upsert_item(wiki, "AI 프로젝트", [], "요약", self._make_version())
-        _, is_new = upsert_item(wiki, "ai 프로젝트", [], "요약2", self._make_version())
+        _, is_new, _ = upsert_item(wiki, "ai 프로젝트", [], "요약2", self._make_version())
         assert is_new is False
 
     def test_manual_tags_are_preserved_on_update(self):
@@ -87,15 +87,15 @@ class TestUpsertItem:
         upsert_item(wiki, "아이디어", ["수동태그"], "요약", self._make_version())
         upsert_item(wiki, "아이디어", ["AI자동태그"], "요약2", self._make_version())
         item = wiki["items"][0]
-        assert "수동태그" in item["tags"]
-        assert "AI자동태그" in item["tags"]
+        assert "#수동태그" in item["tags"]
+        assert "#AI자동태그" in item["tags"]
 
     def test_duplicate_tags_not_added(self):
         wiki = empty_wiki()
         upsert_item(wiki, "아이디어", ["태그A"], "요약", self._make_version())
         upsert_item(wiki, "아이디어", ["태그A", "태그B"], "요약2", self._make_version())
         item = wiki["items"][0]
-        assert item["tags"].count("태그A") == 1
+        assert item["tags"].count("#태그A") == 1
 
 
 # ── runner 테스트 (mock) ──────────────────────────────────────

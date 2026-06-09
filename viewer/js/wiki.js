@@ -1,3 +1,256 @@
+// ── 킥오프 섹션 ─────────────────────────────────────────────
+
+const KICKOFF_FIELDS = [
+  { key: 'core_value',     label: '1. 핵심 가치',          hint: '이걸 왜 만드는가? 한 문장으로.' },
+  { key: 'mvp_scope',      label: '2. MVP 범위',            hint: '딱 이것만. 그 외는 명시적으로 제외.' },
+  { key: 'ui_anchor',      label: '3. UI 앵커',             hint: '화면/인터페이스가 어떻게 생겼는지.' },
+  { key: 'tech_rationale', label: '4. 기술 선택 근거',      hint: '익숙해서인가, 적합해서인가.' },
+  { key: 'weak_points',    label: '5. 가장 먼저 무너질 것', hint: '구조적 약점 2개.' },
+  { key: 'kill_condition', label: '6. Kill Condition',      hint: '이 조건이 충족되면 미련 없이 중단한다.' },
+];
+
+function buildKickoffHtml(item) {
+  const ko = item.kickoff || {};
+  const rows = KICKOFF_FIELDS.map(f => {
+    const val = ko[f.key] || '';
+    const isEmpty = !val.trim();
+    return `
+      <div class="kickoff-row" data-item-id="${esc(item.id)}" data-field="${f.key}">
+        <div class="kickoff-label">${f.label}</div>
+        <div class="kickoff-value${isEmpty ? ' kickoff-empty' : ''}"
+             data-placeholder="${esc(f.hint)}"
+             contenteditable="true"
+             spellcheck="false"
+        >${isEmpty ? '' : esc(val)}</div>
+      </div>`;
+  }).join('');
+
+  const logs = (ko.decision_log || []);
+  const logRows = logs.length === 0
+    ? `<div class="kickoff-log-empty">아직 기록 없음</div>`
+    : logs.map((l, i) => `
+        <div class="kickoff-log-item">
+          <div class="kickoff-log-meta">
+            <span class="kickoff-log-date">${esc(l.date||'')}</span>
+            <button class="kickoff-log-del" data-log-idx="${i}" title="삭제">✕</button>
+          </div>
+          <div class="kickoff-log-decision"><strong>결정:</strong> ${esc(l.decision||'')}</div>
+          ${l.reason ? `<div class="kickoff-log-reason"><strong>이유:</strong> ${esc(l.reason)}</div>` : ''}
+          ${l.rejected_alternative ? `<div class="kickoff-log-alt"><strong>포기한 대안:</strong> ${esc(l.rejected_alternative)}</div>` : ''}
+        </div>`).join('');
+
+  return `
+    <div class="kickoff-block" data-item-id="${esc(item.id)}">
+      <div class="kickoff-save-bar">
+        <span class="kickoff-save-msg" id="kickoff-save-msg-${esc(item.id)}"></span>
+        <button class="kickoff-save-btn" onclick="saveKickoff('${esc(item.id)}')">저장</button>
+        <button class="kickoff-token-btn" onclick="openTokenModal()" title="GitHub Token 설정">🔑</button>
+      </div>
+      ${rows}
+      <div class="kickoff-row kickoff-log-section">
+        <div class="kickoff-label">7. 의사결정 로그</div>
+        <div class="kickoff-log-body">
+          <div id="kickoff-log-list-${esc(item.id)}">${logRows}</div>
+          <button class="kickoff-log-add-btn" onclick="openLogForm('${esc(item.id)}')">+ 추가</button>
+          <div class="kickoff-log-form" id="kickoff-log-form-${esc(item.id)}" style="display:none">
+            <input class="kickoff-log-input" id="log-date-${esc(item.id)}" type="date" value="${new Date().toISOString().slice(0,10)}">
+            <textarea class="kickoff-log-input" id="log-decision-${esc(item.id)}" placeholder="결정 내용" rows="2"></textarea>
+            <textarea class="kickoff-log-input" id="log-reason-${esc(item.id)}" placeholder="이유" rows="2"></textarea>
+            <textarea class="kickoff-log-input" id="log-alt-${esc(item.id)}" placeholder="포기한 대안" rows="2"></textarea>
+            <div class="kickoff-log-form-btns">
+              <button class="kickoff-save-btn" onclick="submitLogEntry('${esc(item.id)}')">추가</button>
+              <button class="kickoff-cancel-btn" onclick="closeLogForm('${esc(item.id)}')">취소</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── 킥오프 편집 이벤트 위임 ──────────────────────────────────
+document.addEventListener('focusout', e => {
+  const val = e.target;
+  if (!val.classList.contains('kickoff-value')) return;
+  val.classList.toggle('kickoff-empty', !val.textContent.trim());
+});
+
+// ── 의사결정 로그 폼 ──────────────────────────────────────────
+function openLogForm(itemId) {
+  document.getElementById(`kickoff-log-form-${itemId}`).style.display = 'block';
+}
+function closeLogForm(itemId) {
+  document.getElementById(`kickoff-log-form-${itemId}`).style.display = 'none';
+}
+
+function submitLogEntry(itemId) {
+  const date     = document.getElementById(`log-date-${itemId}`)?.value || '';
+  const decision = document.getElementById(`log-decision-${itemId}`)?.value.trim() || '';
+  const reason   = document.getElementById(`log-reason-${itemId}`)?.value.trim() || '';
+  const alt      = document.getElementById(`log-alt-${itemId}`)?.value.trim() || '';
+  if (!decision) { alert('결정 내용을 입력하세요.'); return; }
+  saveKickoff(itemId, { date, decision, reason, rejected_alternative: alt });
+  closeLogForm(itemId);
+}
+
+// ── GitHub API 저장 ───────────────────────────────────────────
+const GH_REPO  = 'sbb2002/my-idea-wiki';
+const GH_BRANCH = 'gh-pages';
+
+function getGhToken() {
+  return localStorage.getItem('github_token') || '';
+}
+
+function openTokenModal(callback) {
+  const existing = getGhToken();
+  const token = prompt(
+    'GitHub Personal Access Token을 입력하세요.\n(repo 또는 contents 권한 필요)\n입력값은 이 브라우저에만 저장됩니다.',
+    existing || ''
+  );
+  if (token === null) return;           // 취소
+  if (token.trim()) {
+    localStorage.setItem('github_token', token.trim());
+    if (callback) callback();
+  } else {
+    localStorage.removeItem('github_token');
+  }
+}
+
+async function pushKickoffToGithub(itemId, updatedKickoff) {
+  const token = getGhToken();
+  if (!token) {
+    return new Promise((resolve, reject) => {
+      openTokenModal(() => pushKickoffToGithub(itemId, updatedKickoff).then(resolve).catch(reject));
+    });
+  }
+
+  const apiBase = `https://api.github.com/repos/${GH_REPO}/contents/wiki.json`;
+
+  // 1) 현재 wiki.json SHA + 내용 조회
+  const getResp = await fetch(`${apiBase}?ref=${GH_BRANCH}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+  });
+  if (!getResp.ok) throw new Error(`GitHub GET 실패: ${getResp.status}`);
+  const getMeta = await getResp.json();
+  const sha = getMeta.sha;
+  const currentJson = JSON.parse(atob(getMeta.content.replace(/\n/g, '')));
+
+  // 2) 해당 아이템 kickoff만 업데이트
+  const targetItem = currentJson.items.find(i => i.id === itemId);
+  if (!targetItem) throw new Error(`아이템 ID ${itemId}를 찾을 수 없습니다.`);
+  targetItem.kickoff = updatedKickoff;
+  currentJson.updated_at = new Date().toISOString();
+
+  // 3) PUT
+  const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(currentJson, null, 2))));
+  const putResp = await fetch(apiBase, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: `chore: update kickoff for "${targetItem.title}"`,
+      content: newContent,
+      sha,
+      branch: GH_BRANCH,
+    }),
+  });
+  if (!putResp.ok) {
+    const err = await putResp.json().catch(() => ({}));
+    throw new Error(`GitHub PUT 실패: ${putResp.status} — ${err.message || ''}`);
+  }
+
+  // 4) 로컬 wiki 데이터도 동기화
+  const localItem = wiki.items.find(i => i.id === itemId);
+  if (localItem) localItem.kickoff = updatedKickoff;
+}
+
+async function saveKickoff(itemId, newLogEntry) {
+  const item = wiki.items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // 현재 DOM에서 1~6번 값 수집
+  const block = document.querySelector(`.kickoff-block[data-item-id="${itemId}"]`);
+  if (!block) return;
+
+  const updatedKickoff = Object.assign({}, item.kickoff || {});
+  // decision_log 보존
+  if (!Array.isArray(updatedKickoff.decision_log)) updatedKickoff.decision_log = [];
+
+  KICKOFF_FIELDS.forEach(f => {
+    const el = block.querySelector(`.kickoff-row[data-field="${f.key}"] .kickoff-value`);
+    if (el) updatedKickoff[f.key] = el.textContent.trim();
+  });
+
+  // 의사결정 로그 신규 항목 추가
+  if (newLogEntry) {
+    updatedKickoff.decision_log = [newLogEntry, ...updatedKickoff.decision_log];
+  }
+
+  const msgEl = document.getElementById(`kickoff-save-msg-${itemId}`);
+  if (msgEl) { msgEl.textContent = '저장 중…'; msgEl.className = 'kickoff-save-msg saving'; }
+
+  try {
+    await pushKickoffToGithub(itemId, updatedKickoff);
+    if (msgEl) { msgEl.textContent = '✓ 저장됨'; msgEl.className = 'kickoff-save-msg saved'; }
+    setTimeout(() => { if (msgEl) { msgEl.textContent = ''; msgEl.className = 'kickoff-save-msg'; } }, 2500);
+
+    // 로그 목록 재렌더링
+    if (newLogEntry) {
+      const logList = document.getElementById(`kickoff-log-list-${itemId}`);
+      if (logList) {
+        const logs = updatedKickoff.decision_log;
+        logList.innerHTML = logs.map((l, i) => `
+          <div class="kickoff-log-item">
+            <div class="kickoff-log-meta">
+              <span class="kickoff-log-date">${esc(l.date||'')}</span>
+              <button class="kickoff-log-del" data-item-id="${itemId}" data-log-idx="${i}" title="삭제">✕</button>
+            </div>
+            <div class="kickoff-log-decision"><strong>결정:</strong> ${esc(l.decision||'')}</div>
+            ${l.reason ? `<div class="kickoff-log-reason"><strong>이유:</strong> ${esc(l.reason)}</div>` : ''}
+            ${l.rejected_alternative ? `<div class="kickoff-log-alt"><strong>포기한 대안:</strong> ${esc(l.rejected_alternative)}</div>` : ''}
+          </div>`).join('');
+      }
+    }
+  } catch (err) {
+    console.error('[kickoff save]', err);
+    const msg = err.message || '저장 실패';
+    if (msgEl) { msgEl.textContent = `✕ ${msg}`; msgEl.className = 'kickoff-save-msg error'; }
+  }
+}
+
+// 로그 삭제 이벤트 위임
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('.kickoff-log-del');
+  if (!btn) return;
+  const itemId = btn.dataset.itemId;
+  const idx    = parseInt(btn.dataset.logIdx, 10);
+  if (!itemId || isNaN(idx)) return;
+  if (!confirm('이 항목을 삭제할까요?')) return;
+
+  const item = wiki.items.find(i => i.id === itemId);
+  if (!item?.kickoff?.decision_log) return;
+  const updatedKickoff = Object.assign({}, item.kickoff);
+  updatedKickoff.decision_log = updatedKickoff.decision_log.filter((_, i) => i !== idx);
+
+  const msgEl = document.getElementById(`kickoff-save-msg-${itemId}`);
+  if (msgEl) { msgEl.textContent = '삭제 중…'; msgEl.className = 'kickoff-save-msg saving'; }
+  try {
+    await pushKickoffToGithub(itemId, updatedKickoff);
+    if (msgEl) { msgEl.textContent = '✓ 삭제됨'; msgEl.className = 'kickoff-save-msg saved'; }
+    setTimeout(() => { if (msgEl) { msgEl.textContent = ''; msgEl.className = 'kickoff-save-msg'; } }, 2000);
+    // 로그 항목 DOM 제거
+    btn.closest('.kickoff-log-item')?.remove();
+    const logList = document.getElementById(`kickoff-log-list-${itemId}`);
+    if (logList && !logList.querySelector('.kickoff-log-item')) {
+      logList.innerHTML = `<div class="kickoff-log-empty">아직 기록 없음</div>`;
+    }
+  } catch (err) {
+    if (msgEl) { msgEl.textContent = `✕ ${err.message||'삭제 실패'}`; msgEl.className = 'kickoff-save-msg error'; }
+  }
+});
+
 function renderSidebar(items) {
   const list = document.getElementById('item-list');
   document.getElementById('item-count').textContent = items.length;
@@ -109,6 +362,7 @@ function selectItem(id) {
 
   tocItems = [
     { id: 'sec-summary', label: '개요' },
+    { id: 'sec-kickoff', label: '킥오프' },
     ...(item.body ? [{ id: 'sec-body', label: '상세 내용' }] : []),
     ...(hasPrd ? [{ id: 'sec-prd', label: 'PRD' }] : []),
     { id: 'sec-history', label: '버전 히스토리' },
@@ -163,6 +417,9 @@ function selectItem(id) {
 
     <h2 class="wiki-h2" id="sec-summary">개요</h2>
     <p class="summary-text">${esc(item.summary||'개요 없음')}</p>
+
+    <h2 class="wiki-h2" id="sec-kickoff">킥오프</h2>
+    ${buildKickoffHtml(item)}
 
     ${item.body ? `
     <h2 class="wiki-h2" id="sec-body">상세 내용</h2>

@@ -57,6 +57,7 @@ def run_pipeline(is_rerun: bool = False) -> dict:
     notes_folder_id = os.getenv("DRIVE_NOTES_FOLDER_ID")
     wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
 
+    ai_items = None  # 노트가 없는 경우에도 PRD 처리 시 참조 가능하도록 초기화
     result = {
         "status": "success",
         "processed": 0,
@@ -200,6 +201,7 @@ def run_pipeline(is_rerun: bool = False) -> dict:
                     version=version,
                     body="",  # body는 2차 호출에서 별도 생성
                     see_also=ai_item.get("see_also", []),
+                    kickoff=ai_item.get("kickoff"),
                 )
                 if is_new:
                     result["new_items"] += 1

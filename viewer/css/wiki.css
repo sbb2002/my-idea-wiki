@@ -589,3 +589,211 @@
     line-height: 1.7;
     color: var(--text-muted);
   }
+
+  /* ── 킥오프 섹션 ── */
+  .kickoff-block {
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .kickoff-save-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-light);
+    justify-content: flex-end;
+  }
+
+  .kickoff-save-msg {
+    font-size: 12px;
+    color: var(--text-dim);
+    flex: 1;
+    min-width: 0;
+  }
+  .kickoff-save-msg.saving { color: var(--text-muted); }
+  .kickoff-save-msg.saved  { color: #2e7d32; }
+  .kickoff-save-msg.error  { color: #c62828; }
+
+  .kickoff-save-btn {
+    font-size: 12px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--accent);
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+  }
+  .kickoff-save-btn:hover { background: var(--tag-bg); }
+
+  .kickoff-cancel-btn {
+    font-size: 12px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: var(--font-sans);
+  }
+  .kickoff-cancel-btn:hover { background: var(--bg); }
+
+  .kickoff-token-btn {
+    font-size: 14px;
+    padding: 2px 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-dim);
+    border-radius: 2px;
+  }
+  .kickoff-token-btn:hover { color: var(--accent); }
+
+  .kickoff-row {
+    display: flex;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .kickoff-row:last-child { border-bottom: none; }
+
+  .kickoff-label {
+    flex-shrink: 0;
+    width: 160px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg);
+    border-right: 1px solid var(--border-light);
+    line-height: 1.5;
+  }
+
+  .kickoff-value {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    outline: none;
+    min-height: 40px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    transition: background .1s;
+  }
+  .kickoff-value:focus {
+    background: var(--tag-bg);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .kickoff-value.kickoff-empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-dim);
+    pointer-events: none;
+    font-style: italic;
+  }
+  .kickoff-value.kickoff-empty:focus::before { display: none; }
+
+  /* 의사결정 로그 */
+  .kickoff-log-section { align-items: flex-start; }
+
+  .kickoff-log-body {
+    flex: 1;
+    padding: 10px 12px;
+  }
+
+  .kickoff-log-empty {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+
+  .kickoff-log-item {
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    background: var(--bg);
+  }
+
+  .kickoff-log-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .kickoff-log-date {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .kickoff-log-del {
+    font-size: 11px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .kickoff-log-del:hover { color: #c62828; }
+
+  .kickoff-log-decision,
+  .kickoff-log-reason,
+  .kickoff-log-alt {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text);
+    margin-top: 2px;
+  }
+
+  .kickoff-log-add-btn {
+    margin-top: 6px;
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: var(--font-sans);
+    width: 100%;
+    text-align: left;
+  }
+  .kickoff-log-add-btn:hover { background: var(--tag-bg); }
+
+  .kickoff-log-form {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .kickoff-log-input {
+    font-size: 12.5px;
+    font-family: var(--font-sans);
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+    width: 100%;
+  }
+  .kickoff-log-input:focus { outline: none; border-color: var(--accent); }
+
+  .kickoff-log-form-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* 모바일 대응 */
+  @media (max-width: 640px) {
+    .kickoff-label { width: 110px; font-size: 11.5px; }
+    .kickoff-value { font-size: 12.5px; }
+  }
