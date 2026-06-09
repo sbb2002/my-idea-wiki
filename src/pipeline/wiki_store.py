@@ -44,6 +44,19 @@ def make_version(week: str, content: str, source_note_ids: list[str], tokens: in
     }
 
 
+def make_kickoff() -> dict:
+    """빈 킥오프 필드를 반환한다. 1~5번은 파이프라인이 채우고, 6~7번은 항상 공란."""
+    return {
+        "core_value": "",          # 1. 핵심 가치 — AI 자동 생성
+        "mvp_scope": "",           # 2. MVP 범위 — AI 자동 생성
+        "ui_anchor": "",           # 3. UI 앵커 — AI 자동 생성
+        "tech_rationale": "",      # 4. 기술 선택 근거 — AI 자동 생성
+        "weak_points": "",         # 5. 가장 먼저 무너질 것 — AI 자동 생성
+        "kill_condition": "",      # 6. Kill Condition — 사용자 작성
+        "decision_log": [],        # 7. 의사결정 로그 — 사용자 작성 [{date, decision, reason, rejected_alternative}]
+    }
+
+
 def make_item(title: str, tags: list[str], summary: str, first_version: dict) -> dict:
     return {
         "id": f"item_{uuid.uuid4().hex[:8]}",
@@ -53,6 +66,7 @@ def make_item(title: str, tags: list[str], summary: str, first_version: dict) ->
         "versions": [first_version],
         "related": [],            # 연관 아이템 ID 목록
         "comments": [],
+        "kickoff": make_kickoff(),  # 킥오프 문서 (1~5: AI 자동, 6~7: 사용자 작성)
         "prd": None,               # LLM 친화적 PRD (Markdown, 파이프라인 생성)
         "prd_history": [],         # 이전 PRD 버전 목록 [{date, content}]
     }
@@ -108,6 +122,7 @@ def upsert_item(
     version: dict,
     body: str = "",
     see_also: list[dict] | None = None,
+    kickoff: dict | None = None,
 ) -> tuple[dict, bool, bool]:
     """
     아이템을 추가하거나 업데이트한다.
@@ -126,6 +141,11 @@ def upsert_item(
         item = make_item(title, tags, summary, version)
         item["body"] = body
         item["see_also"] = see_also or []
+        # AI 생성 킥오프 값이 있으면 1~5번 필드만 반영 (6~7번은 항상 공란 유지)
+        if kickoff:
+            for key in ("core_value", "mvp_scope", "ui_anchor", "tech_rationale", "weak_points"):
+                if kickoff.get(key):
+                    item["kickoff"][key] = kickoff[key]
         wiki["items"].append(item)
         return item, True, False
     else:
@@ -137,6 +157,14 @@ def upsert_item(
             existing["body"] = body
         if see_also is not None:
             existing["see_also"] = see_also
+        # kickoff: 기존 아이템에 필드가 없으면 추가, 있으면 사용자 편집 보존
+        # AI 생성값은 기존 킥오프의 빈 1~5번 필드에만 채움
+        if "kickoff" not in existing:
+            existing["kickoff"] = make_kickoff()
+        if kickoff:
+            for key in ("core_value", "mvp_scope", "ui_anchor", "tech_rationale", "weak_points"):
+                if kickoff.get(key) and not existing["kickoff"].get(key):
+                    existing["kickoff"][key] = kickoff[key]
         # 동일 week 버전이 이미 있으면 content만 업데이트 (중복 삽입 방지)
         same_week = next((v for v in existing["versions"] if v.get("week") == version.get("week")), None)
         if same_week:
