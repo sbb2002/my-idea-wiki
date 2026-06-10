@@ -199,6 +199,8 @@ def _handle_help(chat_id: str | int) -> None:
         "  → 위키 아이템 목록을 최초 생성일 순으로 표시\n\n"
         "/list --tags\n"
         "  → 아이템 목록 + 태그 표시 (최대 3개)\n\n"
+        "/overview N\n"
+        "  → N번 아이템의 개요를 출력합니다. 번호는 /list 에서 확인하세요.\n\n"
         "/status\n"
         "  → 현재 실행 중이면 진행 중 안내, 완료됐으면 마지막 실행 결과 조회\n\n"
         "/schedule\n"
@@ -263,6 +265,81 @@ def _handle_list(chat_id: str | int, args: str) -> None:
     except Exception as e:
         log.error(f"[list] 오류: {e}", exc_info=True)
         _reply(chat_id, f"❌ 목록 조회 중 오류: {e}")
+
+
+def _handle_overview(chat_id: str | int, args: str) -> None:
+    """N번 아이템의 개요를 출력한다."""
+    n_str = args.strip()
+
+    # 숫자 유효성 검사
+    try:
+        n = int(n_str)
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        _reply(chat_id, "해당 아이템이 없습니다. 먼저 /list 로 확인해주세요.")
+        return
+
+    try:
+        from src.drive.client import find_file_in_folder, read_note
+        from src.pipeline.wiki_store import load_wiki
+
+        wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
+        wiki_file_id = find_file_in_folder(wiki_folder_id, "wiki.json")
+        if not wiki_file_id:
+            _reply(chat_id, "ℹ️ 아직 위키 데이터가 없습니다.\n/run 으로 위키화를 먼저 실행하세요.")
+            return
+
+        wiki = load_wiki(read_note(wiki_file_id))
+        items = wiki.get("items", [])
+
+        if not items:
+            _reply(chat_id, "ℹ️ 등록된 아이템이 없습니다.\n/run 으로 위키화를 먼저 실행하세요.")
+            return
+
+        def _first_created(item: dict) -> str:
+            versions = item.get("versions", [])
+            if versions:
+                return versions[-1].get("week", "9999-99-99")
+            return "9999-99-99"
+
+        sorted_items = sorted(items, key=_first_created)
+
+        if n > len(sorted_items):
+            _reply(chat_id, "해당 아이템이 없습니다. 먼저 /list 로 확인해주세요.")
+            return
+
+        item = sorted_items[n - 1]
+        title = item.get("title", "(제목 없음)")
+        tags = item.get("tags", [])
+        summary = item.get("summary", "(요약 없음)")
+        versions = item.get("versions", [])
+        latest = versions[0] if versions else None
+
+        tag_str = " ".join(tags) if tags else "(없음)"
+        date = _first_created(item)
+
+        lines = [
+            f"📄 <b>{n}. {title}</b>",
+            f"📅 최초 등록: {date}",
+            f"🏷 태그: {tag_str}",
+            "",
+            f"<b>요약</b>",
+            summary,
+        ]
+
+        if latest:
+            lines += [
+                "",
+                f"<b>최신 업데이트</b> ({latest.get('week', '')})",
+                latest.get("content", "(내용 없음)"),
+            ]
+
+        _reply(chat_id, "\n".join(lines))
+
+    except Exception as e:
+        log.error(f"[overview] 오류: {e}", exc_info=True)
+        _reply(chat_id, f"❌ 개요 조회 중 오류: {e}")
 
 
 def _handle_rerun(chat_id: str | int) -> None:
@@ -392,6 +469,8 @@ def handle_update(update: dict) -> None:
         _handle_rerun(chat_id)
     elif command_part == "/list":
         _handle_list(chat_id, args)
+    elif command_part == "/overview":
+        _handle_overview(chat_id, args)
     elif command_part == "/status":
         _handle_status(chat_id)
     elif command_part == "/schedule":
