@@ -10,7 +10,6 @@ FastAPI의 POST /webhook 요청을 처리하고 5개 명령어를 구현한다.
   /set <주기> — 실행 주기 변경
   /cancel   — 예약된 실행 취소
 """
-import asyncio
 import logging
 import os
 import threading
@@ -23,7 +22,7 @@ import atexit
 import signal
 import sys
 
-from src.telegram.notifier import send_message, _bot_url, _chat_id, _viewer_url
+from src.telegram.notifier import send_message, _bot_url, _viewer_url
 
 log = logging.getLogger("idea-wiki.bot")
 
