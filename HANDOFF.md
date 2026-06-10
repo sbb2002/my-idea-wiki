@@ -26,105 +26,35 @@ GitHub: https://github.com/sbb2002/my-idea-wiki
 | 중단 알람 | SIGTERM/atexit 시 파이프라인 실행 중이면 텔레그램 알람 | ✅ |
 | 모바일 접기 버그 | click 단일 리스너로 교체 | ✅ |
 | 그래프 범례 | 우측 하단 드래그 가능 범례 | ✅ |
-| PRD 기능 | 파이프라인에서 LLM 친화적 PRD 생성 + 뷰어 다운로드 버튼 | ✅ |
 | 뷰어 리팩토링 | index.html → _template.html + css/×6 + js/×6 분리 | ✅ |
+| **#46** | 보안 — loadWiki() → GitHub Contents API + Token 인증 | ✅ |
+| **#47** | 파이프라인 PRD 자동 생성 제거 (runner.py, claude_processor.py) | ✅ |
+| **#48** | PRD 만들기 버튼 — 브라우저에서 Claude API 직접 호출 | ✅ |
+| **#49** | 생성된 PRD → gh-pages/prd/{itemId}.md GitHub API push + 다운로드 | ✅ |
+| **#50** | 아이템 선택 시 gh-pages/prd/{itemId}.md 자동 로드 및 렌더링 | ✅ |
 
-### 이번 세션 주요 결정사항
+### 이번 세션 주요 변경사항
 
-#### PRD 기능 재설계
-기존: 파이프라인(runner.py)이 위키화 시 모든 아이템에 대해 PRD 자동 생성
-→ 문제: 구체화되지 않은 아이디어도 PRD로 만들어 토큰 낭비 심함
+#### #46 보안
+- `viewer/js/data.js` `loadWiki()` → GitHub Contents API + Token 방식
+- Token 없으면 에러를 throw, `init.js`에서 catch → 샘플 데이터 + 에러 배너 표시
+- `init.js` try/catch로 loadWiki() 예외 처리 추가
 
-변경 후:
-- **파이프라인에서 PRD 자동 생성 제거** (#47)
-- **index.html에서 사용자가 원하는 아이템만 선택해 PRD 생성** (#48)
-- **생성된 PRD를 gh-pages/prd/ 에 저장 + 다운로드** (#49)
-- **아이템 선택 시 기존 PRD 자동 로드** (#50)
+#### #47 파이프라인 PRD 제거
+- `runner.py`: 6-B 섹션 전체 제거, `generate_prd`/`archive_prd` import 제거, `prd_generated`/`prd_failed` 카운터 제거
+- `claude_processor.py`: `generate_prd()`, `_build_prd_prompt()`, `PRD_SYSTEM_PROMPT` 제거
+- `wiki.json`의 `item.prd` / `item.prd_history` 필드는 유지 (뷰어에서 계속 사용)
 
-#### 보안 설계
-기존: gh-pages public → wiki.json/PRD 누구나 접근 가능
-→ 문제: 개인 아이디어 노출
-
-검토한 방안:
-- GitHub Pages Private (유료, 기각)
-- JS 비밀번호 (개발자도구 노출, 기각, 이전 세션에서도 기각된 바 있음)
-- Cloudflare Pages + Access (무료, OTP 이메일 인증)
-- **GitHub Token을 비밀번호로 활용** → 채택 (#46)
-
-채택 이유: 이미 킥오프 저장 시 localStorage GitHub Token 구조가 있어 추가 인프라 없이 구현 가능.
-개인 기기에서만 사용하므로 localStorage 토큰 노출 위험 낮음.
-
----
-
-## 다음 세션 작업 (우선순위 순)
-
-| 이슈 | 제목 | Type | Blocked by |
-|------|------|------|------------|
-| [#46](https://github.com/sbb2002/my-idea-wiki/issues/46) | 보안 — wiki.json/PRD 로딩을 GitHub Token 인증으로 보호 | AFK | 없음 |
-| [#47](https://github.com/sbb2002/my-idea-wiki/issues/47) | 파이프라인에서 PRD 자동 생성 제거 | AFK | 없음 |
-| [#48](https://github.com/sbb2002/my-idea-wiki/issues/48) | PRD 생성 — index.html에서 선택한 아이템으로 Claude API 호출 | AFK | #46 |
-| [#49](https://github.com/sbb2002/my-idea-wiki/issues/49) | PRD 저장 — 생성된 PRD를 gh-pages/prd/에 GitHub API로 push 및 다운로드 | AFK | #48 |
-| [#50](https://github.com/sbb2002/my-idea-wiki/issues/50) | PRD 열람 — 아이템 선택 시 gh-pages/prd/에서 해당 PRD 로드 및 렌더링 | AFK | #49 |
-
-### #46 구현 상세 (보안)
-
-`viewer/js/data.js`의 `loadWiki()` 함수를 수정:
-```javascript
-// 변경 전
-async function loadWiki() {
-  if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
-  try {
-    const resp = await fetch('./wiki.json');
-    if (resp.ok) return await resp.json();
-  } catch(e) {}
-  return null;
-}
-
-// 변경 후: GitHub Contents API + Token 인증
-async function loadWiki() {
-  if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
-  const token = getGhToken(); // 기존 함수 재사용
-  if (!token) { /* 🔑 입력 안내 */ return null; }
-  const resp = await fetch(
-    'https://api.github.com/repos/sbb2002/my-idea-wiki/contents/wiki.json?ref=gh-pages',
-    { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } }
-  );
-  if (!resp.ok) { /* 인증 실패 안내 */ return null; }
-  const meta = await resp.json();
-  return JSON.parse(atob(meta.content.replace(/\n/g, '')));
-}
-```
-
-PRD 로딩도 동일한 패턴으로 GitHub Contents API 사용.
-
-### #47 구현 상세 (파이프라인 PRD 제거)
-
-`src/pipeline/runner.py`에서 제거할 것:
-- 6-B 섹션 전체 (약 383~421번 줄, PRD 생성 루프)
-- `generate_prd` import
-- `result["prd_generated"]`, `result["prd_failed"]` 카운터
-
-`src/pipeline/claude_processor.py`에서 제거할 것:
-- `generate_prd()` 함수
-- `PRD_SYSTEM_PROMPT` 상수
-- `_build_prd_prompt()` 함수
-
-`src/pipeline/wiki_store.py`에서 제거할 것:
-- `archive_prd()` 함수 (뷰어에서 직접 prd_history 관리)
-
-`src/telegram/notifier.py`:
-- 완료 알람에서 PRD 관련 통계 항목 제거
-
-**단, `item.prd` / `item.prd_history` wiki.json 필드는 유지** (뷰어에서 계속 사용).
-
-### #48 구현 상세 (PRD 생성 UI)
-
-`viewer/js/wiki.js`에 추가:
-- "PRD 만들기" 버튼 — 기존 `prd-download-btn` 근처 배치
-- 클릭 시 Anthropic API(`claude-sonnet-4-20250514`) 직접 호출 (브라우저에서)
-- 프롬프트 재료: `item.title`, `item.summary`, `item.versions`, `item.kickoff`
-- 기존 PRD 있으면 덮어쓰기 확인 모달
-- 로딩 중 스피너, 완료 후 PRD 섹션 즉시 렌더링
+#### #48/#49/#50 PRD 생성/저장/열람
+- `wiki.js` PRD 섹션 전면 재설계:
+  - `generatePrd()`: 브라우저에서 Claude API 직접 호출 → 스피너 → 완료 시 즉시 렌더링
+  - `_savePrdToGithub()`: gh-pages/prd/{itemId}.md PUT (SHA 조회 → 신규/업데이트)
+  - `_loadPrdFromGithub()`: 아이템 선택 시 백그라운드 로드 시도
+  - `_renderPrdSection()`: PRD 섹션 DOM 독립 렌더링 (id="prd-section-container")
+  - 기존 PRD 덮어쓰기 시 confirm 모달 + prd_history 보관
+- `_template.html`: "📄 PRD 만들기" 버튼 추가 (데스크탑 TOC 박스, 모바일 상단)
+- `graph.css`: `#prd-generate-btn` 스타일 추가 (accent 배경 filled 버튼)
+- TOC에서 PRD 섹션 항상 표시 (기존엔 item.prd 있을 때만)
 
 ---
 
@@ -133,9 +63,9 @@ PRD 로딩도 동일한 패턴으로 GitHub Contents API 사용.
 ```
 src/
 ├── pipeline/
-│   ├── runner.py           # 파이프라인 오케스트레이터 (6-B PRD 생성 섹션 제거 예정)
-│   ├── wiki_store.py       # wiki.json 데이터 구조 (archive_prd 제거 예정)
-│   ├── claude_processor.py # 위키화/OCR/PDF (generate_prd 제거 예정)
+│   ├── runner.py           # 파이프라인 오케스트레이터 (PRD 섹션 제거됨)
+│   ├── wiki_store.py       # wiki.json 데이터 구조 (archive_prd 유지, 뷰어에서 직접 관리)
+│   ├── claude_processor.py # 위키화/OCR/PDF (generate_prd 제거됨)
 │   └── gemini_processor.py # Gemini 폴백
 ├── drive/client.py
 ├── telegram/
@@ -145,15 +75,21 @@ src/
 └── viewer/builder.py       # css/*.css + js/*.js + _template.html → index.html 조합
 
 viewer/
-├── _template.html
-├── css/ (variables, layout, wiki, graph, layout_shell, responsive)
+├── _template.html          ← 📄 PRD 만들기 버튼 추가
+├── css/
+│   ├── variables.css
+│   ├── layout.css
+│   ├── wiki.css
+│   ├── graph.css           ← #prd-generate-btn CSS 추가
+│   ├── layout_shell.css
+│   └── responsive.css
 └── js/
-    ├── data.js     ← #46: loadWiki() GitHub API 방식으로 교체
+    ├── data.js     ← loadWiki() GitHub API + Token 인증
     ├── render.js
     ├── ui.js
-    ├── wiki.js     ← #48: PRD 만들기 버튼 + Claude API 호출 추가
+    ├── wiki.js     ← PRD 생성/저장/열람 전면 재설계
     ├── graph.js
-    └── init.js
+    └── init.js     ← loadWiki() try/catch 예외 처리
 ```
 
 ---
@@ -167,6 +103,8 @@ viewer/
 - **renderMarkdown 이스케이프 순서** — 이스케이프 → MD변환 → 테이블파싱 → 이미지치환 → p래핑
 - **A안 빌드 조합** — builder.py로 단일 index.html 생성, 배포 구조 변경 없음
 - **GitHub Token을 비밀번호로** — 기존 localStorage Token 구조 재활용, 추가 인프라 불필요
+- **prd-section-container 패턴** — PRD를 인라인 HTML 대신 독립 컨테이너로 관리, 비동기 로드/재렌더링 용이
+- **loadWiki throw/catch 패턴** — data.js에서 showError 의존 제거, init.js에서 일괄 처리
 
 ## What Didn't Work
 
