@@ -266,6 +266,7 @@ def _handle_list(chat_id: str | int, args: str) -> None:
         _reply(chat_id, f"❌ 목록 조회 중 오류: {e}")
 
 
+def _handle_rerun(chat_id: str | int) -> None:
     """last_processed_at을 초기화하고 전체 노트를 재처리한다."""
     global _pipeline_running, _last_run_result
 
