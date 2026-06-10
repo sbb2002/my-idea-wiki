@@ -34,8 +34,16 @@ async function init() {
   } catch(e) {}
 
   const overlay = document.getElementById('load-overlay');
-  let data = await loadWiki();
+  let data = null;
   let usingSample = false;
+
+  try {
+    data = await loadWiki();
+  } catch(e) {
+    usingSample = true;
+    data = SAMPLE_WIKI;
+    showError(e.message || '⚠️ wiki.json을 불러오지 못했습니다. 샘플 데이터로 표시 중입니다.');
+  }
 
   if (!data) {
     usingSample = true;

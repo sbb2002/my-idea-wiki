@@ -143,6 +143,31 @@
 
   #graph-legend.collapsed #graph-legend-body { display: none; }
 
+
+  /* PRD 만들기 버튼 */
+  #prd-generate-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--accent);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .18s, transform .12s, opacity .15s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    margin-left: auto;
+  }
+  #prd-generate-btn.visible { display: flex; }
+  #prd-generate-btn:hover { background: var(--accent-hover, var(--accent)); opacity: .9; }
+  #prd-generate-btn:active { transform: scale(.97); }
+  #prd-generate-btn:disabled { opacity: .55; cursor: wait; }
+
   /* PRD 다운로드 버튼 (uiverse faxriddin20 스타일 기반) */
   #prd-download-btn {
     display: none;              /* 아이템 선택 시 표시 */

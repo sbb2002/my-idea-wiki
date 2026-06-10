@@ -99,6 +99,9 @@
               <span>목차</span>
               <span id="toc-mobile-arrow">▼</span>
             </button>
+            <button id="prd-generate-btn-mobile" class="prd-mobile-btn" title="PRD 만들기" onclick="generatePrd()">
+              📄
+            </button>
             <button id="prd-download-btn-mobile" class="prd-mobile-btn" title="PRD 다운로드" onclick="downloadPrd()">
               📋 PRD
             </button>
@@ -118,6 +121,10 @@
         <div class="toc-box">
           <div class="toc-title">목차</div>
           <ul class="toc-list" id="toc-list"></ul>
+          <button id="prd-generate-btn" title="PRD 생성" onclick="generatePrd()">
+            <span class="prd-icon">📄</span>
+            <span>PRD 만들기</span>
+          </button>
           <button id="prd-download-btn" title="PRD 다운로드" onclick="downloadPrd()">
             <span class="prd-icon">📋</span>
             <span>PRD 다운로드</span>

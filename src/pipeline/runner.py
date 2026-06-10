@@ -25,9 +25,9 @@ from src.drive.client import (
 from src.pipeline.wiki_store import (
     load_wiki, dump_wiki, upsert_item, make_version, current_week_str, note_modified_date,
     make_attachment, add_attachment_to_item, add_comment_to_item,
-    find_item_by_title, archive_prd, normalize_tags,
+    find_item_by_title, normalize_tags,
 )
-from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude, generate_prd, generate_body_with_claude
+from src.pipeline.claude_processor import wikify_with_claude, ocr_image_with_claude, process_pdf_with_claude, generate_body_with_claude
 from src.pipeline.gemini_processor import wikify_with_gemini
 
 WIKI_FILENAME = "wiki.json"
@@ -71,8 +71,6 @@ def run_pipeline(is_rerun: bool = False) -> dict:
         "ocr_skipped": 0,
         "comments_processed": 0,
         "is_rerun": is_rerun,   # rerun 여부 (#30)
-        "prd_generated": 0,     # PRD 생성 성공 수
-        "prd_failed": 0,        # PRD 생성 실패 수
     }
 
     # ── 1. 기존 wiki.json 로드 ──────────────────────────────────
@@ -379,46 +377,6 @@ def run_pipeline(is_rerun: bool = False) -> dict:
         result["status"] = "partial"
     elif result["processed"] > 0 and skipped == result["processed"]:
         result["status"] = "failure"
-
-    # ── 6-B. PRD 생성 ─────────────────────────────────────────
-    # 생성 조건:
-    #   - run:   prd가 None인 아이템만 생성 (이미 있으면 토큰 절약을 위해 스킵)
-    #   - rerun: 기존 prd를 prd_history로 보관 후 항상 재생성
-    # 이번 실행에서 신규/업데이트된 아이템에만 적용
-    processed_titles = {ai_item.get("title") for ai_item in (ai_items or [])}
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    for item in wiki["items"]:
-        if item.get("title") not in processed_titles:
-            continue  # 이번 실행에서 처리되지 않은 아이템은 스킵
-
-        has_prd = bool(item.get("prd"))
-
-        # run 모드: 이미 PRD가 있으면 스킵
-        if not is_rerun and has_prd:
-            logger.info(f"PRD 스킵 (이미 존재): {item['title']}")
-            continue
-
-        # rerun 모드: 기존 PRD를 history로 보관
-        if is_rerun and has_prd:
-            archive_prd(item, today_str)
-            logger.info(f"PRD 아카이브 완료: {item['title']} ({today_str})")
-
-        try:
-            related_ids = item.get("related", [])
-            related_items_ctx = [
-                {"title": r["title"], "summary": r.get("summary", "")}
-                for r in wiki["items"]
-                if r["id"] in related_ids and r.get("title")
-            ]
-            prd_md = generate_prd(item, related_items_ctx)
-            item["prd"] = prd_md
-            result["prd_generated"] += 1
-            logger.info(f"PRD 생성 완료: {item['title']}")
-        except Exception as e:
-            result["prd_failed"] += 1
-            result["errors"].append(f"PRD 생성 실패 ({item.get('title', '?')}): {e}")
-            logger.warning(f"PRD 생성 실패 ({item.get('title', '?')}): {e}")
 
     # ── 7. 고아 아이템 감지 및 자동 제거 (#31, #36) ──────────
     # Drive에 존재하지 않는 source_note_ids만 가진 아이템을 wiki.json에서 직접 삭제

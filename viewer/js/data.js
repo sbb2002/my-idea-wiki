@@ -35,11 +35,22 @@ let tocItems = [];
 
 async function loadWiki() {
   if (typeof WIKI_DATA !== 'undefined') return WIKI_DATA;
-  try {
-    const resp = await fetch('./wiki.json');
-    if (resp.ok) return await resp.json();
-  } catch(e) {}
-  return null;
+  const token = typeof getGhToken === 'function' ? getGhToken() : (localStorage.getItem('github_token') || '');
+  if (!token) {
+    throw new Error('🔑 GitHub Token이 필요합니다. 킥오프 섹션의 🔑 버튼으로 토큰을 입력해주세요.');
+  }
+  const resp = await fetch(
+    'https://api.github.com/repos/sbb2002/my-idea-wiki/contents/wiki.json?ref=gh-pages',
+    { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } }
+  );
+  if (resp.status === 401 || resp.status === 403) {
+    throw new Error('🔒 인증 실패: Token이 올바르지 않거나 권한이 부족합니다. 🔑 버튼으로 다시 입력해주세요.');
+  }
+  if (!resp.ok) {
+    throw new Error(`wiki.json 로드 실패: HTTP ${resp.status}`);
+  }
+  const meta = await resp.json();
+  return JSON.parse(atob(meta.content.replace(/\n/g, '')));
 }
 
 function esc(str) {
