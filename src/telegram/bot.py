@@ -196,6 +196,10 @@ def _handle_help(chat_id: str | int) -> None:
         "/rerun\n"
         "  → 전체 재처리. last_processed_at을 초기화하고 모든 노트를 다시 위키화합니다.\n"
         "  (노트가 스킵되거나 결과가 이상할 때 사용)\n\n"
+        "/list\n"
+        "  → 위키 아이템 목록을 최초 생성일 순으로 표시\n\n"
+        "/list --tags\n"
+        "  → 아이템 목록 + 태그 표시 (최대 3개)\n\n"
         "/status\n"
         "  → 현재 실행 중이면 진행 중 안내, 완료됐으면 마지막 실행 결과 조회\n\n"
         "/schedule\n"
@@ -210,7 +214,58 @@ def _handle_help(chat_id: str | int) -> None:
     _reply(chat_id, text)
 
 
-def _handle_rerun(chat_id: str | int) -> None:
+def _handle_list(chat_id: str | int, args: str) -> None:
+    """wiki.json에서 아이템 목록을 최초 생성일 오름차순으로 출력한다."""
+    show_tags = "--tags" in args
+
+    try:
+        from src.drive.client import find_file_in_folder, read_note
+        from src.pipeline.wiki_store import load_wiki
+
+        wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
+        wiki_file_id = find_file_in_folder(wiki_folder_id, "wiki.json")
+        if not wiki_file_id:
+            _reply(chat_id, "ℹ️ 아직 위키 데이터가 없습니다.\n/run 으로 위키화를 먼저 실행하세요.")
+            return
+
+        wiki = load_wiki(read_note(wiki_file_id))
+        items = wiki.get("items", [])
+
+        if not items:
+            _reply(chat_id, "ℹ️ 등록된 아이템이 없습니다.\n/run 으로 위키화를 먼저 실행하세요.")
+            return
+
+        def _first_created(item: dict) -> str:
+            versions = item.get("versions", [])
+            if versions:
+                return versions[-1].get("week", "9999-99-99")
+            return "9999-99-99"
+
+        sorted_items = sorted(items, key=_first_created)
+
+        lines = [f"📋 <b>위키 아이템 목록</b> ({len(sorted_items)}개)\n"]
+
+        for i, item in enumerate(sorted_items, 1):
+            title = item.get("title", "(제목 없음)")
+            date = _first_created(item)
+
+            if show_tags:
+                tags = item.get("tags", [])
+                if len(tags) <= 3:
+                    tag_str = "  " + " ".join(tags) if tags else ""
+                else:
+                    tag_str = "  " + " ".join(tags[:3]) + " [#...]"
+                lines.append(f"{i:2}. {title}\n    📅 {date}{tag_str}")
+            else:
+                lines.append(f"{i:2}. {title}  ·  {date}")
+
+        _reply(chat_id, "\n".join(lines))
+
+    except Exception as e:
+        log.error(f"[list] 오류: {e}", exc_info=True)
+        _reply(chat_id, f"❌ 목록 조회 중 오류: {e}")
+
+
     """last_processed_at을 초기화하고 전체 노트를 재처리한다."""
     global _pipeline_running, _last_run_result
 
@@ -335,6 +390,8 @@ def handle_update(update: dict) -> None:
         _handle_run(chat_id)
     elif command_part == "/rerun":
         _handle_rerun(chat_id)
+    elif command_part == "/list":
+        _handle_list(chat_id, args)
     elif command_part == "/status":
         _handle_status(chat_id)
     elif command_part == "/schedule":
