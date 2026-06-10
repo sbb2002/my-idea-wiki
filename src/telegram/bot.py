@@ -201,6 +201,9 @@ def _handle_help(chat_id: str | int) -> None:
         "  → 아이템 목록 + 태그 표시 (최대 3개)\n\n"
         "/overview N\n"
         "  → N번 아이템의 개요를 출력합니다. 번호는 /list 에서 확인하세요.\n\n"
+        "/prd N\n"
+        "  → N번 아이템의 PRD를 AI로 생성해 GitHub Pages에 저장합니다.\n"
+        "  번호는 /list 에서 확인하세요.\n\n"
         "/status\n"
         "  → 현재 실행 중이면 진행 중 안내, 완료됐으면 마지막 실행 결과 조회\n\n"
         "/schedule\n"
@@ -342,6 +345,135 @@ def _handle_overview(chat_id: str | int, args: str) -> None:
         _reply(chat_id, f"❌ 개요 조회 중 오류: {e}")
 
 
+def _handle_prd(chat_id: str | int, args: str) -> None:
+    """/prd N — N번 아이템의 PRD를 생성해 gh-pages에 push한다."""
+    n_str = args.strip()
+
+    try:
+        n = int(n_str)
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        _reply(chat_id, "❗ 사용법: /prd &lt;번호&gt;\n예: <code>/prd 3</code>\n번호는 /list 에서 확인하세요.")
+        return
+
+    try:
+        from src.drive.client import find_file_in_folder, read_note
+        from src.pipeline.wiki_store import load_wiki
+
+        wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
+        wiki_file_id = find_file_in_folder(wiki_folder_id, "wiki.json")
+        if not wiki_file_id:
+            _reply(chat_id, "ℹ️ 아직 위키 데이터가 없습니다.\n/run 으로 위키화를 먼저 실행하세요.")
+            return
+
+        wiki = load_wiki(read_note(wiki_file_id))
+        items = wiki.get("items", [])
+
+        if not items:
+            _reply(chat_id, "ℹ️ 등록된 아이템이 없습니다.\n/run 으로 위키화를 먼저 실행하세요.")
+            return
+
+        def _first_created(item: dict) -> str:
+            versions = item.get("versions", [])
+            if versions:
+                return versions[-1].get("week", "9999-99-99")
+            return "9999-99-99"
+
+        sorted_items = sorted(items, key=_first_created)
+
+        if n > len(sorted_items):
+            _reply(chat_id, f"해당 아이템이 없습니다. 먼저 /list 로 확인해주세요.")
+            return
+
+        item = sorted_items[n - 1]
+
+    except Exception as e:
+        log.error(f"[prd] wiki 로드 오류: {e}", exc_info=True)
+        _reply(chat_id, f"❌ 위키 데이터 로드 중 오류: {e}")
+        return
+
+    title = item.get("title", "(제목 없음)")
+    _reply(chat_id, f"🤖 {n}번 아이템 <b>{title}</b>의 PRD를 생성 중입니다…")
+    log.info(f"[prd] 생성 시작: {item.get('id')} — {title}")
+
+    def _run_in_thread():
+        try:
+            import anthropic as _anthropic
+            from src.main import _build_prd_prompt, _PRD_SYSTEM_PROMPT, PrdRequest
+            from src.github.gh_pages import push_file, gh_pages_url
+
+            api_key = os.getenv("ANTHROPIC_API_KEY")
+            if not api_key:
+                _reply(chat_id, "❌ ANTHROPIC_API_KEY가 서버에 설정되지 않았습니다.")
+                return
+
+            # 연관 아이템 summary 수집
+            all_items = {i.get("id"): i for i in wiki.get("items", [])}
+            related_items = [
+                {"title": all_items[r].get("title", r), "summary": all_items[r].get("summary", "")}
+                for r in item.get("related", [])
+                if r in all_items
+            ]
+
+            # 기존 PRD가 있으면 prd_history로 보관
+            if item.get("prd"):
+                if not isinstance(item.get("prd_history"), list):
+                    item["prd_history"] = []
+                item["prd_history"].insert(0, {
+                    "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                    "content": item["prd"],
+                })
+                item["prd"] = None
+
+            req = PrdRequest(
+                item_id=item.get("id", ""),
+                title=title,
+                tags=item.get("tags", []),
+                summary=item.get("summary", ""),
+                body=item.get("versions", [{}])[0].get("content", "") if item.get("versions") else "",
+                kickoff=item.get("kickoff", {}),
+                versions=item.get("versions", []),
+                related_items=related_items,
+            )
+
+            client = _anthropic.Anthropic(api_key=api_key)
+            prompt = _build_prd_prompt(req)
+            message = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=4096,
+                system=_PRD_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            prd_text = message.content[0].text.strip()
+
+            if not prd_text:
+                _reply(chat_id, "❌ Claude 응답이 비어있습니다.")
+                return
+
+            prd_path = f"prd/{req.item_id}.md"
+            push_file(prd_path, prd_text, f'prd: generate PRD for "{title}"')
+
+            viewer = gh_pages_url()
+            prd_url = f"{viewer}#prd-{req.item_id}" if viewer else ""
+
+            lines = [
+                f"✅ <b>{title}</b> PRD 생성 완료!",
+                f"📄 <code>{prd_path}</code> 저장됨",
+            ]
+            if prd_url:
+                lines.append(f"🔗 {prd_url}")
+            _reply(chat_id, "\n".join(lines))
+            log.info(f"[prd] 완료: {prd_path}")
+
+        except Exception as e:
+            log.error(f"[prd] 오류: {e}", exc_info=True)
+            _reply(chat_id, f"❌ PRD 생성 중 오류: {e}")
+
+    thread = threading.Thread(target=_run_in_thread, daemon=False)
+    thread.start()
+
+
 def _handle_rerun(chat_id: str | int) -> None:
     """last_processed_at을 초기화하고 전체 노트를 재처리한다."""
     global _pipeline_running, _last_run_result
@@ -471,6 +603,8 @@ def handle_update(update: dict) -> None:
         _handle_list(chat_id, args)
     elif command_part == "/overview":
         _handle_overview(chat_id, args)
+    elif command_part == "/prd":
+        _handle_prd(chat_id, args)
     elif command_part == "/status":
         _handle_status(chat_id)
     elif command_part == "/schedule":
