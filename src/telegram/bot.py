@@ -401,7 +401,7 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
         try:
             import anthropic as _anthropic
             from src.main import _build_prd_prompt, _PRD_SYSTEM_PROMPT, PrdRequest
-            from src.github.gh_pages import push_file, gh_pages_url
+            from src.github.gh_pages import push_file
 
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key:
@@ -454,15 +454,14 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
             prd_path = f"prd/{req.item_id}.md"
             push_file(prd_path, prd_text, f'prd: generate PRD for "{title}"')
 
-            viewer = gh_pages_url()
-            prd_url = f"{viewer}#prd-{req.item_id}" if viewer else ""
+            repo = os.getenv("GITHUB_REPO", "sbb2002/my-idea-wiki")
+            branch = os.getenv("GITHUB_BRANCH", "gh-pages")
+            raw_url = f"https://raw.githubusercontent.com/{repo}/{branch}/{prd_path}"
 
             lines = [
                 f"✅ <b>{title}</b> PRD 생성 완료!",
-                f"📄 <code>{prd_path}</code> 저장됨",
+                f"📄 {raw_url}",
             ]
-            if prd_url:
-                lines.append(f"🔗 {prd_url}")
             _reply(chat_id, "\n".join(lines))
             log.info(f"[prd] 완료: {prd_path}")
 

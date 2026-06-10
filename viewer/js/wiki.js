@@ -521,7 +521,15 @@ function selectItem(id) {
 let _currentPrdItem = null;
 
 // PRD를 gh-pages/prd/{itemId}.md 에서 로드 (#50)
+// public repo이므로 토큰 없이 raw URL로 직접 fetch. 토큰이 있으면 Contents API도 병행 시도.
 async function _loadPrdFromGithub(itemId) {
+  const rawUrl = `https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/prd/${itemId}.md`;
+  try {
+    const resp = await fetch(rawUrl);
+    if (resp.ok) return await resp.text();
+  } catch(_) {}
+
+  // raw fetch 실패 시 토큰으로 Contents API 재시도
   const token = getGhToken();
   if (!token) return null;
   try {
