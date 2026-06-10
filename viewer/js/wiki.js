@@ -520,90 +520,6 @@ function selectItem(id) {
 // ── PRD 생성/저장/열람 (#46 #48 #49 #50) ────────────────────
 let _currentPrdItem = null;
 
-// PRD 생성용 시스템 프롬프트
-const PRD_SYSTEM_PROMPT = `You are a precise technical writer that produces Product Requirements Documents (PRDs) for LLM-based autonomous implementation agents.
-
-Rules:
-- Write in the same language as the idea content (Korean if Korean, English if English).
-- Be exhaustive and unambiguous — the implementing LLM has no other context.
-- Do NOT include version history, attachment metadata, or changelog.
-- Include related items ONLY if they are architecturally inseparable from this item.
-- Output raw Markdown only. No preamble, no explanation, no code fences around the document.`;
-
-function _buildPrdPrompt(item) {
-  const related = (item.related || [])
-    .map(rid => wiki.items.find(i => i.id === rid))
-    .filter(Boolean)
-    .map(r => `- **${r.title}**: ${r.summary || ''}`);
-
-  const kickoffLines = [];
-  const ko = item.kickoff || {};
-  const KO_LABELS = {
-    core_value: '핵심 가치', mvp_scope: 'MVP 범위', ui_anchor: 'UI 앵커',
-    tech_rationale: '기술 선택 근거', weak_points: '가장 먼저 무너질 것', kill_condition: 'Kill Condition'
-  };
-  for (const [k, label] of Object.entries(KO_LABELS)) {
-    if (ko[k]?.trim()) kickoffLines.push(`**${label}**: ${ko[k]}`);
-  }
-
-  const versions = (item.versions || []).map((v, i) =>
-    `### ${i === 0 ? '최신' : v.week}\n${v.content}`
-  ).join('\n\n');
-
-  return [
-    `# Idea Title\n${item.title}`,
-    item.tags?.length ? `# Tags\n${item.tags.join(', ')}` : '',
-    `# Summary\n${item.summary || ''}`,
-    item.body ? `# Detailed Content\n${item.body}` : '',
-    kickoffLines.length ? `# Kickoff\n${kickoffLines.join('\n')}` : '',
-    versions ? `# Version History\n${versions}` : '',
-    related.length ? `# Related Items\n${related.join('\n')}` : '',
-    '---\nGenerate a comprehensive PRD. Structure it with: Overview, Goals, Requirements, Technical Considerations, and any relevant sections.\nWrite for an LLM agent that will autonomously implement this from scratch.',
-  ].filter(Boolean).join('\n\n');
-}
-
-// PRD를 gh-pages/prd/{itemId}.md 에 GitHub API로 push (#49)
-async function _savePrdToGithub(itemId, prdContent, itemTitle) {
-  const token = getGhToken();
-  if (!token) throw new Error('GitHub Token이 없습니다.');
-  const path = `prd/${itemId}.md`;
-  const apiUrl = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
-
-  // 기존 파일 SHA 조회 (없으면 신규 생성)
-  let sha = null;
-  try {
-    const getResp = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
-    });
-    if (getResp.ok) {
-      const meta = await getResp.json();
-      sha = meta.sha;
-    }
-  } catch(_) {}
-
-  const content = btoa(unescape(encodeURIComponent(prdContent)));
-  const body = {
-    message: `prd: generate PRD for "${itemTitle}"`,
-    content,
-    branch: GH_BRANCH,
-  };
-  if (sha) body.sha = sha;
-
-  const putResp = await fetch(apiUrl, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  if (!putResp.ok) {
-    const err = await putResp.json().catch(() => ({}));
-    throw new Error(`PRD GitHub 저장 실패: ${putResp.status} — ${err.message || ''}`);
-  }
-}
-
 // PRD를 gh-pages/prd/{itemId}.md 에서 로드 (#50)
 async function _loadPrdFromGithub(itemId) {
   const token = getGhToken();
@@ -651,11 +567,12 @@ function _renderPrdSection(item) {
     </div>`;
 }
 
-// "PRD 만들기" 클릭 핸들러 (#48)
+// "PRD 만들기" 클릭 핸들러 (#48) — 백엔드 경유
 async function generatePrd() {
   if (!_currentPrdItem) return;
   const item = _currentPrdItem;
 
+  // Token 검증 (localStorage에 없으면 입력 유도)
   const token = getGhToken();
   if (!token) {
     return new Promise((resolve) => {
@@ -666,9 +583,9 @@ async function generatePrd() {
   // 기존 PRD가 있으면 덮어쓰기 확인
   if (item.prd) {
     if (!confirm(`"${item.title}"의 기존 PRD를 덮어쓸까요?\n기존 내용은 버전 히스토리로 보관됩니다.`)) return;
-    // 히스토리로 보관
     if (!Array.isArray(item.prd_history)) item.prd_history = [];
     item.prd_history.unshift({ date: new Date().toISOString().slice(0, 10), content: item.prd });
+    item.prd = null;
   }
 
   // 버튼 로딩 상태
@@ -676,57 +593,57 @@ async function generatePrd() {
   const origText = btn?.textContent;
   if (btn) { btn.textContent = '⏳ 생성 중…'; btn.disabled = true; }
 
-  // PRD 섹션에 로딩 표시
   const section = document.getElementById('prd-section-container');
-  if (section) section.innerHTML = '<p class="no-content">🤖 Claude가 PRD를 작성 중입니다…</p>';
+  if (section) section.innerHTML = '<p class="no-content">🤖 PRD를 생성 중입니다…</p>';
 
   try {
-    const prompt = _buildPrdPrompt(item);
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    // 연관 아이템 요약 조립
+    const relatedItems = (item.related || [])
+      .map(rid => wiki.items.find(i => i.id === rid))
+      .filter(Boolean)
+      .map(r => ({ title: r.title, summary: r.summary || '' }));
+
+    // 백엔드 호출
+    const serverUrl = 'https://idea-wiki-web.onrender.com';
+    const resp = await fetch(`${serverUrl}/api/generate-prd`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        system: PRD_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
+        item_id:      item.id,
+        title:        item.title,
+        tags:         item.tags || [],
+        summary:      item.summary || '',
+        body:         item.body || '',
+        kickoff:      item.kickoff || {},
+        versions:     item.versions || [],
+        related_items: relatedItems,
       }),
     });
+
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(`Claude API 실패: ${resp.status} — ${err.error?.message || ''}`);
+      throw new Error(err.detail || `서버 오류: ${resp.status}`);
     }
+
     const data = await resp.json();
-    const prdText = data.content?.find(b => b.type === 'text')?.text?.trim() || '';
-    if (!prdText) throw new Error('Claude 응답이 비어있습니다.');
+    const prdText = data.prd;
+    if (!prdText) throw new Error('서버 응답에 PRD가 없습니다.');
 
+    // 메모리 업데이트 및 렌더링
     item.prd = prdText;
-
-    // GitHub에 저장 (#49)
-    await _savePrdToGithub(item.id, prdText, item.title);
-
-    // 로컬 렌더링 업데이트 (#50)
     _renderPrdSection(item);
     _updatePrdBtn(item);
 
-    // TOC에 PRD 항목 추가 (없으면)
-    if (!tocItems.find(t => t.id === 'sec-prd')) {
-      const histIdx = tocItems.findIndex(t => t.id === 'sec-history');
-      tocItems.splice(histIdx, 0, { id: 'sec-prd', label: 'PRD' });
-      const tocList = document.getElementById('toc-list');
-      if (tocList) tocList.innerHTML = tocItems.map(t =>
-        `<li class="toc-item" onclick="scrollToSection('${t.id}')">${t.label}</li>`
-      ).join('');
-    }
+    // 완료 팝업 (#5 요구사항)
+    alert('✅ PRD가 생성되었습니다.');
 
-    if (btn) { btn.textContent = '✓ PRD 생성됨'; btn.disabled = false; }
-    setTimeout(() => { if (btn) btn.textContent = origText; }, 3000);
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
 
   } catch(err) {
     console.error('[generatePrd]', err);
     if (section) section.innerHTML = `<p class="no-content" style="color:var(--warn-color)">⚠️ PRD 생성 실패: ${esc(err.message)}</p>`;
     if (btn) { btn.textContent = '✕ 실패'; btn.disabled = false; }
-    setTimeout(() => { if (btn) btn.textContent = origText; }, 3000);
+    setTimeout(() => { if (btn && btn.textContent === '✕ 실패') btn.textContent = origText; }, 3000);
   }
 }
 
