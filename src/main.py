@@ -125,6 +125,22 @@ for LLM-based autonomous implementation agents.
 Rules:
 - Write in the same language as the idea content (Korean if Korean, English if English).
 - Be exhaustive and unambiguous — the implementing LLM has no other context.
+
+Capture what makes THIS idea unique:
+- Identify the distinctive value of this specific idea: the exact problem it solves, \
+for whom, and the design choices that differentiate it from a generic product in the \
+same category. A PRD that could describe any similar product is a failed PRD.
+- Infer the following directly from the idea content and state them explicitly:
+  * Core value — the single most important thing this idea must deliver.
+  * MVP scope — the minimal feature set that proves the core value, AND what is \
+deliberately excluded from the first version.
+  * Constraints & risks — technical or UX constraints implied by the content, and \
+the weakest assumption that would break this idea first.
+- Do NOT invent features that contradict the idea content. Where the content is \
+silent, choose the simplest option that serves the core value and mark it clearly \
+as an assumption.
+
+Output constraints:
 - Do NOT include version history, attachment metadata, or changelog.
 - Include related items ONLY if they are architecturally inseparable from this item.
 - Output raw Markdown only. No preamble, no explanation, no code fences around the document.
@@ -137,8 +153,6 @@ class PrdRequest(BaseModel):
     tags: list[str] = []
     summary: str = ""
     body: str = ""
-    kickoff: dict = {}
-    versions: list[dict] = []
     related_items: list[dict] = []   # [{title, summary}]
 
 
@@ -156,25 +170,6 @@ def _build_prd_prompt(req: PrdRequest) -> str:
     if req.body:
         parts.append(f"# Detailed Content\n{req.body}")
 
-    # 킥오프 필드
-    ko = req.kickoff
-    ko_labels = {
-        "core_value": "핵심 가치", "mvp_scope": "MVP 범위", "ui_anchor": "UI 앵커",
-        "tech_rationale": "기술 선택 근거", "weak_points": "가장 먼저 무너질 것",
-        "kill_condition": "Kill Condition",
-    }
-    ko_lines = [f"**{label}**: {ko[k]}" for k, label in ko_labels.items() if ko.get(k, "").strip()]
-    if ko_lines:
-        parts.append("# Kickoff\n" + "\n".join(ko_lines))
-
-    # 버전 히스토리
-    if req.versions:
-        ver_lines = "\n\n".join(
-            f"### {'최신' if i == 0 else v.get('week', '')}\n{v.get('content', '')}"
-            for i, v in enumerate(req.versions)
-        )
-        parts.append(f"# Version History\n{ver_lines}")
-
     # 연관 아이템
     if req.related_items:
         rel_lines = "\n".join(f"- **{r['title']}**: {r.get('summary', '')}" for r in req.related_items)
@@ -182,8 +177,9 @@ def _build_prd_prompt(req: PrdRequest) -> str:
 
     parts.append(
         "---\n"
-        "Generate a comprehensive PRD. Structure it with: Overview, Goals, Requirements, "
-        "Technical Considerations, and any relevant sections.\n"
+        "Generate a comprehensive PRD for THIS specific idea. Structure it with: "
+        "Overview, Core Value, MVP Scope (including explicit exclusions), Requirements, "
+        "Technical Considerations, and Risks & Assumptions.\n"
         "Write for an LLM agent that will autonomously implement this from scratch."
     )
 

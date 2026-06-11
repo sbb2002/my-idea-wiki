@@ -621,9 +621,7 @@ async function generatePrd() {
         title:        item.title,
         tags:         item.tags || [],
         summary:      item.summary || '',
-        body:         item.body || '',
-        kickoff:      item.kickoff || {},
-        versions:     item.versions || [],
+        body:         (item.versions && item.versions[0] && item.versions[0].content) || '',
         related_items: relatedItems,
       }),
     });

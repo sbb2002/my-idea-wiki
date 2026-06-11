@@ -432,8 +432,6 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
                 tags=item.get("tags", []),
                 summary=item.get("summary", ""),
                 body=item.get("versions", [{}])[0].get("content", "") if item.get("versions") else "",
-                kickoff=item.get("kickoff", {}),
-                versions=item.get("versions", []),
                 related_items=related_items,
             )
 
