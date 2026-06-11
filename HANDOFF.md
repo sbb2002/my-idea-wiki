@@ -136,3 +136,8 @@ viewer/
 | `GITHUB_TOKEN` | gh-pages push용 PAT ✅ Render 등록 완료 |
 | `GITHUB_REPO` | 기본값: `sbb2002/my-idea-wiki` |
 | `GITHUB_BRANCH` | 기본값: `gh-pages` |
+
+## 의사결정 로그
+
+[2026-06-11] 이슈 #58 — 패스스루를 check_error y/N 확인 경로로 대체 / 검증 실패 시 무단 PRD 생성 방지 / "경고 없이 그냥 진행" 방식 포기
+[2026-06-11] 이슈 #58 — 근본 원인을 _VIABILITY_PROMPT의 비이스케이프 중괄호(format KeyError '"q1"')로 확정하고 함께 수정 / 이슈 진단(_parse 예외)만으로는 관측된 로그 재현 불가 / 프롬프트 수정 없이 예외 분리만 하는 방안 포기

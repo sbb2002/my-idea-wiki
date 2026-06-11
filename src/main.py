@@ -243,7 +243,7 @@ _VIABILITY_PROMPT = """\
    (예: 사용할 기술, 알고리즘, 아키텍처 중 하나 — "자동화", "AI 활용" 같은 추상적 표현은 no)
 
 반드시 아래 JSON 형식으로만 응답하라. 다른 텍스트 없이:
-{"q1": "yes", "q2": "no", "q3": "yes"}
+{{"q1": "yes", "q2": "no", "q3": "yes"}}
 
 ---
 제목: {title}
@@ -311,6 +311,7 @@ async def check_prd_viability(req: ViabilityRequest):
     # 1차: Claude Haiku
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if api_key:
+        haiku_text = None
         try:
             client = _anthropic.Anthropic(api_key=api_key)
             msg = client.messages.create(
@@ -318,13 +319,19 @@ async def check_prd_viability(req: ViabilityRequest):
                 max_tokens=64,
                 messages=[{"role": "user", "content": prompt}],
             )
-            return _parse(msg.content[0].text)
+            haiku_text = msg.content[0].text
         except Exception as e:
-            log.warning(f"[viability] Haiku 실패, Gemini 폴백: {e}")
+            log.warning(f"[viability] Haiku API 호출 실패, Gemini 폴백: {e}")
+        if haiku_text is not None:
+            try:
+                return _parse(haiku_text)
+            except Exception as e:
+                log.warning(f"[viability] Haiku 응답 파싱 실패, Gemini 폴백: {e}")
 
     # 2차: Gemini Flash
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key:
+        gemini_text = None
         try:
             from google import genai as _genai
             client = _genai.Client(api_key=gemini_key)
@@ -332,11 +339,16 @@ async def check_prd_viability(req: ViabilityRequest):
                 model="gemini-2.5-flash",
                 contents=prompt,
             )
-            return _parse(resp.text)
+            gemini_text = resp.text
         except Exception as e:
-            log.warning(f"[viability] Gemini 폴백도 실패: {e}")
+            log.warning(f"[viability] Gemini API 호출도 실패: {e}")
+        if gemini_text is not None:
+            try:
+                return _parse(gemini_text)
+            except Exception as e:
+                log.warning(f"[viability] Gemini 응답 파싱 실패 — check_error 반환: {e}")
 
-    # 양쪽 실패
+    # 양쪽 실패 (API 호출 또는 파싱)
     log.error("[viability] 모든 모델 실패 — check_error 반환")
     return {"sufficient": False, "check_error": True}
 
