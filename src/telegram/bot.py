@@ -412,14 +412,21 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
         )
         result = _asyncio.run(check_prd_viability(v_req))
         if not result.get("sufficient", True):
-            reasons = result.get("reasons", [])
-            reason_text = "\n".join(f"  • {r}" for r in reasons)
-            warning = (
-                f"⚠️ <b>{title}</b> 아이템의 내용이 PRD로 만들기에 부실합니다.\n\n"
-                f"부실 이유:\n{reason_text}\n\n"
-                f"바이브 코딩이 불가능할 수 있습니다.\n"
-                f"그래도 PRD로 만드시겠습니까? (y/N)"
-            )
+            if result.get("check_error"):
+                warning = (
+                    f"⚠️ 원문 품질 검증이 실패하였습니다.\n"
+                    f"그렇지만 PRD는 여전히 생성할 수 있습니다.\n"
+                    f"생성하시겠습니까? (y/N)"
+                )
+            else:
+                reasons = result.get("reasons", [])
+                reason_text = "\n".join(f"  • {r}" for r in reasons)
+                warning = (
+                    f"⚠️ <b>{title}</b> 아이템의 내용이 PRD로 만들기에 부실합니다.\n\n"
+                    f"부실 이유:\n{reason_text}\n\n"
+                    f"바이브 코딩이 불가능할 수 있습니다.\n"
+                    f"그래도 PRD로 만드시겠습니까? (y/N)"
+                )
             _prd_pending[chat_id] = {"item": item, "title": title}
             _reply(chat_id, warning)
             return

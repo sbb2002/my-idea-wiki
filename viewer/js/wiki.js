@@ -598,7 +598,7 @@ async function generatePrd() {
 
   // ── viability check ──────────────────────────────────────────
   const serverUrl = 'https://idea-wiki-web.onrender.com';
-  try {
+    try {
     const vResp = await fetch(`${serverUrl}/api/check-prd-viability`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -611,7 +611,13 @@ async function generatePrd() {
     });
     if (vResp.ok) {
       const vData = await vResp.json();
-      if (!vData.sufficient) {
+      if (vData.check_error) {
+        const go = confirm(
+          `⚠️ 원문 품질 검증이 실패하였습니다.\n` +
+          `그렇지만 PRD는 여전히 생성할 수 있습니다.\n생성하시겠습니까?`
+        );
+        if (!go) return;
+      } else if (!vData.sufficient) {
         const reasons = (vData.reasons || []).map(r => `• ${r}`).join('\n');
         const go = confirm(
           `⚠️ "${item.title}" 아이템의 내용이 PRD로 만들기에 부실합니다.\n\n` +

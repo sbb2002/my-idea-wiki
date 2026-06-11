@@ -284,9 +284,9 @@ async def check_prd_viability(req: ViabilityRequest):
         except Exception as e:
             log.warning(f"[viability] Gemini 폴백도 실패: {e}")
 
-    # 양쪽 실패 시 sufficient로 간주 (생성 막지 않음)
-    log.error("[viability] 모든 모델 실패 — sufficient=true로 패스스루")
-    return {"sufficient": True}
+    # 양쪽 실패 시 error 플래그 반환 — 사용자에게 경고 후 선택하게 한다
+    log.error("[viability] 모든 모델 실패 — check_error 반환")
+    return {"sufficient": False, "check_error": True}
 
 
 @app.post("/api/generate-prd")
