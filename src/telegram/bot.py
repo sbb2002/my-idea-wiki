@@ -401,6 +401,29 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
 
     title = item.get("title", "(제목 없음)")
 
+    # ── 기존 PRD 존재 시 재생성 확인 (#56) ───────────────────────
+    if item.get("prd"):
+        _prd_pending[chat_id] = {
+            "stage": "regen_confirm",
+            "item": item,
+            "title": title,
+            "items": items,
+            "expires_at": time.time() + _PRD_PENDING_TTL,
+        }
+        _reply(
+            chat_id,
+            f"ℹ️ <b>{title}</b> 아이템에는 이미 PRD가 있습니다.\n"
+            f"재생성하면 기존 PRD는 버전 히스토리로 보관됩니다.\n"
+            f"재생성할까요? (y/N)",
+        )
+        return
+    # ────────────────────────────────────────────────────────────
+
+    _check_viability_and_run(chat_id, item, title, items)
+
+
+def _check_viability_and_run(chat_id: str | int, item: dict, title: str, items: list) -> None:
+    """viability check 후 통과하면 PRD 생성, 부실이면 y/N 확인을 요청한다."""
     # ── viability check ──────────────────────────────────────────
     body = item.get("versions", [{}])[0].get("content", "") if item.get("versions") else ""
     try:
@@ -434,7 +457,7 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
                 f"바이브 코딩이 불가능할 수 있습니다.\n"
                 f"그래도 PRD로 만드시겠습니까? (y/N)"
             )
-        _prd_pending[chat_id] = {"item": item, "title": title, "items": items, "expires_at": time.time() + _PRD_PENDING_TTL}
+        _prd_pending[chat_id] = {"stage": "viability_confirm", "item": item, "title": title, "items": items, "expires_at": time.time() + _PRD_PENDING_TTL}
         _reply(chat_id, warning)
         return
     # ────────────────────────────────────────────────────────────
@@ -678,14 +701,25 @@ def handle_update(update: dict) -> None:
                 _reply(chat_id, "⏱ PRD 생성 요청이 만료되었습니다. 다시 /prd N 으로 시도하세요.")
                 return
             answer = text.strip().lower()
+            stage = pending.get("stage", "viability_confirm")
             if answer in ("y", "yes"):
                 _prd_pending.pop(chat_id)
-                _execute_prd(chat_id, pending["item"], pending["title"], pending.get("items"))
+                if stage == "regen_confirm":
+                    # 재생성 승인 → 강화된 viability check를 동일하게 거친다 (#56)
+                    _check_viability_and_run(chat_id, pending["item"], pending["title"], pending.get("items") or [])
+                else:
+                    _execute_prd(chat_id, pending["item"], pending["title"], pending.get("items"))
             elif answer in ("n", "no", ""):
                 _prd_pending.pop(chat_id)
-                _reply(chat_id, "🚫 PRD 생성을 취소했습니다.")
+                if stage == "regen_confirm":
+                    _reply(chat_id, "🚫 PRD 재생성을 취소했습니다. 기존 PRD는 그대로 유지됩니다.")
+                else:
+                    _reply(chat_id, "🚫 PRD 생성을 취소했습니다.")
             else:
-                _reply(chat_id, "❓ y 또는 n 으로 답해주세요. 그래도 PRD로 만드시겠습니까? (y/N)")
+                if stage == "regen_confirm":
+                    _reply(chat_id, "❓ y 또는 n 으로 답해주세요. PRD를 재생성할까요? (y/N)")
+                else:
+                    _reply(chat_id, "❓ y 또는 n 으로 답해주세요. 그래도 PRD로 만드시겠습니까? (y/N)")
         return
 
     # "@botname" suffix 제거 (그룹 채팅 대응)
