@@ -197,24 +197,53 @@ def _build_prd_prompt(req: PrdRequest) -> str:
         "> - 답변이 새로운 불확실성을 드러내면 그 가지를 끝까지 파고들 것\n"
         "> - 모든 주요 분기가 해소되면 인터뷰를 종료하고 확정된 결정 요약을 제공\n"
         ">\n"
+        "> **grill-me 우선순위 목록** (아래 항목을 위 규칙에 따라 순서대로 확정하라):\n"
+        "> {GRILL_ME_LIST}\n"
+        ">\n"
         "> 인터뷰 완료 후 사용자의 확인을 받은 다음 구현을 시작하라.\n\n"
+        "For the {GRILL_ME_LIST} placeholder above, replace it with a numbered list of "
+        "the most critical unresolved decisions in THIS specific idea — decisions that MUST "
+        "be confirmed before the first file can be written. "
+        "Order them from most to least blocking. "
+        "Each item must be a concrete question, not a category. "
+        "Aim for 3–7 items. Format each as:\n"
+        "> 1. [질문 내용] (권장: [권장 답변])\n\n"
         "After this blockquote, write the PRD body."
     )
 
     return "\n\n".join(parts)
 
 
-_VIABILITY_PROMPT = """\
-아래 아이디어 노트 내용을 읽고, 이것이 PRD(제품 요구사항 문서)로 만들기에 충분한 내용인지 판단하라.
+# ── PRD viability check ──────────────────────────────────────────
 
-판단 기준 — 아래 중 2개 이상 해당하면 부실(insufficient)로 판정:
-1. summary가 3문장 미만이거나 없음
-2. body가 없거나 200자 미만
-3. "무엇을 만드는가"(결과물의 형태: 앱/시스템/도구 등)가 불명확
-4. MVP 범위나 제외 사항을 전혀 추론할 수 없음
+def _rule_based_check(title: str, summary: str, body: str) -> list[str]:
+    """
+    1단계: 규칙 기반 체크 (토큰 0).
+    명백히 빈 노트를 걸러낸다. 실패 이유 목록 반환 (빈 리스트 = 통과).
+    """
+    fails = []
+    combined = (summary + " " + body).strip()
+    if len(combined) < 100:
+        fails.append("노트 전체 내용이 너무 짧습니다 (100자 미만)")
+    if not title or title == "(제목 없음)":
+        fails.append("제목이 없습니다")
+    return fails
+
+
+_VIABILITY_PROMPT = """\
+아래 아이디어 노트를 읽고, 세 가지 사실 확인 질문에 yes 또는 no로만 답하라.
+추론하거나 빈 곳을 채워서 읽지 말 것. 명시적으로 적혀 있는 내용만 기준으로 판단하라.
+
+질문:
+1. 대상 플랫폼, 환경, 또는 사용 대상이 구체적으로 명시되어 있는가?
+   (예: "카카오톡 스크린샷", "웹 브라우저", "iOS 앱" 등 — 단순히 "앱" "시스템" 같은 추상적 표현은 no)
+2. 입력과 출력 형태가 모두 명시되어 있는가?
+   (예: "CSV 파일 입력 → 인터랙티브 차트 출력" — 둘 중 하나라도 없으면 no)
+3. 핵심 구현 방향이 하나 이상 명시되어 있는가?
+   (예: 사용할 기술, 알고리즘, 아키텍처 중 하나 — "자동화", "AI 활용" 같은 추상적 표현은 no)
 
 반드시 아래 JSON 형식으로만 응답하라. 다른 텍스트 없이:
-{"sufficient": true} 또는 {"sufficient": false, "reasons": ["이유1", "이유2"]}
+{"q1": "yes", "q2": "no", "q3": "yes"}
 
 ---
 제목: {title}
@@ -222,6 +251,12 @@ _VIABILITY_PROMPT = """\
 요약: {summary}
 본문: {body}
 """
+
+_VIABILITY_QUESTIONS = [
+    "대상 플랫폼/환경/사용 대상이 구체적으로 명시되지 않았습니다",
+    "입력과 출력 형태가 명시되지 않았습니다",
+    "핵심 구현 방향(기술/알고리즘/아키텍처)이 명시되지 않았습니다",
+]
 
 
 class ViabilityRequest(BaseModel):
@@ -235,10 +270,18 @@ class ViabilityRequest(BaseModel):
 async def check_prd_viability(req: ViabilityRequest):
     """
     PRD 생성 전 내용 충분성 사전 검사.
-    Haiku로 판단, 실패 시 Gemini Flash로 폴백.
+    1단계: 규칙 기반 (토큰 0)
+    2단계: LLM 닫힌 질문 3개 — 2개 이상 no면 부실
+    LLM 실패 시 Gemini Flash 폴백, 양쪽 실패 시 check_error 반환.
     """
     import anthropic as _anthropic
 
+    # 1단계: 규칙 기반
+    rule_fails = _rule_based_check(req.title, req.summary, req.body)
+    if rule_fails:
+        return {"sufficient": False, "reasons": rule_fails}
+
+    # 2단계: LLM 닫힌 질문
     prompt = _VIABILITY_PROMPT.format(
         title=req.title,
         tags=", ".join(req.tags) if req.tags else "(없음)",
@@ -249,12 +292,21 @@ async def check_prd_viability(req: ViabilityRequest):
     def _parse(text: str) -> dict:
         import json as _json
         text = text.strip()
-        # 코드 펜스 제거
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
-        return _json.loads(text.strip())
+        answers = _json.loads(text.strip())
+        # no인 항목 수집
+        fails = [
+            _VIABILITY_QUESTIONS[i]
+            for i, key in enumerate(["q1", "q2", "q3"])
+            if str(answers.get(key, "no")).lower() == "no"
+        ]
+        # 2개 이상 no → 부실
+        if len(fails) >= 2:
+            return {"sufficient": False, "reasons": fails}
+        return {"sufficient": True}
 
     # 1차: Claude Haiku
     api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -263,7 +315,7 @@ async def check_prd_viability(req: ViabilityRequest):
             client = _anthropic.Anthropic(api_key=api_key)
             msg = client.messages.create(
                 model="claude-haiku-4-5-20251001",
-                max_tokens=256,
+                max_tokens=64,
                 messages=[{"role": "user", "content": prompt}],
             )
             return _parse(msg.content[0].text)
@@ -284,7 +336,7 @@ async def check_prd_viability(req: ViabilityRequest):
         except Exception as e:
             log.warning(f"[viability] Gemini 폴백도 실패: {e}")
 
-    # 양쪽 실패 시 error 플래그 반환 — 사용자에게 경고 후 선택하게 한다
+    # 양쪽 실패
     log.error("[viability] 모든 모델 실패 — check_error 반환")
     return {"sufficient": False, "check_error": True}
 
