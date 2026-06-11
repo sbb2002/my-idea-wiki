@@ -427,17 +427,17 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
                     f"바이브 코딩이 불가능할 수 있습니다.\n"
                     f"그래도 PRD로 만드시겠습니까? (y/N)"
                 )
-            _prd_pending[chat_id] = {"item": item, "title": title}
+            _prd_pending[chat_id] = {"item": item, "title": title, "items": items}
             _reply(chat_id, warning)
             return
     except Exception as e:
         log.warning(f"[prd] viability check 실패, 그냥 진행: {e}")
     # ────────────────────────────────────────────────────────────
 
-    _execute_prd(chat_id, item, title)
+    _execute_prd(chat_id, item, title, items)
 
 
-def _execute_prd(chat_id: str | int, item: dict, title: str) -> None:
+def _execute_prd(chat_id: str | int, item: dict, title: str, all_wiki_items: list | None = None) -> None:
     """PRD 생성을 스레드로 실행한다. viability check 통과 후 호출된다."""
     _reply(chat_id, f"🤖 <b>{title}</b>의 PRD를 생성 중입니다…")
     log.info(f"[prd] 생성 시작: {item.get('id')} — {title}")
@@ -454,7 +454,7 @@ def _execute_prd(chat_id: str | int, item: dict, title: str) -> None:
                 return
 
             # 연관 아이템 summary 수집
-            all_items = {i.get("id"): i for i in item.get("_wiki_items", [])}
+            all_items = {i.get("id"): i for i in (all_wiki_items or [])}
             related_items = [
                 {"title": all_items[r].get("title", r), "summary": all_items[r].get("summary", "")}
                 for r in item.get("related", [])
@@ -631,7 +631,7 @@ def handle_update(update: dict) -> None:
             answer = text.strip().lower()
             if answer in ("y", "yes"):
                 pending = _prd_pending.pop(chat_id)
-                _execute_prd(chat_id, pending["item"], pending["title"])
+                _execute_prd(chat_id, pending["item"], pending["title"], pending.get("items"))
             elif answer in ("n", "no", ""):
                 _prd_pending.pop(chat_id)
                 _reply(chat_id, "🚫 PRD 생성을 취소했습니다.")
