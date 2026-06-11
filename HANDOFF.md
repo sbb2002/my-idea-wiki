@@ -160,6 +160,6 @@ viewer/
 
 ### 다음 세션 시작 방법
 ```
-PRD_idea-wiki-system.md 와 HANDOFF.md 를 읽고 작업을 이어주세요.
+HANDOFF.md 를 읽고 작업을 이어주세요.
 /combo-run --list  또는  /combo-run 59
 ```
