@@ -13,6 +13,7 @@ FastAPI의 POST /webhook 요청을 처리하고 5개 명령어를 구현한다.
 import logging
 import os
 import threading
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -33,9 +34,10 @@ _schedule_description: str = "매주 월요일 오전 9시 (UTC)"
 _pipeline_running: bool = False
 _cold_start_warned: bool = False  # 이번 프로세스 생애 첫 /run 여부
 
-# chat_id → {"item": dict, "title": str, "reasons": list[str]}
+# chat_id → {"item": dict, "title": str, "items": list, "expires_at": float}
 # /prd 부실 판정 후 y/n 대기 중인 상태를 보관한다.
 _prd_pending: dict[str | int, dict] = {}
+_PRD_PENDING_TTL = int(os.getenv("PRD_PENDING_TTL_MINUTES", "10")) * 60
 
 
 def _mark_started() -> None:
@@ -427,7 +429,7 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
                     f"바이브 코딩이 불가능할 수 있습니다.\n"
                     f"그래도 PRD로 만드시겠습니까? (y/N)"
                 )
-            _prd_pending[chat_id] = {"item": item, "title": title, "items": items}
+            _prd_pending[chat_id] = {"item": item, "title": title, "items": items, "expires_at": time.time() + _PRD_PENDING_TTL}
             _reply(chat_id, warning)
             return
     except Exception as e:
@@ -628,9 +630,14 @@ def handle_update(update: dict) -> None:
     if not text.startswith("/"):
         # PRD 부실 경고에 대한 y/n 응답 처리
         if chat_id in _prd_pending:
+            pending = _prd_pending[chat_id]
+            if time.time() > pending.get("expires_at", 0):
+                _prd_pending.pop(chat_id)
+                _reply(chat_id, "⏱ PRD 생성 요청이 만료되었습니다. 다시 /prd N 으로 시도하세요.")
+                return
             answer = text.strip().lower()
             if answer in ("y", "yes"):
-                pending = _prd_pending.pop(chat_id)
+                _prd_pending.pop(chat_id)
                 _execute_prd(chat_id, pending["item"], pending["title"], pending.get("items"))
             elif answer in ("n", "no", ""):
                 _prd_pending.pop(chat_id)
