@@ -257,3 +257,97 @@ class TestWebhookEndpoint:
         monkeypatch.delenv("TELEGRAM_WEBHOOK_SECRET", raising=False)
         if "src.main" in sys.modules:
             del sys.modules["src.main"]
+
+
+class TestPersistPrdToWiki:
+    """#59 — 텔레그램 PRD 생성 후 wiki.json item.prd 저장 검증."""
+
+    def _make_wiki_json(self, item_id: str = "item_abc12345", prd=None, prd_history=None) -> str:
+        import json
+        return json.dumps({
+            "schema_version": "1",
+            "updated_at": "2026-06-01T00:00:00+00:00",
+            "last_processed_at": None,
+            "items": [{
+                "id": item_id,
+                "title": "테스트 아이템",
+                "tags": ["#test"],
+                "summary": "요약",
+                "versions": [{"week": "2026-06-01", "content": "내용", "source_note_ids": [], "tokens": 0}],
+                "related": [],
+                "comments": [],
+                "prd": prd,
+                "prd_history": prd_history if prd_history is not None else [],
+            }],
+        }, ensure_ascii=False)
+
+    def test_persist_sets_prd_field(self, monkeypatch):
+        """생성된 PRD 텍스트가 item.prd에 저장되고 Drive에 업로드된다."""
+        import json
+        bot = _reload_bot()
+        monkeypatch.setenv("DRIVE_WIKI_FOLDER_ID", "folder123")
+
+        uploaded = {}
+
+        def fake_upload(folder_id, filename, content, existing_file_id=None, **kw):
+            uploaded["folder_id"] = folder_id
+            uploaded["filename"] = filename
+            uploaded["content"] = content
+            uploaded["existing_file_id"] = existing_file_id
+            return "file123"
+
+        with patch("src.drive.client.find_file_in_folder", return_value="file123"), \
+             patch("src.drive.client.read_note", return_value=self._make_wiki_json()), \
+             patch("src.drive.client.upload_json", side_effect=fake_upload):
+            bot._persist_prd_to_wiki("item_abc12345", "# 새 PRD 내용")
+
+        assert uploaded["filename"] == "wiki.json"
+        assert uploaded["existing_file_id"] == "file123"
+        saved = json.loads(uploaded["content"])
+        assert saved["items"][0]["prd"] == "# 새 PRD 내용"
+
+    def test_persist_moves_existing_prd_to_history(self, monkeypatch):
+        """기존 PRD가 있으면 prd_history 맨 앞으로 이관된다."""
+        import json
+        bot = _reload_bot()
+        monkeypatch.setenv("DRIVE_WIKI_FOLDER_ID", "folder123")
+
+        old_history = [{"date": "2026-05-01", "content": "# 아주 옛날 PRD"}]
+        wiki_json = self._make_wiki_json(prd="# 기존 PRD", prd_history=old_history)
+        uploaded = {}
+
+        def fake_upload(folder_id, filename, content, existing_file_id=None, **kw):
+            uploaded["content"] = content
+            return "file123"
+
+        with patch("src.drive.client.find_file_in_folder", return_value="file123"), \
+             patch("src.drive.client.read_note", return_value=wiki_json), \
+             patch("src.drive.client.upload_json", side_effect=fake_upload):
+            bot._persist_prd_to_wiki("item_abc12345", "# 새 PRD")
+
+        saved = json.loads(uploaded["content"])
+        item = saved["items"][0]
+        assert item["prd"] == "# 새 PRD"
+        assert item["prd_history"][0]["content"] == "# 기존 PRD"
+        assert item["prd_history"][1]["content"] == "# 아주 옛날 PRD"
+
+    def test_persist_raises_when_wiki_missing(self, monkeypatch):
+        """wiki.json이 없으면 예외를 올린다 (호출부에서 경고 처리)."""
+        import pytest
+        bot = _reload_bot()
+        monkeypatch.setenv("DRIVE_WIKI_FOLDER_ID", "folder123")
+
+        with patch("src.drive.client.find_file_in_folder", return_value=None):
+            with pytest.raises(RuntimeError):
+                bot._persist_prd_to_wiki("item_abc12345", "# PRD")
+
+    def test_persist_raises_when_item_missing(self, monkeypatch):
+        """item_id가 wiki.json에 없으면 예외를 올린다."""
+        import pytest
+        bot = _reload_bot()
+        monkeypatch.setenv("DRIVE_WIKI_FOLDER_ID", "folder123")
+
+        with patch("src.drive.client.find_file_in_folder", return_value="file123"), \
+             patch("src.drive.client.read_note", return_value=self._make_wiki_json("item_other")):
+            with pytest.raises(RuntimeError):
+                bot._persist_prd_to_wiki("item_abc12345", "# PRD")

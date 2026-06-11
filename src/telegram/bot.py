@@ -466,16 +466,6 @@ def _execute_prd(chat_id: str | int, item: dict, title: str, all_wiki_items: lis
                 if r in all_items
             ]
 
-            # 기존 PRD가 있으면 prd_history로 보관
-            if item.get("prd"):
-                if not isinstance(item.get("prd_history"), list):
-                    item["prd_history"] = []
-                item["prd_history"].insert(0, {
-                    "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                    "content": item["prd"],
-                })
-                item["prd"] = None
-
             req = PrdRequest(
                 item_id=item.get("id", ""),
                 title=title,
@@ -502,6 +492,16 @@ def _execute_prd(chat_id: str | int, item: dict, title: str, all_wiki_items: lis
             prd_path = f"prd/{req.item_id}.md"
             push_file(prd_path, prd_text, f'prd: generate PRD for "{title}"')
 
+            # wiki.json의 item.prd 필드 갱신 (#59)
+            # 생성에 수십 초가 걸리므로, stale 데이터 덮어쓰기를 피하기 위해
+            # 저장 직전에 wiki.json을 fresh reload하고 해당 item만 갱신한다.
+            drive_save_error: str | None = None
+            try:
+                _persist_prd_to_wiki(req.item_id, prd_text)
+            except Exception as e:
+                drive_save_error = str(e)
+                log.error(f"[prd] wiki.json 저장 실패: {e}", exc_info=True)
+
             repo = os.getenv("GITHUB_REPO", "sbb2002/my-idea-wiki")
             branch = os.getenv("GITHUB_BRANCH", "gh-pages")
             raw_url = f"https://raw.githubusercontent.com/{repo}/{branch}/{prd_path}"
@@ -510,6 +510,10 @@ def _execute_prd(chat_id: str | int, item: dict, title: str, all_wiki_items: lis
                 f"✅ <b>{title}</b> PRD 생성 완료!",
                 f"📄 {raw_url}",
             ]
+            if drive_save_error:
+                lines.append(
+                    f"⚠️ 단, wiki.json 저장에 실패해 뷰어에는 반영되지 않았습니다: {drive_save_error}"
+                )
             _reply(chat_id, "\n".join(lines))
             log.info(f"[prd] 완료: {prd_path}")
 
@@ -519,6 +523,41 @@ def _execute_prd(chat_id: str | int, item: dict, title: str, all_wiki_items: lis
 
     thread = threading.Thread(target=_run_in_thread, daemon=False)
     thread.start()
+
+
+def _persist_prd_to_wiki(item_id: str, prd_text: str) -> None:
+    """
+    생성된 PRD 텍스트를 wiki.json의 해당 item에 저장한다 (#59).
+
+    - wiki.json을 Drive에서 fresh reload하여 동시 변경분을 덮어쓰지 않는다.
+    - 기존 prd가 있으면 prd_history 맨 앞으로 이관한 뒤 새 prd를 기록한다.
+    - 실패 시 예외를 그대로 올린다 (호출부에서 경고 알람 처리).
+    """
+    from src.drive.client import find_file_in_folder, upload_json, read_note
+    from src.pipeline.wiki_store import load_wiki, dump_wiki, find_item_by_id
+
+    wiki_folder_id = os.getenv("DRIVE_WIKI_FOLDER_ID")
+    wiki_file_id = find_file_in_folder(wiki_folder_id, "wiki.json")
+    if not wiki_file_id:
+        raise RuntimeError("wiki.json을 Drive에서 찾을 수 없습니다.")
+
+    wiki = load_wiki(read_note(wiki_file_id))
+    fresh_item = find_item_by_id(wiki, item_id)
+    if fresh_item is None:
+        raise RuntimeError(f"item {item_id}을(를) wiki.json에서 찾을 수 없습니다.")
+
+    # 기존 PRD가 있으면 prd_history로 보관
+    if fresh_item.get("prd"):
+        if not isinstance(fresh_item.get("prd_history"), list):
+            fresh_item["prd_history"] = []
+        fresh_item["prd_history"].insert(0, {
+            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "content": fresh_item["prd"],
+        })
+
+    fresh_item["prd"] = prd_text
+    upload_json(wiki_folder_id, "wiki.json", dump_wiki(wiki), existing_file_id=wiki_file_id)
+    log.info(f"[prd] wiki.json item.prd 갱신 완료: {item_id}")
 
 
 def _handle_rerun(chat_id: str | int) -> None:
