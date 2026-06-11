@@ -33,6 +33,10 @@ _schedule_description: str = "매주 월요일 오전 9시 (UTC)"
 _pipeline_running: bool = False
 _cold_start_warned: bool = False  # 이번 프로세스 생애 첫 /run 여부
 
+# chat_id → {"item": dict, "title": str, "reasons": list[str]}
+# /prd 부실 판정 후 y/n 대기 중인 상태를 보관한다.
+_prd_pending: dict[str | int, dict] = {}
+
 
 def _mark_started() -> None:
     """서버가 처음 시작되면 이미 warm 상태임을 기록."""
@@ -394,7 +398,41 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
         return
 
     title = item.get("title", "(제목 없음)")
-    _reply(chat_id, f"🤖 {n}번 아이템 <b>{title}</b>의 PRD를 생성 중입니다…")
+
+    # ── viability check ──────────────────────────────────────────
+    body = item.get("versions", [{}])[0].get("content", "") if item.get("versions") else ""
+    try:
+        from src.main import check_prd_viability, ViabilityRequest
+        import asyncio as _asyncio
+        v_req = ViabilityRequest(
+            title=title,
+            tags=item.get("tags", []),
+            summary=item.get("summary", ""),
+            body=body,
+        )
+        result = _asyncio.run(check_prd_viability(v_req))
+        if not result.get("sufficient", True):
+            reasons = result.get("reasons", [])
+            reason_text = "\n".join(f"  • {r}" for r in reasons)
+            warning = (
+                f"⚠️ <b>{title}</b> 아이템의 내용이 PRD로 만들기에 부실합니다.\n\n"
+                f"부실 이유:\n{reason_text}\n\n"
+                f"바이브 코딩이 불가능할 수 있습니다.\n"
+                f"그래도 PRD로 만드시겠습니까? (y/N)"
+            )
+            _prd_pending[chat_id] = {"item": item, "title": title}
+            _reply(chat_id, warning)
+            return
+    except Exception as e:
+        log.warning(f"[prd] viability check 실패, 그냥 진행: {e}")
+    # ────────────────────────────────────────────────────────────
+
+    _execute_prd(chat_id, item, title)
+
+
+def _execute_prd(chat_id: str | int, item: dict, title: str) -> None:
+    """PRD 생성을 스레드로 실행한다. viability check 통과 후 호출된다."""
+    _reply(chat_id, f"🤖 <b>{title}</b>의 PRD를 생성 중입니다…")
     log.info(f"[prd] 생성 시작: {item.get('id')} — {title}")
 
     def _run_in_thread():
@@ -409,7 +447,7 @@ def _handle_prd(chat_id: str | int, args: str) -> None:
                 return
 
             # 연관 아이템 summary 수집
-            all_items = {i.get("id"): i for i in wiki.get("items", [])}
+            all_items = {i.get("id"): i for i in item.get("_wiki_items", [])}
             related_items = [
                 {"title": all_items[r].get("title", r), "summary": all_items[r].get("summary", "")}
                 for r in item.get("related", [])
@@ -581,7 +619,18 @@ def handle_update(update: dict) -> None:
     text: str = message.get("text", "")
 
     if not text.startswith("/"):
-        return  # 명령어가 아닌 메시지 무시
+        # PRD 부실 경고에 대한 y/n 응답 처리
+        if chat_id in _prd_pending:
+            answer = text.strip().lower()
+            if answer in ("y", "yes"):
+                pending = _prd_pending.pop(chat_id)
+                _execute_prd(chat_id, pending["item"], pending["title"])
+            elif answer in ("n", "no", ""):
+                _prd_pending.pop(chat_id)
+                _reply(chat_id, "🚫 PRD 생성을 취소했습니다.")
+            else:
+                _reply(chat_id, "❓ y 또는 n 으로 답해주세요. 그래도 PRD로 만드시겠습니까? (y/N)")
+        return
 
     # "@botname" suffix 제거 (그룹 채팅 대응)
     command_part = text.split()[0].split("@")[0]

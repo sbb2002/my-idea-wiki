@@ -204,6 +204,91 @@ def _build_prd_prompt(req: PrdRequest) -> str:
     return "\n\n".join(parts)
 
 
+_VIABILITY_PROMPT = """\
+아래 아이디어 노트 내용을 읽고, 이것이 PRD(제품 요구사항 문서)로 만들기에 충분한 내용인지 판단하라.
+
+판단 기준 — 아래 중 2개 이상 해당하면 부실(insufficient)로 판정:
+1. summary가 3문장 미만이거나 없음
+2. body가 없거나 200자 미만
+3. "무엇을 만드는가"(결과물의 형태: 앱/시스템/도구 등)가 불명확
+4. MVP 범위나 제외 사항을 전혀 추론할 수 없음
+
+반드시 아래 JSON 형식으로만 응답하라. 다른 텍스트 없이:
+{"sufficient": true} 또는 {"sufficient": false, "reasons": ["이유1", "이유2"]}
+
+---
+제목: {title}
+태그: {tags}
+요약: {summary}
+본문: {body}
+"""
+
+
+class ViabilityRequest(BaseModel):
+    title: str
+    tags: list[str] = []
+    summary: str = ""
+    body: str = ""
+
+
+@app.post("/api/check-prd-viability")
+async def check_prd_viability(req: ViabilityRequest):
+    """
+    PRD 생성 전 내용 충분성 사전 검사.
+    Haiku로 판단, 실패 시 Gemini Flash로 폴백.
+    """
+    import anthropic as _anthropic
+
+    prompt = _VIABILITY_PROMPT.format(
+        title=req.title,
+        tags=", ".join(req.tags) if req.tags else "(없음)",
+        summary=req.summary or "(없음)",
+        body=req.body or "(없음)",
+    )
+
+    def _parse(text: str) -> dict:
+        import json as _json
+        text = text.strip()
+        # 코드 펜스 제거
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        return _json.loads(text.strip())
+
+    # 1차: Claude Haiku
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if api_key:
+        try:
+            client = _anthropic.Anthropic(api_key=api_key)
+            msg = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=256,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return _parse(msg.content[0].text)
+        except Exception as e:
+            log.warning(f"[viability] Haiku 실패, Gemini 폴백: {e}")
+
+    # 2차: Gemini Flash
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        try:
+            from google import genai as _genai
+            client = _genai.Client(api_key=gemini_key)
+            resp = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            return _parse(resp.text)
+        except Exception as e:
+            log.warning(f"[viability] Gemini 폴백도 실패: {e}")
+
+    # 양쪽 실패 시 sufficient로 간주 (생성 막지 않음)
+    log.error("[viability] 모든 모델 실패 — sufficient=true로 패스스루")
+    return {"sufficient": True}
+
+
 @app.post("/api/generate-prd")
 async def generate_prd_endpoint(req: PrdRequest):
     """

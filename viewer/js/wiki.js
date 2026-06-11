@@ -596,6 +596,36 @@ async function generatePrd() {
     item.prd = null;
   }
 
+  // ── viability check ──────────────────────────────────────────
+  const serverUrl = 'https://idea-wiki-web.onrender.com';
+  try {
+    const vResp = await fetch(`${serverUrl}/api/check-prd-viability`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title:   item.title,
+        tags:    item.tags || [],
+        summary: item.summary || '',
+        body:    (item.versions && item.versions[0] && item.versions[0].content) || '',
+      }),
+    });
+    if (vResp.ok) {
+      const vData = await vResp.json();
+      if (!vData.sufficient) {
+        const reasons = (vData.reasons || []).map(r => `• ${r}`).join('\n');
+        const go = confirm(
+          `⚠️ "${item.title}" 아이템의 내용이 PRD로 만들기에 부실합니다.\n\n` +
+          `${reasons}\n\n` +
+          `바이브 코딩이 불가능할 수 있습니다.\n그래도 PRD로 만드시겠습니까?`
+        );
+        if (!go) return;
+      }
+    }
+  } catch (e) {
+    console.warn('[viability check 실패, 생성 계속]', e);
+  }
+  // ─────────────────────────────────────────────────────────────
+
   // 버튼 로딩 상태
   const btn = document.getElementById('prd-generate-btn');
   const origText = btn?.textContent;
@@ -612,7 +642,6 @@ async function generatePrd() {
       .map(r => ({ title: r.title, summary: r.summary || '' }));
 
     // 백엔드 호출
-    const serverUrl = 'https://idea-wiki-web.onrender.com';
     const resp = await fetch(`${serverUrl}/api/generate-prd`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
